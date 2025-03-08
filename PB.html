@@ -41,6 +41,7 @@
 
     <h2>Pickleball Instant Replay</h2>
 
+    <h3>Live Preview</h3>
     <video id="liveVideo" autoplay playsinline></video>
     <br>
     <button onclick="startGame()">Let’s Play</button>
@@ -57,14 +58,18 @@
         let motionDetected = false;
         let lastMotionTime = Date.now();
         let checkMotionInterval;
+        let speechRecognition;
         
         let videoElement = document.getElementById("liveVideo");
         let timeline = document.getElementById("timeline");
 
-        async function startGame() {
+        async function startLivePreview() {
             let stream = await navigator.mediaDevices.getUserMedia({ video: true });
             videoElement.srcObject = stream;
+        }
 
+        async function startGame() {
+            let stream = videoElement.srcObject;
             let videoTrack = stream.getVideoTracks()[0];
             let imageCapture = new ImageCapture(videoTrack);
             
@@ -86,6 +91,7 @@
             };
 
             startMotionDetection(imageCapture);
+            startVoiceRecognition();
         }
 
         function startMotionDetection(imageCapture) {
@@ -104,7 +110,7 @@
                     if (prevFrame) {
                         let motionLevel = compareFrames(prevFrame, frameData);
                         
-                        if (motionLevel > 20) { // Adjust sensitivity
+                        if (motionLevel > 40) { // Increased sensitivity
                             motionDetected = true;
                             lastMotionTime = Date.now();
                             if (!recording) startRecording();
@@ -154,6 +160,7 @@
             }
             videoElement.srcObject.getTracks().forEach(track => track.stop());
             clearInterval(checkMotionInterval); // Stop motion detection
+            stopVoiceRecognition();
         }
 
         function updateTimeline() {
@@ -175,8 +182,52 @@
             replayVideo.style.width = "90%";
             document.body.appendChild(replayVideo);
         }
+
+        function startVoiceRecognition() {
+            if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
+                console.log("Speech recognition not supported in this browser.");
+                return;
+            }
+
+            let Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            speechRecognition = new Recognition();
+            speechRecognition.continuous = true;
+            speechRecognition.lang = "en-US";
+
+            speechRecognition.onresult = (event) => {
+                let lastTranscript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
+                console.log("Heard:", lastTranscript);
+                if (lastTranscript === "start") {
+                    console.log("Voice command detected: Starting new clip...");
+                    startNewClip();
+                }
+            };
+
+            speechRecognition.onerror = (event) => {
+                console.log("Speech recognition error:", event.error);
+            };
+
+            speechRecognition.start();
+        }
+
+        function stopVoiceRecognition() {
+            if (speechRecognition) {
+                speechRecognition.stop();
+            }
+        }
+
+        function startNewClip() {
+            if (recording) {
+                stopRecording();
+                setTimeout(() => startRecording(), 500); // Short delay before starting a new clip
+            } else {
+                startRecording();
+            }
+        }
+
+        // Start the live preview as soon as the page loads
+        startLivePreview();
     </script>
 
 </body>
 </html>
-
