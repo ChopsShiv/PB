@@ -55,8 +55,8 @@
         let rallyClips = [];
         let recording = false;
         let motionDetected = false;
-        let noMotionTimeout;
         let lastMotionTime = Date.now();
+        let checkMotionInterval;
         
         let videoElement = document.getElementById("liveVideo");
         let timeline = document.getElementById("timeline");
@@ -104,7 +104,7 @@
                     if (prevFrame) {
                         let motionLevel = compareFrames(prevFrame, frameData);
                         
-                        if (motionLevel > 10) {
+                        if (motionLevel > 20) { // Adjust sensitivity
                             motionDetected = true;
                             lastMotionTime = Date.now();
                             if (!recording) startRecording();
@@ -112,17 +112,16 @@
                     }
 
                     prevFrame = frameData;
-                    
-                    if (motionDetected && Date.now() - lastMotionTime > 2000) {
+
+                    // If no motion for 2 seconds, stop recording
+                    if (recording && Date.now() - lastMotionTime > 2000) {
                         stopRecording();
                         motionDetected = false;
                     }
-
-                    requestAnimationFrame(checkMotion);
                 });
             }
 
-            checkMotion();
+            checkMotionInterval = setInterval(checkMotion, 500); // Check every 500ms
         }
 
         function compareFrames(prevFrame, currentFrame) {
@@ -135,6 +134,7 @@
 
         function startRecording() {
             if (!recording) {
+                console.log("Recording started");
                 mediaRecorder.start();
                 recording = true;
             }
@@ -142,6 +142,7 @@
 
         function stopRecording() {
             if (recording) {
+                console.log("Recording stopped");
                 mediaRecorder.stop();
                 recording = false;
             }
@@ -152,6 +153,7 @@
                 stopRecording();
             }
             videoElement.srcObject.getTracks().forEach(track => track.stop());
+            clearInterval(checkMotionInterval); // Stop motion detection
         }
 
         function updateTimeline() {
@@ -177,3 +179,4 @@
 
 </body>
 </html>
+
