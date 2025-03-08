@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pickleball Instant Replay</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+        video {
+            width: 90%;
+            max-width: 600px;
+            border: 2px solid black;
+            margin-top: 10px;
+        }
+        button {
+            padding: 10px;
+            font-size: 16px;
+            margin: 10px;
+        }
+        #timeline {
+            margin-top: 20px;
+            text-align: left;
+        }
+        .rally-item {
+            margin: 5px 0;
+            padding: 5px;
+            cursor: pointer;
+            background: lightgray;
+            border-radius: 5px;
+        }
+        .rally-item:hover {
+            background: darkgray;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Pickleball Instant Replay</h2>
+
+    <video id="liveVideo" autoplay playsinline></video>
+    <br>
+    <button onclick="startGame()">Let’s Play</button>
+    <button onclick="stopGame()">Stop</button>
+
+    <h3>Rally Timeline</h3>
+    <div id="timeline"></div>
+
+    <script>
+        let mediaRecorder;
+        let recordedChunks = [];
+        let rallyClips = [];
+        let recording = false;
+        let motionDetected = false;
+        let noMotionTimeout;
+        let lastMotionTime = Date.now();
+        
+        let videoElement = document.getElementById("liveVideo");
+        let timeline = document.getElementById("timeline");
+
+        async function startGame() {
+            let stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            videoElement.srcObject = stream;
+
+            let videoTrack = stream.getVideoTracks()[0];
+            let imageCapture = new ImageCapture(videoTrack);
+            
+            mediaRecorder = new MediaRecorder(stream);
+            
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) recordedChunks.push(event.data);
+            };
+
+            mediaRecorder.onstop = () => {
+                let blob = new Blob(recordedChunks, { type: "video/webm" });
+                let url = URL.createObjectURL(blob);
+                let clip = { url: url, timestamp: new Date().toLocaleTimeString() };
+
+                rallyClips.push(clip);
+                updateTimeline();
+                
+                recordedChunks = [];
+            };
+
+            startMotionDetection(imageCapture);
+        }
+
+        function startMotionDetection(imageCapture) {
+            let prevFrame = null;
+
+            function checkMotion() {
+                imageCapture.grabFrame().then((bitmap) => {
+                    let canvas = document.createElement("canvas");
+                    canvas.width = bitmap.width;
+                    canvas.height = bitmap.height;
+                    let ctx = canvas.getContext("2d");
+                    ctx.drawImage(bitmap, 0, 0);
+                    
+                    let frameData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+
+                    if (prevFrame) {
+                        let motionLevel = compareFrames(prevFrame, frameData);
+                        
+                        if (motionLevel > 10) {
+                            motionDetected = true;
+                            lastMotionTime = Date.now();
+                            if (!recording) startRecording();
+                        }
+                    }
+
+                    prevFrame = frameData;
+                    
+                    if (motionDetected && Date.now() - lastMotionTime > 2000) {
+                        stopRecording();
+                        motionDetected = false;
+                    }
+
+                    requestAnimationFrame(checkMotion);
+                });
+            }
+
+            checkMotion();
+        }
+
+        function compareFrames(prevFrame, currentFrame) {
+            let diff = 0;
+            for (let i = 0; i < prevFrame.length; i += 4) {
+                diff += Math.abs(prevFrame[i] - currentFrame[i]); // Compare red channel only
+            }
+            return diff / (prevFrame.length / 4);
+        }
+
+        function startRecording() {
+            if (!recording) {
+                mediaRecorder.start();
+                recording = true;
+            }
+        }
+
+        function stopRecording() {
+            if (recording) {
+                mediaRecorder.stop();
+                recording = false;
+            }
+        }
+
+        function stopGame() {
+            if (mediaRecorder && mediaRecorder.state === "recording") {
+                stopRecording();
+            }
+            videoElement.srcObject.getTracks().forEach(track => track.stop());
+        }
+
+        function updateTimeline() {
+            timeline.innerHTML = "";
+            rallyClips.forEach((clip, index) => {
+                let div = document.createElement("div");
+                div.className = "rally-item";
+                div.innerText = `Rally ${index + 1} - ${clip.timestamp}`;
+                div.onclick = () => replayRally(clip.url);
+                timeline.appendChild(div);
+            });
+        }
+
+        function replayRally(url) {
+            let replayVideo = document.createElement("video");
+            replayVideo.src = url;
+            replayVideo.controls = true;
+            replayVideo.autoplay = true;
+            replayVideo.style.width = "90%";
+            document.body.appendChild(replayVideo);
+        }
+    </script>
+
+</body>
+</html>
