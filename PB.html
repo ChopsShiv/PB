@@ -68,46 +68,52 @@
         let playButton = document.getElementById("playButton");
         let timeline = document.getElementById("timeline");
 
-        async function startGame() {
+        async function startLivePreview() {
             try {
                 let stream = await navigator.mediaDevices.getUserMedia({
-                    video: { frameRate: 120, facingMode: "environment" }, // Request 120FPS if supported
+                    video: { frameRate: 120, facingMode: "environment" },
                     audio: true
                 });
 
                 videoElement.srcObject = stream;
 
-                if (typeof MediaRecorder === "undefined") {
-                    alert("MediaRecorder not supported in this browser. Try using Safari on iOS.");
-                    return;
-                }
-
-                mediaRecorder = new MediaRecorder(stream, { mimeType: "video/mp4" });
-
-                mediaRecorder.ondataavailable = (event) => {
-                    if (event.data.size > 0) recordedChunks.push(event.data);
-                };
-
-                mediaRecorder.onstop = () => {
-                    if (recordedChunks.length > 0) {
-                        let blob = new Blob(recordedChunks, { type: "video/mp4" });
-                        let url = URL.createObjectURL(blob);
-                        let clip = { url: url, timestamp: new Date().toLocaleTimeString() };
-
-                        rallyClips.push(clip);
-                        updateTimeline();
-                        
-                        recordedChunks = [];
-                    }
-                };
-
-                playButton.style.background = "green"; // Button starts in green state
-                startVoiceRecognition(); // Attempt voice control
-                
             } catch (error) {
                 console.error("Error accessing camera/microphone:", error);
                 alert("Camera and microphone access is required.");
             }
+        }
+
+        async function startGame() {
+            if (!videoElement.srcObject) {
+                await startLivePreview(); // Ensure live preview starts if not already
+            }
+
+            if (typeof MediaRecorder === "undefined") {
+                alert("MediaRecorder not supported in this browser. Try using Safari on iOS.");
+                return;
+            }
+
+            mediaRecorder = new MediaRecorder(videoElement.srcObject, { mimeType: "video/mp4" });
+
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) recordedChunks.push(event.data);
+            };
+
+            mediaRecorder.onstop = () => {
+                if (recordedChunks.length > 0) {
+                    let blob = new Blob(recordedChunks, { type: "video/mp4" });
+                    let url = URL.createObjectURL(blob);
+                    let clip = { url: url, timestamp: new Date().toLocaleTimeString() };
+
+                    rallyClips.push(clip);
+                    updateTimeline();
+                    
+                    recordedChunks = [];
+                }
+            };
+
+            playButton.style.background = "green"; // Button starts in green state
+            startVoiceRecognition(); // Attempt voice control
         }
 
         function startRecording() {
@@ -133,7 +139,9 @@
             if (mediaRecorder && mediaRecorder.state === "recording") {
                 stopRecording();
             }
-            videoElement.srcObject.getTracks().forEach(track => track.stop());
+            if (videoElement.srcObject) {
+                videoElement.srcObject.getTracks().forEach(track => track.stop());
+            }
         }
 
         function updateTimeline() {
@@ -199,8 +207,10 @@
         function manualStop() {
             stopRecording();
         }
+
+        // Start live preview as soon as the web app opens
+        startLivePreview();
     </script>
 
 </body>
 </html>
-
