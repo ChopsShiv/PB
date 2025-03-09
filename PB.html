@@ -94,7 +94,7 @@
 
             startVoiceRecognition();
 
-            playButton.style.background = "red"; // Change button to red when recording
+            playButton.style.background = "green"; // Button starts in green state
         }
 
         function startRecording() {
@@ -158,8 +158,8 @@
                 let lastTranscript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
                 console.log("Heard:", lastTranscript);
                 if (lastTranscript === "start") {
-                    console.log("Voice command detected: Starting new clip...");
-                    startNewClip();
+                    console.log("Voice command detected: Toggling recording...");
+                    toggleRecording();
                 }
             };
 
@@ -176,7 +176,7 @@
             }
         }
 
-        function startNewClip() {
+        function toggleRecording() {
             if (recording) {
                 stopRecording();
                 setTimeout(() => startRecording(), 500); // Short delay before starting a new clip
@@ -190,3 +190,4 @@
 
 </body>
 </html>
+
