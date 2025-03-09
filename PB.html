@@ -49,10 +49,12 @@
     <h2>Pickleball Instant Replay</h2>
 
     <h3>Live Preview</h3>
-    <video id="liveVideo" autoplay playsinline></video>
+    <video id="liveVideo" autoplay playsinline muted></video>
     <br>
     <button id="playButton" onclick="startGame()">Let’s Play</button>
-    <button onclick="stopGame()">Stop</button>
+    <button onclick="manualStart()">Start Recording</button>
+    <button onclick="manualStop()">Stop Recording</button>
+    <button onclick="stopGame()">Stop App</button>
 
     <h3>Rally Timeline</h3>
     <div id="timeline"></div>
@@ -62,41 +64,52 @@
         let recordedChunks = [];
         let rallyClips = [];
         let recording = false;
-        let speechRecognition;
-        
         let videoElement = document.getElementById("liveVideo");
         let playButton = document.getElementById("playButton");
         let timeline = document.getElementById("timeline");
 
-        async function startLivePreview() {
-            let stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            videoElement.srcObject = stream;
-        }
-
         async function startGame() {
-            let stream = videoElement.srcObject;
-            mediaRecorder = new MediaRecorder(stream);
-            
-            mediaRecorder.ondataavailable = (event) => {
-                if (event.data.size > 0) recordedChunks.push(event.data);
-            };
+            try {
+                let stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: "environment" }, // Use back camera if available
+                    audio: true
+                });
 
-            mediaRecorder.onstop = () => {
-                if (recordedChunks.length > 0) {
-                    let blob = new Blob(recordedChunks, { type: "video/webm" });
-                    let url = URL.createObjectURL(blob);
-                    let clip = { url: url, timestamp: new Date().toLocaleTimeString() };
+                videoElement.srcObject = stream;
 
-                    rallyClips.push(clip);
-                    updateTimeline();
-                    
-                    recordedChunks = [];
+                // Check if MediaRecorder is supported in Chrome for iOS
+                if (typeof MediaRecorder === "undefined") {
+                    alert("MediaRecorder not supported in this browser. Try using Safari on iOS.");
+                    return;
                 }
-            };
 
-            startVoiceRecognition();
+                mediaRecorder = new MediaRecorder(stream, { mimeType: "video/mp4" });
 
-            playButton.style.background = "green"; // Button starts in green state
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) recordedChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    if (recordedChunks.length > 0) {
+                        let blob = new Blob(recordedChunks, { type: "video/mp4" });
+                        let url = URL.createObjectURL(blob);
+                        let clip = { url: url, timestamp: new Date().toLocaleTimeString() };
+
+                        rallyClips.push(clip);
+                        updateTimeline();
+                        
+                        recordedChunks = [];
+                    }
+                };
+
+                playButton.style.background = "green"; // Button starts in green state
+
+                startVoiceRecognition(); // Attempt voice control (may not work in Chrome on iOS)
+                
+            } catch (error) {
+                console.error("Error accessing camera/microphone:", error);
+                alert("Camera and microphone access is required.");
+            }
         }
 
         function startRecording() {
@@ -123,7 +136,6 @@
                 stopRecording();
             }
             videoElement.srcObject.getTracks().forEach(track => track.stop());
-            stopVoiceRecognition();
         }
 
         function updateTimeline() {
@@ -149,11 +161,12 @@
         function startVoiceRecognition() {
             if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
                 console.log("Speech recognition not supported in this browser.");
+                alert("Voice commands are not supported in Chrome for iOS. Use manual buttons.");
                 return;
             }
 
             let Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            speechRecognition = new Recognition();
+            let speechRecognition = new Recognition();
             speechRecognition.continuous = true;
             speechRecognition.lang = "en-US";
 
@@ -176,14 +189,15 @@
             speechRecognition.start();
         }
 
-        function stopVoiceRecognition() {
-            if (speechRecognition) {
-                speechRecognition.stop();
-            }
+        function manualStart() {
+            startRecording();
         }
 
-        startLivePreview();
+        function manualStop() {
+            stopRecording();
+        }
     </script>
 
 </body>
 </html>
+
