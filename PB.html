@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pickleball Instant Replay</title>
-    <script src="https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.6.0/firebase-storage.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -60,18 +58,6 @@
     <div id="timeline"></div>
 
     <script>
-        // 🔹 Initialize Firebase
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT_ID.appspot.com",
-            messagingSenderId: "YOUR_SENDER_ID",
-            appId: "YOUR_APP_ID"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const storage = firebase.storage();
-
         let mediaRecorder;
         let recordedChunks = [];
         let rallyClips = [];
@@ -109,8 +95,6 @@
                 rallyClips.push(clip);
                 updateTimeline();
                 
-                uploadToFirebase(blob); // 🔹 Upload to Firebase Cloud Storage
-
                 recordedChunks = [];
             };
 
@@ -210,11 +194,46 @@
             document.body.appendChild(replayVideo);
         }
 
-        async function uploadToFirebase(blob) {
-            let fileName = `rally-${Date.now()}.webm`;
-            let storageRef = storage.ref().child(fileName);
-            await storageRef.put(blob);
-            console.log(`Uploaded to Firebase: ${fileName}`);
+        function startVoiceRecognition() {
+            if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
+                console.log("Speech recognition not supported in this browser.");
+                return;
+            }
+
+            let Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            speechRecognition = new Recognition();
+            speechRecognition.continuous = true;
+            speechRecognition.lang = "en-US";
+
+            speechRecognition.onresult = (event) => {
+                let lastTranscript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
+                console.log("Heard:", lastTranscript);
+                if (lastTranscript === "start") {
+                    console.log("Voice command detected: Starting new clip...");
+                    startNewClip();
+                }
+            };
+
+            speechRecognition.onerror = (event) => {
+                console.log("Speech recognition error:", event.error);
+            };
+
+            speechRecognition.start();
+        }
+
+        function stopVoiceRecognition() {
+            if (speechRecognition) {
+                speechRecognition.stop();
+            }
+        }
+
+        function startNewClip() {
+            if (recording) {
+                stopRecording();
+                setTimeout(() => startRecording(), 500); // Short delay before starting a new clip
+            } else {
+                startRecording();
+            }
         }
 
         startLivePreview();
@@ -222,3 +241,4 @@
 
 </body>
 </html>
+
