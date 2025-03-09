@@ -71,13 +71,12 @@
         async function startGame() {
             try {
                 let stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: "environment" }, // Use back camera if available
+                    video: { frameRate: 120, facingMode: "environment" }, // Request 120FPS if supported
                     audio: true
                 });
 
                 videoElement.srcObject = stream;
 
-                // Check if MediaRecorder is supported in Chrome for iOS
                 if (typeof MediaRecorder === "undefined") {
                     alert("MediaRecorder not supported in this browser. Try using Safari on iOS.");
                     return;
@@ -103,8 +102,7 @@
                 };
 
                 playButton.style.background = "green"; // Button starts in green state
-
-                startVoiceRecognition(); // Attempt voice control (may not work in Chrome on iOS)
+                startVoiceRecognition(); // Attempt voice control
                 
             } catch (error) {
                 console.error("Error accessing camera/microphone:", error);
@@ -143,18 +141,23 @@
             rallyClips.forEach((clip, index) => {
                 let div = document.createElement("div");
                 div.className = "rally-item";
-                div.innerText = `Rally ${index + 1} - ${clip.timestamp}`;
-                div.onclick = () => replayRally(clip.url);
+                div.innerHTML = `
+                    Rally ${index + 1} - ${clip.timestamp}
+                    <button onclick="replayRally('${clip.url}', 1)">Play</button>
+                    <button onclick="replayRally('${clip.url}', 0.5)">0.5x</button>
+                    <button onclick="replayRally('${clip.url}', 0.25)">0.25x</button>
+                `;
                 timeline.appendChild(div);
             });
         }
 
-        function replayRally(url) {
+        function replayRally(url, speed) {
             let replayVideo = document.createElement("video");
             replayVideo.src = url;
             replayVideo.controls = true;
             replayVideo.autoplay = true;
             replayVideo.style.width = "90%";
+            replayVideo.playbackRate = speed; // Slow-motion playback
             document.body.appendChild(replayVideo);
         }
 
@@ -200,3 +203,4 @@
 
 </body>
 </html>
+
