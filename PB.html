@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pickleball Instant Replay</title>
+    <script src="https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.6.0/firebase-storage.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -20,6 +22,13 @@
             padding: 10px;
             font-size: 16px;
             margin: 10px;
+            border: none;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        #playButton {
+            background: green;
+            color: white;
         }
         #timeline {
             margin-top: 20px;
@@ -44,13 +53,25 @@
     <h3>Live Preview</h3>
     <video id="liveVideo" autoplay playsinline></video>
     <br>
-    <button onclick="startGame()">Let’s Play</button>
+    <button id="playButton" onclick="startGame()">Let’s Play</button>
     <button onclick="stopGame()">Stop</button>
 
     <h3>Rally Timeline</h3>
     <div id="timeline"></div>
 
     <script>
+        // 🔹 Initialize Firebase
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const storage = firebase.storage();
+
         let mediaRecorder;
         let recordedChunks = [];
         let rallyClips = [];
@@ -61,6 +82,7 @@
         let speechRecognition;
         
         let videoElement = document.getElementById("liveVideo");
+        let playButton = document.getElementById("playButton");
         let timeline = document.getElementById("timeline");
 
         async function startLivePreview() {
@@ -87,11 +109,15 @@
                 rallyClips.push(clip);
                 updateTimeline();
                 
+                uploadToFirebase(blob); // 🔹 Upload to Firebase Cloud Storage
+
                 recordedChunks = [];
             };
 
             startMotionDetection(imageCapture);
             startVoiceRecognition();
+
+            playButton.style.background = "red"; // 🔹 Change button to red when recording
         }
 
         function startMotionDetection(imageCapture) {
@@ -110,7 +136,7 @@
                     if (prevFrame) {
                         let motionLevel = compareFrames(prevFrame, frameData);
                         
-                        if (motionLevel > 40) { // Increased sensitivity
+                        if (motionLevel > 40) {
                             motionDetected = true;
                             lastMotionTime = Date.now();
                             if (!recording) startRecording();
@@ -119,7 +145,6 @@
 
                     prevFrame = frameData;
 
-                    // If no motion for 2 seconds, stop recording
                     if (recording && Date.now() - lastMotionTime > 2000) {
                         stopRecording();
                         motionDetected = false;
@@ -127,13 +152,13 @@
                 });
             }
 
-            checkMotionInterval = setInterval(checkMotion, 500); // Check every 500ms
+            checkMotionInterval = setInterval(checkMotion, 500);
         }
 
         function compareFrames(prevFrame, currentFrame) {
             let diff = 0;
             for (let i = 0; i < prevFrame.length; i += 4) {
-                diff += Math.abs(prevFrame[i] - currentFrame[i]); // Compare red channel only
+                diff += Math.abs(prevFrame[i] - currentFrame[i]);
             }
             return diff / (prevFrame.length / 4);
         }
@@ -143,6 +168,7 @@
                 console.log("Recording started");
                 mediaRecorder.start();
                 recording = true;
+                playButton.style.background = "red";
             }
         }
 
@@ -151,6 +177,7 @@
                 console.log("Recording stopped");
                 mediaRecorder.stop();
                 recording = false;
+                playButton.style.background = "green";
             }
         }
 
@@ -159,7 +186,7 @@
                 stopRecording();
             }
             videoElement.srcObject.getTracks().forEach(track => track.stop());
-            clearInterval(checkMotionInterval); // Stop motion detection
+            clearInterval(checkMotionInterval);
             stopVoiceRecognition();
         }
 
@@ -183,51 +210,16 @@
             document.body.appendChild(replayVideo);
         }
 
-        function startVoiceRecognition() {
-            if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
-                console.log("Speech recognition not supported in this browser.");
-                return;
-            }
-
-            let Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            speechRecognition = new Recognition();
-            speechRecognition.continuous = true;
-            speechRecognition.lang = "en-US";
-
-            speechRecognition.onresult = (event) => {
-                let lastTranscript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
-                console.log("Heard:", lastTranscript);
-                if (lastTranscript === "start") {
-                    console.log("Voice command detected: Starting new clip...");
-                    startNewClip();
-                }
-            };
-
-            speechRecognition.onerror = (event) => {
-                console.log("Speech recognition error:", event.error);
-            };
-
-            speechRecognition.start();
+        async function uploadToFirebase(blob) {
+            let fileName = `rally-${Date.now()}.webm`;
+            let storageRef = storage.ref().child(fileName);
+            await storageRef.put(blob);
+            console.log(`Uploaded to Firebase: ${fileName}`);
         }
 
-        function stopVoiceRecognition() {
-            if (speechRecognition) {
-                speechRecognition.stop();
-            }
-        }
-
-        function startNewClip() {
-            if (recording) {
-                stopRecording();
-                setTimeout(() => startRecording(), 500); // Short delay before starting a new clip
-            } else {
-                startRecording();
-            }
-        }
-
-        // Start the live preview as soon as the page loads
         startLivePreview();
     </script>
 
 </body>
 </html>
+
