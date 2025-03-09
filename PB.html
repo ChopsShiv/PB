@@ -82,14 +82,16 @@
             };
 
             mediaRecorder.onstop = () => {
-                let blob = new Blob(recordedChunks, { type: "video/webm" });
-                let url = URL.createObjectURL(blob);
-                let clip = { url: url, timestamp: new Date().toLocaleTimeString() };
+                if (recordedChunks.length > 0) {
+                    let blob = new Blob(recordedChunks, { type: "video/webm" });
+                    let url = URL.createObjectURL(blob);
+                    let clip = { url: url, timestamp: new Date().toLocaleTimeString() };
 
-                rallyClips.push(clip);
-                updateTimeline();
-                
-                recordedChunks = [];
+                    rallyClips.push(clip);
+                    updateTimeline();
+                    
+                    recordedChunks = [];
+                }
             };
 
             startVoiceRecognition();
@@ -100,6 +102,7 @@
         function startRecording() {
             if (!recording) {
                 console.log("Recording started");
+                recordedChunks = []; // Reset recorded clips
                 mediaRecorder.start();
                 recording = true;
                 playButton.style.background = "red";
@@ -158,8 +161,11 @@
                 let lastTranscript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
                 console.log("Heard:", lastTranscript);
                 if (lastTranscript === "start") {
-                    console.log("Voice command detected: Toggling recording...");
-                    toggleRecording();
+                    console.log("Voice command detected: Starting recording...");
+                    startRecording();
+                } else if (lastTranscript === "stop") {
+                    console.log("Voice command detected: Stopping recording...");
+                    stopRecording();
                 }
             };
 
@@ -176,18 +182,8 @@
             }
         }
 
-        function toggleRecording() {
-            if (recording) {
-                stopRecording();
-                setTimeout(() => startRecording(), 500); // Short delay before starting a new clip
-            } else {
-                startRecording();
-            }
-        }
-
         startLivePreview();
     </script>
 
 </body>
 </html>
-
