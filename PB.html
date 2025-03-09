@@ -62,9 +62,6 @@
         let recordedChunks = [];
         let rallyClips = [];
         let recording = false;
-        let motionDetected = false;
-        let lastMotionTime = Date.now();
-        let checkMotionInterval;
         let speechRecognition;
         
         let videoElement = document.getElementById("liveVideo");
@@ -78,9 +75,6 @@
 
         async function startGame() {
             let stream = videoElement.srcObject;
-            let videoTrack = stream.getVideoTracks()[0];
-            let imageCapture = new ImageCapture(videoTrack);
-            
             mediaRecorder = new MediaRecorder(stream);
             
             mediaRecorder.ondataavailable = (event) => {
@@ -98,53 +92,9 @@
                 recordedChunks = [];
             };
 
-            startMotionDetection(imageCapture);
             startVoiceRecognition();
 
-            playButton.style.background = "red"; // 🔹 Change button to red when recording
-        }
-
-        function startMotionDetection(imageCapture) {
-            let prevFrame = null;
-
-            function checkMotion() {
-                imageCapture.grabFrame().then((bitmap) => {
-                    let canvas = document.createElement("canvas");
-                    canvas.width = bitmap.width;
-                    canvas.height = bitmap.height;
-                    let ctx = canvas.getContext("2d");
-                    ctx.drawImage(bitmap, 0, 0);
-                    
-                    let frameData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-
-                    if (prevFrame) {
-                        let motionLevel = compareFrames(prevFrame, frameData);
-                        
-                        if (motionLevel > 40) {
-                            motionDetected = true;
-                            lastMotionTime = Date.now();
-                            if (!recording) startRecording();
-                        }
-                    }
-
-                    prevFrame = frameData;
-
-                    if (recording && Date.now() - lastMotionTime > 2000) {
-                        stopRecording();
-                        motionDetected = false;
-                    }
-                });
-            }
-
-            checkMotionInterval = setInterval(checkMotion, 500);
-        }
-
-        function compareFrames(prevFrame, currentFrame) {
-            let diff = 0;
-            for (let i = 0; i < prevFrame.length; i += 4) {
-                diff += Math.abs(prevFrame[i] - currentFrame[i]);
-            }
-            return diff / (prevFrame.length / 4);
+            playButton.style.background = "red"; // Change button to red when recording
         }
 
         function startRecording() {
@@ -170,7 +120,6 @@
                 stopRecording();
             }
             videoElement.srcObject.getTracks().forEach(track => track.stop());
-            clearInterval(checkMotionInterval);
             stopVoiceRecognition();
         }
 
@@ -241,4 +190,3 @@
 
 </body>
 </html>
-
