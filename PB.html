@@ -68,10 +68,10 @@
     #playButton {
       background: green;
     }
-    /* Responsive timeline at bottom */
+    /* Responsive timeline at bottom, now raised to 5% above the bottom */
     .timeline {
       position: absolute;
-      bottom: 0;
+      bottom: 5%;
       left: 0;
       width: 100%;
       background: rgba(0,0,0,0.5);
@@ -162,7 +162,7 @@
     <video id="liveVideo" autoplay playsinline muted webkit-playsinline></video>
     
     <div class="controls">
-      <!-- "Let's Play" triggers camera access; disabled once live video is active -->
+      <!-- The user must tap "Let’s Play" to trigger camera access -->
       <button id="playButton" onclick="startGame()">Let’s Play</button>
       <button onclick="manualStart()">Start Rec</button>
       <button onclick="manualStop()">Stop Rec</button>
@@ -196,8 +196,8 @@
     }
 
     async function startGame() {
+      // If live video is already active, disable the button to avoid duplicate activation.
       if (videoElement.srcObject) {
-        // Already active – disable the button to avoid duplicate activation.
         playButton.disabled = true;
         return;
       }
@@ -227,7 +227,7 @@
         }
       };
       playButton.style.background = "green";
-      playButton.disabled = true;
+      playButton.disabled = true; // Disable button so it can't be clicked twice
       startVoiceRecognition();
     }
 
@@ -362,3 +362,4 @@
   </script>
 </body>
 </html>
+
