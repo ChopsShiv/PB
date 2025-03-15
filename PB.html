@@ -148,10 +148,9 @@
       background: white;
       color: black;
     }
-    #backButton {
+    #backButton, #shareButton {
       position: absolute;
       top: 20px;
-      left: 20px;
       padding: 10px 15px;
       font-size: 16px;
       background: rgba(0,0,0,0.7);
@@ -160,6 +159,12 @@
       border-radius: 5px;
       cursor: pointer;
       z-index: 11;
+    }
+    #backButton {
+      left: 20px;
+    }
+    #shareButton {
+      right: 20px;
     }
   </style>
 </head>
@@ -200,7 +205,7 @@
         });
         console.log("Camera stream acquired.");
         videoElement.srcObject = stream;
-        videoElement.muted = true; // Start with audio muted
+        videoElement.muted = true; // Start live video muted
       } catch (error) {
         console.error("getUserMedia error:", error);
         alert("Unable to access camera/microphone. Check your device settings.");
@@ -208,7 +213,6 @@
     }
 
     async function startGame() {
-      // If live video is already active, disable the "Let's Play" button
       if (videoElement.srcObject) {
         playButton.disabled = true;
         return;
@@ -239,7 +243,7 @@
         }
       };
       playButton.style.background = "green";
-      playButton.disabled = true; // Disable the button so it can't be clicked twice
+      playButton.disabled = true;
       startVoiceRecognition();
     }
 
@@ -295,7 +299,7 @@
       const overlay = document.createElement("div");
       overlay.id = "replayOverlay";
       
-      // Back button to return to live view; resume live video playback explicitly
+      // Back button to return to live view
       const backButton = document.createElement("button");
       backButton.id = "backButton";
       backButton.innerText = "Back";
@@ -303,6 +307,12 @@
         document.body.removeChild(overlay);
         videoElement.play();
       };
+      
+      // Share button to export/share the rally clip
+      const shareButton = document.createElement("button");
+      shareButton.id = "shareButton";
+      shareButton.innerText = "Share";
+      shareButton.onclick = () => shareClip(url);
       
       // Replay video element
       const replayVideo = document.createElement("video");
@@ -317,13 +327,11 @@
       // Replay controls for playback speed
       const replayControls = document.createElement("div");
       replayControls.className = "replay-controls";
-      
       const speeds = [
         { label: "0.25x", value: 0.25 },
         { label: "0.5x", value: 0.5 },
         { label: "1.0x", value: 1.0 }
       ];
-      
       speeds.forEach(speedOption => {
         const btn = document.createElement("button");
         btn.innerText = speedOption.label;
@@ -345,7 +353,30 @@
       overlay.appendChild(replayControls);
       overlay.appendChild(replayMuteBtn);
       overlay.appendChild(backButton);
+      overlay.appendChild(shareButton);
       document.body.appendChild(overlay);
+    }
+
+    async function shareClip(url) {
+      if (navigator.share) {
+        try {
+          // Convert the video URL to a blob and then to a File (if needed)
+          const response = await fetch(url);
+          const blob = await response.blob();
+          const file = new File([blob], "rally.mp4", { type: "video/mp4" });
+          await navigator.share({
+            title: "Pickleball Rally",
+            text: "Check out this rally clip!",
+            files: [file],
+          });
+          console.log("Share successful.");
+        } catch (error) {
+          console.error("Error sharing:", error);
+          alert("Error sharing the clip.");
+        }
+      } else {
+        alert("Web Share API not supported on this device.");
+      }
     }
 
     function toggleMute() {
@@ -358,9 +389,7 @@
         alert("Stop recording before toggling camera.");
         return;
       }
-      // Toggle between front ("user") and back ("environment")
       currentFacingMode = (currentFacingMode === "environment") ? "user" : "environment";
-      // Stop current stream tracks if any
       if (videoElement.srcObject) {
         videoElement.srcObject.getTracks().forEach(track => track.stop());
       }
@@ -371,7 +400,6 @@
         });
         console.log("Camera switched. New facing mode:", currentFacingMode);
         videoElement.srcObject = stream;
-        // Reinitialize mediaRecorder with new stream if already initialized
         if (mediaRecorder) {
           mediaRecorder = new MediaRecorder(stream, { mimeType: "video/mp4" });
           mediaRecorder.ondataavailable = (event) => {
@@ -426,4 +454,3 @@
   </script>
 </body>
 </html>
-
