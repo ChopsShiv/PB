@@ -68,7 +68,13 @@
     #playButton {
       background: green;
     }
-    /* Responsive timeline at bottom, now raised to 5% above the bottom */
+    /* Mute toggle button style */
+    #muteToggleButton {
+      background: rgba(0, 0, 0, 0.7);
+      border: 1px solid white;
+      border-radius: 6px;
+    }
+    /* Responsive timeline at bottom */
     .timeline {
       position: absolute;
       bottom: 5%;
@@ -162,11 +168,13 @@
     <video id="liveVideo" autoplay playsinline muted webkit-playsinline></video>
     
     <div class="controls">
-      <!-- The user must tap "Let’s Play" to trigger camera access -->
+      <!-- "Let's Play" triggers camera access; disabled after activation -->
       <button id="playButton" onclick="startGame()">Let’s Play</button>
       <button onclick="manualStart()">Start Rec</button>
       <button onclick="manualStop()">Stop Rec</button>
       <button onclick="stopGame()">End Session</button>
+      <!-- Mute toggle button -->
+      <button id="muteToggleButton" onclick="toggleMute()">🔇</button>
     </div>
     
     <div class="timeline" id="timeline"></div>
@@ -180,6 +188,7 @@
     const videoElement = document.getElementById("liveVideo");
     const playButton = document.getElementById("playButton");
     const timeline = document.getElementById("timeline");
+    const muteToggleButton = document.getElementById("muteToggleButton");
 
     async function startLivePreview() {
       try {
@@ -189,6 +198,8 @@
         });
         console.log("Camera stream acquired.");
         videoElement.srcObject = stream;
+        // Start with audio muted
+        videoElement.muted = true;
       } catch (error) {
         console.error("getUserMedia error:", error);
         alert("Unable to access camera/microphone. Check your device settings.");
@@ -196,7 +207,6 @@
     }
 
     async function startGame() {
-      // If live video is already active, disable the button to avoid duplicate activation.
       if (videoElement.srcObject) {
         playButton.disabled = true;
         return;
@@ -227,7 +237,7 @@
         }
       };
       playButton.style.background = "green";
-      playButton.disabled = true; // Disable button so it can't be clicked twice
+      playButton.disabled = true;
       startVoiceRecognition();
     }
 
@@ -299,8 +309,8 @@
       replayVideo.style.width = "100%";
       replayVideo.style.height = "100%";
       replayVideo.style.objectFit = "contain";
-      
-      // Replay controls for playback speed
+      replayVideo.muted = true; // Start muted
+      // Replay controls for playback speed and mute toggle
       const replayControls = document.createElement("div");
       replayControls.className = "replay-controls";
       
@@ -319,10 +329,25 @@
         replayControls.appendChild(btn);
       });
       
+      // Mute toggle for replay video
+      const replayMuteBtn = document.createElement("button");
+      replayMuteBtn.innerText = "🔇";
+      replayMuteBtn.onclick = () => {
+        replayVideo.muted = !replayVideo.muted;
+        replayMuteBtn.innerText = replayVideo.muted ? "🔇" : "🔊";
+      };
+      
       overlay.appendChild(replayVideo);
       overlay.appendChild(replayControls);
+      overlay.appendChild(replayMuteBtn);
       overlay.appendChild(backButton);
       document.body.appendChild(overlay);
+    }
+
+    function toggleMute() {
+      // Toggle mute for live video stream
+      videoElement.muted = !videoElement.muted;
+      muteToggleButton.innerText = videoElement.muted ? "🔇" : "🔊";
     }
 
     function startVoiceRecognition() {
@@ -362,4 +387,3 @@
   </script>
 </body>
 </html>
-
