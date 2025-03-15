@@ -68,7 +68,7 @@
     #playButton {
       background: green;
     }
-    /* Mute toggle button style */
+    /* Mute toggle button style (if needed) */
     #muteToggleButton {
       background: rgba(0, 0, 0, 0.7);
       border: 1px solid white;
@@ -173,6 +173,7 @@
       <button onclick="manualStart()">Start Rec</button>
       <button onclick="manualStop()">Stop Rec</button>
       <button onclick="stopGame()">End Session</button>
+      <button id="toggleCameraButton" onclick="toggleCamera()">Toggle Camera</button>
       <!-- Mute toggle button -->
       <button id="muteToggleButton" onclick="toggleMute()">🔇</button>
     </div>
@@ -185,6 +186,8 @@
     let recordedChunks = [];
     let rallyClips = [];
     let recording = false;
+    // Default facing mode: back camera ("environment")
+    let currentFacingMode = "environment";
     const videoElement = document.getElementById("liveVideo");
     const playButton = document.getElementById("playButton");
     const timeline = document.getElementById("timeline");
@@ -193,12 +196,12 @@
     async function startLivePreview() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { frameRate: { ideal: 120 }, facingMode: "environment" },
+          video: { frameRate: { ideal: 120 }, facingMode: currentFacingMode },
           audio: true
         });
         console.log("Camera stream acquired.");
         videoElement.srcObject = stream;
-        // Start with audio muted
+        // Start with live video muted
         videoElement.muted = true;
       } catch (error) {
         console.error("getUserMedia error:", error);
@@ -207,6 +210,7 @@
     }
 
     async function startGame() {
+      // If live video is already active, disable "Let's Play"
       if (videoElement.srcObject) {
         playButton.disabled = true;
         return;
@@ -310,7 +314,8 @@
       replayVideo.style.height = "100%";
       replayVideo.style.objectFit = "contain";
       replayVideo.muted = true; // Start muted
-      // Replay controls for playback speed and mute toggle
+      
+      // Replay controls for playback speed
       const replayControls = document.createElement("div");
       replayControls.className = "replay-controls";
       
@@ -345,9 +350,49 @@
     }
 
     function toggleMute() {
-      // Toggle mute for live video stream
       videoElement.muted = !videoElement.muted;
       muteToggleButton.innerText = videoElement.muted ? "🔇" : "🔊";
+    }
+
+    async function toggleCamera() {
+      if (recording) {
+        alert("Stop recording before toggling camera.");
+        return;
+      }
+      // Toggle between front ("user") and back ("environment")
+      currentFacingMode = (currentFacingMode === "environment") ? "user" : "environment";
+      // Stop current stream tracks if any
+      if (videoElement.srcObject) {
+        videoElement.srcObject.getTracks().forEach(track => track.stop());
+      }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { frameRate: { ideal: 120 }, facingMode: currentFacingMode },
+          audio: true
+        });
+        console.log("Camera switched. New facing mode:", currentFacingMode);
+        videoElement.srcObject = stream;
+        // Reinitialize mediaRecorder with new stream if already initialized
+        if (mediaRecorder) {
+          mediaRecorder = new MediaRecorder(stream, { mimeType: "video/mp4" });
+          mediaRecorder.ondataavailable = (event) => {
+            if (event.data && event.data.size > 0) recordedChunks.push(event.data);
+          };
+          mediaRecorder.onstop = () => {
+            if (recordedChunks.length > 0) {
+              const blob = new Blob(recordedChunks, { type: "video/mp4" });
+              const url = URL.createObjectURL(blob);
+              const clip = { url: url, timestamp: new Date().toLocaleTimeString() };
+              rallyClips.push(clip);
+              updateTimeline();
+              recordedChunks = [];
+            }
+          };
+        }
+      } catch (error) {
+        console.error("toggleCamera error:", error);
+        alert("Unable to switch camera.");
+      }
     }
 
     function startVoiceRecognition() {
@@ -377,13 +422,8 @@
       speechRecognition.start();
     }
 
-    function manualStart() {
-      startRecording();
-    }
-
-    function manualStop() {
-      stopRecording();
-    }
+    function manualStart() { startRecording(); }
+    function manualStop() { stopRecording(); }
   </script>
 </body>
 </html>
