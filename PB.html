@@ -36,7 +36,7 @@
       object-fit: cover;
       z-index: 1;
     }
-    /* Smaller overlaid controls */
+    /* Overlaid, smaller controls */
     .controls {
       position: absolute;
       bottom: 20%;
@@ -139,7 +139,7 @@
     <video id="liveVideo" autoplay playsinline muted webkit-playsinline></video>
     
     <div class="controls">
-      <!-- User must tap "Let's Play" to trigger camera access -->
+      <!-- The user must tap "Let's Play" to trigger camera access -->
       <button id="playButton" onclick="startGame()">Let’s Play</button>
       <button onclick="manualStart()">Start Rec</button>
       <button onclick="manualStop()">Stop Rec</button>
@@ -173,9 +173,12 @@
     }
 
     async function startGame() {
-      if (!videoElement.srcObject) {
-        await startLivePreview();
+      // If live video is already active, disable the "Let's Play" button and do nothing
+      if (videoElement.srcObject) {
+        playButton.disabled = true;
+        return;
       }
+      await startLivePreview();
       if (typeof MediaRecorder === "undefined") {
         alert("MediaRecorder not supported. Please use Safari on iOS.");
         return;
@@ -200,7 +203,8 @@
           recordedChunks = [];
         }
       };
-      playButton.style.background = "green"; // Ensure initial state
+      playButton.style.background = "green";
+      playButton.disabled = true; // Disable button so it can't be clicked twice
       startVoiceRecognition();
     }
 
@@ -253,16 +257,13 @@
     }
 
     function replayRally(url, speed) {
-      // Create overlay for replay mode
       const overlay = document.createElement("div");
       overlay.id = "replayOverlay";
-      // Create back button
       const backButton = document.createElement("button");
       backButton.innerText = "Back";
       backButton.onclick = () => {
         document.body.removeChild(overlay);
       };
-      // Create replay video element
       const replayVideo = document.createElement("video");
       replayVideo.src = url;
       replayVideo.controls = true;
