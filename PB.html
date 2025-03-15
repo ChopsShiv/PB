@@ -110,16 +110,39 @@
       background: black;
       z-index: 10;
       display: flex;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
-      flex-direction: column;
     }
     #replayOverlay video {
       width: 100%;
       height: 100%;
       object-fit: contain;
     }
-    #replayOverlay button {
+    .replay-controls {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      z-index: 11;
+    }
+    .replay-controls button {
+      padding: 8px 12px;
+      font-size: 14px;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      border: 1px solid white;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .replay-controls button:hover {
+      background: white;
+      color: black;
+    }
+    #backButton {
       position: absolute;
       top: 20px;
       left: 20px;
@@ -139,11 +162,11 @@
     <video id="liveVideo" autoplay playsinline muted webkit-playsinline></video>
     
     <div class="controls">
-      <!-- The user must tap "Let's Play" to trigger camera access -->
+      <!-- "Let's Play" triggers camera access; disabled once live video is active -->
       <button id="playButton" onclick="startGame()">Let’s Play</button>
       <button onclick="manualStart()">Start Rec</button>
       <button onclick="manualStop()">Stop Rec</button>
-      <button onclick="stopGame()">Stop App</button>
+      <button onclick="stopGame()">End Session</button>
     </div>
     
     <div class="timeline" id="timeline"></div>
@@ -173,8 +196,8 @@
     }
 
     async function startGame() {
-      // If live video is already active, disable the "Let's Play" button and do nothing
       if (videoElement.srcObject) {
+        // Already active – disable the button to avoid duplicate activation.
         playButton.disabled = true;
         return;
       }
@@ -204,7 +227,7 @@
         }
       };
       playButton.style.background = "green";
-      playButton.disabled = true; // Disable button so it can't be clicked twice
+      playButton.disabled = true;
       startVoiceRecognition();
     }
 
@@ -247,7 +270,7 @@
         thumb.playsInline = true;
         thumb.autoplay = true;
         thumb.loop = true;
-        thumb.onclick = () => replayRally(clip.url, 1);
+        thumb.onclick = () => replayRally(clip.url);
         const label = document.createElement("span");
         label.innerText = `Rally ${index + 1}`;
         div.appendChild(thumb);
@@ -256,14 +279,19 @@
       });
     }
 
-    function replayRally(url, speed) {
+    function replayRally(url) {
       const overlay = document.createElement("div");
       overlay.id = "replayOverlay";
+      
+      // Back button to return to live view
       const backButton = document.createElement("button");
+      backButton.id = "backButton";
       backButton.innerText = "Back";
       backButton.onclick = () => {
         document.body.removeChild(overlay);
       };
+      
+      // Replay video element
       const replayVideo = document.createElement("video");
       replayVideo.src = url;
       replayVideo.controls = true;
@@ -271,8 +299,28 @@
       replayVideo.style.width = "100%";
       replayVideo.style.height = "100%";
       replayVideo.style.objectFit = "contain";
-      replayVideo.playbackRate = speed;
+      
+      // Replay controls for playback speed
+      const replayControls = document.createElement("div");
+      replayControls.className = "replay-controls";
+      
+      const speeds = [
+        { label: "0.25x", value: 0.25 },
+        { label: "0.5x", value: 0.5 },
+        { label: "1.0x", value: 1.0 }
+      ];
+      
+      speeds.forEach(speedOption => {
+        const btn = document.createElement("button");
+        btn.innerText = speedOption.label;
+        btn.onclick = () => {
+          replayVideo.playbackRate = speedOption.value;
+        };
+        replayControls.appendChild(btn);
+      });
+      
       overlay.appendChild(replayVideo);
+      overlay.appendChild(replayControls);
       overlay.appendChild(backButton);
       document.body.appendChild(overlay);
     }
