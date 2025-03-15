@@ -3,61 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pickleball Instant Replay - iPad Compatible</title>
+    <title>Pickleball Instant Replay - Full Screen Mode</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 20px;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: black;
+        }
+        .video-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         video {
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+            position: absolute;
+            z-index: -1;
+        }
+        .controls {
+            position: absolute;
+            bottom: 10%;
             width: 90%;
-            max-width: 800px;
-            border: 2px solid black;
-            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
         }
         button {
-            padding: 10px;
-            font-size: 16px;
-            margin: 10px;
-            border: none;
+            padding: 12px 20px;
+            font-size: 18px;
+            font-weight: bold;
+            color: white;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid white;
+            border-radius: 8px;
             cursor: pointer;
-            transition: background 0.3s;
+            transition: 0.3s;
+            width: 60%;
+            text-align: center;
+        }
+        button:hover {
+            background: white;
+            color: black;
         }
         #playButton {
             background: green;
-            color: white;
         }
         #timeline {
-            margin-top: 20px;
-            text-align: left;
-        }
-        .rally-item {
-            margin: 5px 0;
-            padding: 5px;
-            cursor: pointer;
-            background: lightgray;
-            border-radius: 5px;
-        }
-        .rally-item:hover {
-            background: darkgray;
+            position: absolute;
+            bottom: 5%;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            color: white;
+            font-size: 18px;
         }
     </style>
 </head>
 <body>
 
-    <h2>Pickleball Instant Replay</h2>
+    <div class="video-container">
+        <video id="liveVideo" autoplay playsinline muted></video>
+        
+        <div class="controls">
+            <button id="playButton" onclick="startGame()">Let’s Play</button>
+            <button onclick="manualStart()">Start Recording</button>
+            <button onclick="manualStop()">Stop Recording</button>
+            <button onclick="stopGame()">Stop App</button>
+        </div>
 
-    <h3>Live Preview</h3>
-    <video id="liveVideo" autoplay playsinline></video>
-    <br>
-    <button id="playButton" onclick="startGame()">Let’s Play</button>
-    <button onclick="manualStart()">Start Recording</button>
-    <button onclick="manualStop()">Stop Recording</button>
-    <button onclick="stopGame()">Stop App</button>
-
-    <h3>Rally Timeline</h3>
-    <div id="timeline"></div>
+        <div id="timeline"></div>
+    </div>
 
     <script>
         let mediaRecorder;
@@ -71,7 +98,7 @@
         async function startLivePreview() {
             try {
                 let stream = await navigator.mediaDevices.getUserMedia({
-                    video: { frameRate: 120, facingMode: "environment" }, // Request 120FPS if supported
+                    video: { frameRate: 120, facingMode: "environment" },
                     audio: { echoCancellation: true, noiseSuppression: true }
                 });
 
@@ -85,7 +112,7 @@
 
         async function startGame() {
             if (!videoElement.srcObject) {
-                await startLivePreview(); // Ensure live preview starts if not already
+                await startLivePreview();
             }
 
             if (typeof MediaRecorder === "undefined") {
@@ -112,14 +139,14 @@
                 }
             };
 
-            playButton.style.background = "green"; // Button starts in green state
-            startVoiceRecognition(); // Attempt voice control
+            playButton.style.background = "green"; 
+            startVoiceRecognition();
         }
 
         function startRecording() {
             if (!recording) {
                 console.log("Recording started");
-                recordedChunks = []; // Reset recorded clips
+                recordedChunks = [];
                 mediaRecorder.start();
                 recording = true;
                 playButton.style.background = "red";
@@ -148,9 +175,8 @@
             timeline.innerHTML = "";
             rallyClips.forEach((clip, index) => {
                 let div = document.createElement("div");
-                div.className = "rally-item";
                 div.innerHTML = `
-                    Rally ${index + 1} - ${clip.timestamp}
+                    Rally ${index + 1} - ${clip.timestamp} |
                     <button onclick="replayRally('${clip.url}', 1)">Play</button>
                     <button onclick="replayRally('${clip.url}', 0.5)">0.5x</button>
                     <button onclick="replayRally('${clip.url}', 0.25)">0.25x</button>
@@ -165,7 +191,7 @@
             replayVideo.controls = true;
             replayVideo.autoplay = true;
             replayVideo.style.width = "90%";
-            replayVideo.playbackRate = speed; // Slow-motion playback
+            replayVideo.playbackRate = speed;
             document.body.appendChild(replayVideo);
         }
 
@@ -208,7 +234,6 @@
             stopRecording();
         }
 
-        // Start live preview as soon as the web app opens
         startLivePreview();
     </script>
 
