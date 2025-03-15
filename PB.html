@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pickleball Instant Replay</title>
+    <title>Pickleball Instant Replay - iPad Compatible</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -12,7 +12,7 @@
         }
         video {
             width: 90%;
-            max-width: 600px;
+            max-width: 800px;
             border: 2px solid black;
             margin-top: 10px;
         }
@@ -49,7 +49,7 @@
     <h2>Pickleball Instant Replay</h2>
 
     <h3>Live Preview</h3>
-    <video id="liveVideo" autoplay playsinline muted></video>
+    <video id="liveVideo" autoplay playsinline></video>
     <br>
     <button id="playButton" onclick="startGame()">Let’s Play</button>
     <button onclick="manualStart()">Start Recording</button>
@@ -71,8 +71,8 @@
         async function startLivePreview() {
             try {
                 let stream = await navigator.mediaDevices.getUserMedia({
-                    video: { frameRate: 120, facingMode: "environment" },
-                    audio: true
+                    video: { frameRate: 120, facingMode: "environment" }, // Request 120FPS if supported
+                    audio: { echoCancellation: true, noiseSuppression: true }
                 });
 
                 videoElement.srcObject = stream;
