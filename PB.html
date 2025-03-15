@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pickleball Instant Replay - Full Screen</title>
+  <title>Pickleball Instant Replay - iPad Chrome</title>
   <style>
-    /* Reset and full screen layout */
+    /* Reset and full-screen styling */
     * {
       margin: 0;
       padding: 0;
@@ -18,13 +18,13 @@
       background: black;
       font-family: Arial, sans-serif;
     }
-    /* Video container fills the entire viewport */
     .video-container {
-      position: relative;
+      position: fixed;
+      top: 0;
+      left: 0;
       width: 100vw;
       height: 100vh;
     }
-    /* Video element covers the container */
     #liveVideo {
       position: absolute;
       top: 0;
@@ -34,7 +34,6 @@
       object-fit: cover;
       z-index: 1;
     }
-    /* Overlaid controls positioned near the bottom */
     .controls {
       position: absolute;
       bottom: 12%;
@@ -66,7 +65,6 @@
     #playButton {
       background: green;
     }
-    /* Timeline bar at the very bottom */
     .timeline {
       position: absolute;
       bottom: 0;
@@ -95,6 +93,7 @@
     <video id="liveVideo" autoplay playsinline muted></video>
     
     <div class="controls">
+      <!-- User must tap "Let's Play" to initiate camera access -->
       <button id="playButton" onclick="startGame()">Let’s Play</button>
       <button onclick="manualStart()">Start Recording</button>
       <button onclick="manualStop()">Stop Recording</button>
@@ -112,7 +111,8 @@
     const videoElement = document.getElementById("liveVideo");
     const playButton = document.getElementById("playButton");
     const timeline = document.getElementById("timeline");
-  
+
+    // Called when user taps "Let's Play"
     async function startLivePreview() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -125,16 +125,16 @@
         alert("Camera and microphone access are required.");
       }
     }
-  
+
     async function startGame() {
+      // Ensure live preview starts only on user gesture
       if (!videoElement.srcObject) {
         await startLivePreview();
       }
       if (typeof MediaRecorder === "undefined") {
-        alert("MediaRecorder not supported in this browser. Try using Safari on iOS.");
+        alert("MediaRecorder is not supported in this browser. Please use Safari on iOS.");
         return;
       }
-  
       mediaRecorder = new MediaRecorder(videoElement.srcObject, { mimeType: "video/mp4" });
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) recordedChunks.push(event.data);
@@ -149,11 +149,10 @@
           recordedChunks = [];
         }
       };
-  
-      playButton.style.background = "green"; // Ensure initial state
-      startVoiceRecognition(); // Attempt voice control (if supported)
+      playButton.style.background = "green"; // Initial state
+      startVoiceRecognition();
     }
-  
+
     function startRecording() {
       if (!recording) {
         console.log("Recording started");
@@ -163,7 +162,7 @@
         playButton.style.background = "red";
       }
     }
-  
+
     function stopRecording() {
       if (recording) {
         console.log("Recording stopped");
@@ -172,7 +171,7 @@
         playButton.style.background = "green";
       }
     }
-  
+
     function stopGame() {
       if (mediaRecorder && mediaRecorder.state === "recording") {
         stopRecording();
@@ -181,7 +180,7 @@
         videoElement.srcObject.getTracks().forEach(track => track.stop());
       }
     }
-  
+
     function updateTimeline() {
       timeline.innerHTML = "";
       rallyClips.forEach((clip, index) => {
@@ -196,7 +195,7 @@
         timeline.appendChild(div);
       });
     }
-  
+
     function replayRally(url, speed) {
       const replayVideo = document.createElement("video");
       replayVideo.src = url;
@@ -206,11 +205,12 @@
       replayVideo.playbackRate = speed;
       document.body.appendChild(replayVideo);
     }
-  
+
+    // Voice recognition is attempted. If unsupported, manual buttons will work.
     function startVoiceRecognition() {
       if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
-        console.log("Speech recognition not supported in this browser.");
-        alert("Voice commands are not supported. Use manual buttons.");
+        console.log("Voice recognition not supported.");
+        alert("Voice commands are not supported in Chrome on iPad. Use manual buttons.");
         return;
       }
       const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -233,17 +233,14 @@
       };
       speechRecognition.start();
     }
-  
+
     function manualStart() {
       startRecording();
     }
-  
+
     function manualStop() {
       stopRecording();
     }
-  
-    // Automatically start live preview when page loads
-    startLivePreview();
   </script>
 </body>
 </html>
