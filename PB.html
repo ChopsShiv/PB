@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pickleball Instant Replay - iPad Chrome</title>
+  <title>Pickleball Instant Replay - iPad Full Screen</title>
   <style>
-    /* Reset and full-screen styling */
+    /* Global Reset and Full-Screen Layout */
     * {
       margin: 0;
       padding: 0;
@@ -18,6 +18,7 @@
       background: black;
       font-family: Arial, sans-serif;
     }
+    /* Full-screen video container */
     .video-container {
       position: fixed;
       top: 0;
@@ -25,6 +26,7 @@
       width: 100vw;
       height: 100vh;
     }
+    /* Live video fills entire container */
     #liveVideo {
       position: absolute;
       top: 0;
@@ -34,29 +36,30 @@
       object-fit: cover;
       z-index: 1;
     }
+    /* Overlaid, smaller controls */
     .controls {
       position: absolute;
-      bottom: 12%;
+      bottom: 20%;
       left: 50%;
       transform: translateX(-50%);
       z-index: 2;
       display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 15px;
+      flex-wrap: wrap;
+      gap: 8px;
       width: 80%;
+      justify-content: center;
     }
     .controls button {
-      width: 100%;
-      padding: 12px 20px;
-      font-size: 18px;
+      padding: 8px 12px;
+      font-size: 14px;
       font-weight: bold;
       color: white;
-      background: rgba(0,0,0,0.7);
-      border: 2px solid white;
-      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.7);
+      border: 1px solid white;
+      border-radius: 6px;
       cursor: pointer;
       transition: background 0.3s;
+      min-width: 80px;
     }
     .controls button:hover {
       background: white;
@@ -65,26 +68,36 @@
     #playButton {
       background: green;
     }
+    /* Timeline for rally clips overlaid at bottom */
     .timeline {
       position: absolute;
       bottom: 0;
+      left: 0;
       width: 100%;
       background: rgba(0,0,0,0.5);
-      color: white;
-      padding: 10px;
-      z-index: 2;
-      font-size: 16px;
-      white-space: nowrap;
+      z-index: 3;
+      display: flex;
       overflow-x: auto;
+      padding: 5px;
     }
     .timeline-item {
-      display: inline-block;
       margin-right: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
-    .timeline-item button {
-      margin-left: 5px;
-      font-size: 14px;
-      padding: 5px 10px;
+    .timeline-item video {
+      width: 100px;
+      height: 60px;
+      object-fit: cover;
+      border: 1px solid white;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .timeline-item span {
+      font-size: 10px;
+      color: white;
+      margin-top: 4px;
     }
   </style>
 </head>
@@ -93,10 +106,10 @@
     <video id="liveVideo" autoplay playsinline muted></video>
     
     <div class="controls">
-      <!-- User must tap "Let's Play" to initiate camera access -->
+      <!-- User taps "Let’s Play" to begin camera access -->
       <button id="playButton" onclick="startGame()">Let’s Play</button>
-      <button onclick="manualStart()">Start Recording</button>
-      <button onclick="manualStop()">Stop Recording</button>
+      <button onclick="manualStart()">Start Rec</button>
+      <button onclick="manualStop()">Stop Rec</button>
       <button onclick="stopGame()">Stop App</button>
     </div>
     
@@ -112,7 +125,7 @@
     const playButton = document.getElementById("playButton");
     const timeline = document.getElementById("timeline");
 
-    // Called when user taps "Let's Play"
+    // Start live preview when user taps "Let’s Play"
     async function startLivePreview() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -127,12 +140,11 @@
     }
 
     async function startGame() {
-      // Ensure live preview starts only on user gesture
       if (!videoElement.srcObject) {
         await startLivePreview();
       }
       if (typeof MediaRecorder === "undefined") {
-        alert("MediaRecorder is not supported in this browser. Please use Safari on iOS.");
+        alert("MediaRecorder not supported. Please use Safari on iOS.");
         return;
       }
       mediaRecorder = new MediaRecorder(videoElement.srcObject, { mimeType: "video/mp4" });
@@ -150,7 +162,7 @@
         }
       };
       playButton.style.background = "green"; // Initial state
-      startVoiceRecognition();
+      startVoiceRecognition(); // Attempt voice control
     }
 
     function startRecording() {
@@ -184,14 +196,19 @@
     function updateTimeline() {
       timeline.innerHTML = "";
       rallyClips.forEach((clip, index) => {
-        const div = document.createElement("span");
+        const div = document.createElement("div");
         div.className = "timeline-item";
-        div.innerHTML = `
-          Rally ${index + 1} - ${clip.timestamp}
-          <button onclick="replayRally('${clip.url}', 1)">Play</button>
-          <button onclick="replayRally('${clip.url}', 0.5)">0.5x</button>
-          <button onclick="replayRally('${clip.url}', 0.25)">0.25x</button>
-        `;
+        const thumb = document.createElement("video");
+        thumb.src = clip.url;
+        thumb.muted = true;
+        thumb.playsInline = true;
+        thumb.autoplay = true;
+        thumb.loop = true;
+        thumb.onclick = () => replayRally(clip.url, 1);
+        const label = document.createElement("span");
+        label.innerText = `Rally ${index + 1}`;
+        div.appendChild(thumb);
+        div.appendChild(label);
         timeline.appendChild(div);
       });
     }
@@ -201,12 +218,13 @@
       replayVideo.src = url;
       replayVideo.controls = true;
       replayVideo.autoplay = true;
-      replayVideo.style.width = "90%";
+      replayVideo.style.position = "absolute";
+      replayVideo.style.bottom = "0";
+      replayVideo.style.width = "100%";
       replayVideo.playbackRate = speed;
       document.body.appendChild(replayVideo);
     }
 
-    // Voice recognition is attempted. If unsupported, manual buttons will work.
     function startVoiceRecognition() {
       if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
         console.log("Voice recognition not supported.");
@@ -244,3 +262,4 @@
   </script>
 </body>
 </html>
+
