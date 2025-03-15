@@ -1,241 +1,249 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pickleball Instant Replay - Full Screen Mode</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body, html {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background: black;
-        }
-        .video-container {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        video {
-            width: 100vw;
-            height: 100vh;
-            object-fit: cover;
-            position: absolute;
-            z-index: -1;
-        }
-        .controls {
-            position: absolute;
-            bottom: 10%;
-            width: 90%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-        }
-        button {
-            padding: 12px 20px;
-            font-size: 18px;
-            font-weight: bold;
-            color: white;
-            background: rgba(0, 0, 0, 0.7);
-            border: 2px solid white;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: 0.3s;
-            width: 60%;
-            text-align: center;
-        }
-        button:hover {
-            background: white;
-            color: black;
-        }
-        #playButton {
-            background: green;
-        }
-        #timeline {
-            position: absolute;
-            bottom: 5%;
-            left: 50%;
-            transform: translateX(-50%);
-            text-align: center;
-            color: white;
-            font-size: 18px;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pickleball Instant Replay - Full Screen</title>
+  <style>
+    /* Reset and full screen layout */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: black;
+      font-family: Arial, sans-serif;
+    }
+    /* Video container fills the entire viewport */
+    .video-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+    }
+    /* Video element covers the container */
+    #liveVideo {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      z-index: 1;
+    }
+    /* Overlaid controls positioned near the bottom */
+    .controls {
+      position: absolute;
+      bottom: 12%;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+      width: 80%;
+    }
+    .controls button {
+      width: 100%;
+      padding: 12px 20px;
+      font-size: 18px;
+      font-weight: bold;
+      color: white;
+      background: rgba(0,0,0,0.7);
+      border: 2px solid white;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .controls button:hover {
+      background: white;
+      color: black;
+    }
+    #playButton {
+      background: green;
+    }
+    /* Timeline bar at the very bottom */
+    .timeline {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      background: rgba(0,0,0,0.5);
+      color: white;
+      padding: 10px;
+      z-index: 2;
+      font-size: 16px;
+      white-space: nowrap;
+      overflow-x: auto;
+    }
+    .timeline-item {
+      display: inline-block;
+      margin-right: 10px;
+    }
+    .timeline-item button {
+      margin-left: 5px;
+      font-size: 14px;
+      padding: 5px 10px;
+    }
+  </style>
 </head>
 <body>
-
-    <div class="video-container">
-        <video id="liveVideo" autoplay playsinline muted></video>
-        
-        <div class="controls">
-            <button id="playButton" onclick="startGame()">Let’s Play</button>
-            <button onclick="manualStart()">Start Recording</button>
-            <button onclick="manualStop()">Stop Recording</button>
-            <button onclick="stopGame()">Stop App</button>
-        </div>
-
-        <div id="timeline"></div>
+  <div class="video-container">
+    <video id="liveVideo" autoplay playsinline muted></video>
+    
+    <div class="controls">
+      <button id="playButton" onclick="startGame()">Let’s Play</button>
+      <button onclick="manualStart()">Start Recording</button>
+      <button onclick="manualStop()">Stop Recording</button>
+      <button onclick="stopGame()">Stop App</button>
     </div>
-
-    <script>
-        let mediaRecorder;
-        let recordedChunks = [];
-        let rallyClips = [];
-        let recording = false;
-        let videoElement = document.getElementById("liveVideo");
-        let playButton = document.getElementById("playButton");
-        let timeline = document.getElementById("timeline");
-
-        async function startLivePreview() {
-            try {
-                let stream = await navigator.mediaDevices.getUserMedia({
-                    video: { frameRate: 120, facingMode: "environment" },
-                    audio: { echoCancellation: true, noiseSuppression: true }
-                });
-
-                videoElement.srcObject = stream;
-
-            } catch (error) {
-                console.error("Error accessing camera/microphone:", error);
-                alert("Camera and microphone access is required.");
-            }
+    
+    <div class="timeline" id="timeline"></div>
+  </div>
+  
+  <script>
+    let mediaRecorder;
+    let recordedChunks = [];
+    let rallyClips = [];
+    let recording = false;
+    const videoElement = document.getElementById("liveVideo");
+    const playButton = document.getElementById("playButton");
+    const timeline = document.getElementById("timeline");
+  
+    async function startLivePreview() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { frameRate: 120, facingMode: "environment" },
+          audio: true
+        });
+        videoElement.srcObject = stream;
+      } catch (error) {
+        console.error("Error accessing camera/microphone:", error);
+        alert("Camera and microphone access are required.");
+      }
+    }
+  
+    async function startGame() {
+      if (!videoElement.srcObject) {
+        await startLivePreview();
+      }
+      if (typeof MediaRecorder === "undefined") {
+        alert("MediaRecorder not supported in this browser. Try using Safari on iOS.");
+        return;
+      }
+  
+      mediaRecorder = new MediaRecorder(videoElement.srcObject, { mimeType: "video/mp4" });
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) recordedChunks.push(event.data);
+      };
+      mediaRecorder.onstop = () => {
+        if (recordedChunks.length > 0) {
+          const blob = new Blob(recordedChunks, { type: "video/mp4" });
+          const url = URL.createObjectURL(blob);
+          const clip = { url: url, timestamp: new Date().toLocaleTimeString() };
+          rallyClips.push(clip);
+          updateTimeline();
+          recordedChunks = [];
         }
-
-        async function startGame() {
-            if (!videoElement.srcObject) {
-                await startLivePreview();
-            }
-
-            if (typeof MediaRecorder === "undefined") {
-                alert("MediaRecorder not supported in this browser. Try using Safari on iOS.");
-                return;
-            }
-
-            mediaRecorder = new MediaRecorder(videoElement.srcObject, { mimeType: "video/mp4" });
-
-            mediaRecorder.ondataavailable = (event) => {
-                if (event.data.size > 0) recordedChunks.push(event.data);
-            };
-
-            mediaRecorder.onstop = () => {
-                if (recordedChunks.length > 0) {
-                    let blob = new Blob(recordedChunks, { type: "video/mp4" });
-                    let url = URL.createObjectURL(blob);
-                    let clip = { url: url, timestamp: new Date().toLocaleTimeString() };
-
-                    rallyClips.push(clip);
-                    updateTimeline();
-                    
-                    recordedChunks = [];
-                }
-            };
-
-            playButton.style.background = "green"; 
-            startVoiceRecognition();
+      };
+  
+      playButton.style.background = "green"; // Ensure initial state
+      startVoiceRecognition(); // Attempt voice control (if supported)
+    }
+  
+    function startRecording() {
+      if (!recording) {
+        console.log("Recording started");
+        recordedChunks = [];
+        mediaRecorder.start();
+        recording = true;
+        playButton.style.background = "red";
+      }
+    }
+  
+    function stopRecording() {
+      if (recording) {
+        console.log("Recording stopped");
+        mediaRecorder.stop();
+        recording = false;
+        playButton.style.background = "green";
+      }
+    }
+  
+    function stopGame() {
+      if (mediaRecorder && mediaRecorder.state === "recording") {
+        stopRecording();
+      }
+      if (videoElement.srcObject) {
+        videoElement.srcObject.getTracks().forEach(track => track.stop());
+      }
+    }
+  
+    function updateTimeline() {
+      timeline.innerHTML = "";
+      rallyClips.forEach((clip, index) => {
+        const div = document.createElement("span");
+        div.className = "timeline-item";
+        div.innerHTML = `
+          Rally ${index + 1} - ${clip.timestamp}
+          <button onclick="replayRally('${clip.url}', 1)">Play</button>
+          <button onclick="replayRally('${clip.url}', 0.5)">0.5x</button>
+          <button onclick="replayRally('${clip.url}', 0.25)">0.25x</button>
+        `;
+        timeline.appendChild(div);
+      });
+    }
+  
+    function replayRally(url, speed) {
+      const replayVideo = document.createElement("video");
+      replayVideo.src = url;
+      replayVideo.controls = true;
+      replayVideo.autoplay = true;
+      replayVideo.style.width = "90%";
+      replayVideo.playbackRate = speed;
+      document.body.appendChild(replayVideo);
+    }
+  
+    function startVoiceRecognition() {
+      if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
+        console.log("Speech recognition not supported in this browser.");
+        alert("Voice commands are not supported. Use manual buttons.");
+        return;
+      }
+      const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const speechRecognition = new Recognition();
+      speechRecognition.continuous = true;
+      speechRecognition.lang = "en-US";
+      speechRecognition.onresult = (event) => {
+        const lastTranscript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
+        console.log("Heard:", lastTranscript);
+        if (lastTranscript === "start") {
+          console.log("Voice command: Starting recording...");
+          startRecording();
+        } else if (lastTranscript === "stop") {
+          console.log("Voice command: Stopping recording...");
+          stopRecording();
         }
-
-        function startRecording() {
-            if (!recording) {
-                console.log("Recording started");
-                recordedChunks = [];
-                mediaRecorder.start();
-                recording = true;
-                playButton.style.background = "red";
-            }
-        }
-
-        function stopRecording() {
-            if (recording) {
-                console.log("Recording stopped");
-                mediaRecorder.stop();
-                recording = false;
-                playButton.style.background = "green";
-            }
-        }
-
-        function stopGame() {
-            if (mediaRecorder && mediaRecorder.state === "recording") {
-                stopRecording();
-            }
-            if (videoElement.srcObject) {
-                videoElement.srcObject.getTracks().forEach(track => track.stop());
-            }
-        }
-
-        function updateTimeline() {
-            timeline.innerHTML = "";
-            rallyClips.forEach((clip, index) => {
-                let div = document.createElement("div");
-                div.innerHTML = `
-                    Rally ${index + 1} - ${clip.timestamp} |
-                    <button onclick="replayRally('${clip.url}', 1)">Play</button>
-                    <button onclick="replayRally('${clip.url}', 0.5)">0.5x</button>
-                    <button onclick="replayRally('${clip.url}', 0.25)">0.25x</button>
-                `;
-                timeline.appendChild(div);
-            });
-        }
-
-        function replayRally(url, speed) {
-            let replayVideo = document.createElement("video");
-            replayVideo.src = url;
-            replayVideo.controls = true;
-            replayVideo.autoplay = true;
-            replayVideo.style.width = "90%";
-            replayVideo.playbackRate = speed;
-            document.body.appendChild(replayVideo);
-        }
-
-        function startVoiceRecognition() {
-            if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
-                console.log("Speech recognition not supported in this browser.");
-                alert("Voice commands are not supported in Chrome for iOS. Use manual buttons.");
-                return;
-            }
-
-            let Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            let speechRecognition = new Recognition();
-            speechRecognition.continuous = true;
-            speechRecognition.lang = "en-US";
-
-            speechRecognition.onresult = (event) => {
-                let lastTranscript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
-                console.log("Heard:", lastTranscript);
-                if (lastTranscript === "start") {
-                    console.log("Voice command detected: Starting recording...");
-                    startRecording();
-                } else if (lastTranscript === "stop") {
-                    console.log("Voice command detected: Stopping recording...");
-                    stopRecording();
-                }
-            };
-
-            speechRecognition.onerror = (event) => {
-                console.log("Speech recognition error:", event.error);
-            };
-
-            speechRecognition.start();
-        }
-
-        function manualStart() {
-            startRecording();
-        }
-
-        function manualStop() {
-            stopRecording();
-        }
-
-        startLivePreview();
-    </script>
-
+      };
+      speechRecognition.onerror = (event) => {
+        console.log("Speech recognition error:", event.error);
+      };
+      speechRecognition.start();
+    }
+  
+    function manualStart() {
+      startRecording();
+    }
+  
+    function manualStop() {
+      stopRecording();
+    }
+  
+    // Automatically start live preview when page loads
+    startLivePreview();
+  </script>
 </body>
 </html>
