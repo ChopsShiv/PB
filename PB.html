@@ -398,12 +398,17 @@
       document.body.appendChild(overlay);
     }
 
+    // Updated shareClip function using Web Share API and fallback
     async function shareClip(url) {
-      if (navigator.share) {
+      // Check if file sharing is supported using navigator.canShare with files
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [] })) {
         try {
           const response = await fetch(url);
           const blob = await response.blob();
           const file = new File([blob], "rally.mp4", { type: "video/mp4" });
+          if (!navigator.canShare({ files: [file] })) {
+            throw new Error("Sharing files is not supported on this device.");
+          }
           await navigator.share({
             title: "Pickleball Rally",
             text: "Check out this rally clip!",
@@ -412,15 +417,16 @@
           console.log("Share successful.");
         } catch (error) {
           console.error("Error sharing:", error);
-          alert("Error sharing the clip.");
+          alert("Error sharing the clip: " + error.message);
         }
       } else {
-        // Fallback: Copy URL to clipboard
+        // Fallback: copy URL to clipboard
         try {
           await navigator.clipboard.writeText(url);
           alert("Clip URL copied to clipboard. You can now share it manually.");
         } catch (error) {
-          alert("Web Share API not supported on this device.");
+          console.error("Clipboard error:", error);
+          alert("Sharing not supported on this device.");
         }
       }
     }
