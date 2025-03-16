@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Pickleball Instant Replay - iPad Full Screen</title>
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-storage-compat.js"></script>
   <style>
     /* Reset and full-screen layout */
     * {
@@ -169,6 +172,24 @@
   </style>
 </head>
 <body>
+  <!-- Firebase Configuration -->
+  <script>
+    // Replace with your own Firebase project config
+    const firebaseConfig = {
+      apiKey: "AIzaSyCunssONBCjlKuNzwScq0HYCRB0upbL7xA",
+  authDomain: "pb01-6dc9b.firebaseapp.com",
+  projectId: "pb01-6dc9b",
+  storageBucket: "pb01-6dc9b.firebasestorage.app",
+  messagingSenderId: "451766893674",
+  appId: "1:451766893674:web:4526c5aba2c5ff86955e13",
+  measurementId: "G-Y22H853R18"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const storage = firebase.storage();
+  </script>
+
   <div class="video-container">
     <video id="liveVideo" autoplay playsinline muted webkit-playsinline></video>
     
@@ -232,10 +253,11 @@
       mediaRecorder.ondataavailable = (event) => {
         if (event.data && event.data.size > 0) recordedChunks.push(event.data);
       };
-      mediaRecorder.onstop = () => {
+      mediaRecorder.onstop = async () => {
         if (recordedChunks.length > 0) {
           const blob = new Blob(recordedChunks, { type: "video/mp4" });
-          const url = URL.createObjectURL(blob);
+          // Upload the rally clip to Firebase Storage
+          const url = await uploadToFirebase(blob);
           const clip = { url: url, timestamp: new Date().toLocaleTimeString() };
           rallyClips.push(clip);
           updateTimeline();
@@ -275,6 +297,23 @@
       }
     }
 
+    async function uploadToFirebase(blob) {
+      try {
+        const storageRef = storage.ref();
+        // Create a unique filename using timestamp
+        const fileRef = storageRef.child('rallies/rally-' + Date.now() + '.mp4');
+        // Upload the file
+        const snapshot = await fileRef.put(blob);
+        // Get the download URL
+        const downloadURL = await snapshot.ref.getDownloadURL();
+        console.log("Uploaded clip available at:", downloadURL);
+        return downloadURL;
+      } catch (error) {
+        console.error("Upload error:", error);
+        alert("Error uploading clip to cloud storage.");
+      }
+    }
+
     function updateTimeline() {
       timeline.innerHTML = "";
       rallyClips.forEach((clip, index) => {
@@ -299,7 +338,7 @@
       const overlay = document.createElement("div");
       overlay.id = "replayOverlay";
       
-      // Back button to return to live view
+      // Back button to return to live view; resumes live video playback
       const backButton = document.createElement("button");
       backButton.id = "backButton";
       backButton.innerText = "Back";
@@ -360,7 +399,7 @@
     async function shareClip(url) {
       if (navigator.share) {
         try {
-          // Convert the video URL to a blob and then to a File (if needed)
+          // Fetch the file from URL and convert to blob
           const response = await fetch(url);
           const blob = await response.blob();
           const file = new File([blob], "rally.mp4", { type: "video/mp4" });
@@ -389,6 +428,7 @@
         alert("Stop recording before toggling camera.");
         return;
       }
+      // Toggle between front ("user") and back ("environment")
       currentFacingMode = (currentFacingMode === "environment") ? "user" : "environment";
       if (videoElement.srcObject) {
         videoElement.srcObject.getTracks().forEach(track => track.stop());
@@ -454,3 +494,4 @@
   </script>
 </body>
 </html>
+
