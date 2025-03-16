@@ -299,18 +299,23 @@
     }
 
     async function uploadToFirebase(blob) {
-      try {
-        const storageRef = storage.ref();
-        const fileRef = storageRef.child('rallies/rally-' + Date.now() + '.mp4');
-        const snapshot = await fileRef.put(blob, { contentType: 'video/mp4' });
-        const downloadURL = await snapshot.ref.getDownloadURL();
-        console.log("Uploaded clip available at:", downloadURL);
-        return downloadURL;
-      } catch (error) {
-        console.error("Upload error:", error);
-        alert("Error uploading clip to cloud storage.");
-      }
-    }
+  try {
+    const storageRef = storage.ref();
+    const fileName = 'rallies/rally-' + Date.now() + '.mp4';
+    const fileRef = storageRef.child(fileName);
+    const metadata = { contentType: 'video/mp4' };
+    console.log("Starting upload for", fileName);
+    
+    const snapshot = await fileRef.put(blob, metadata);
+    const downloadURL = await snapshot.ref.getDownloadURL();
+    console.log("Uploaded clip available at:", downloadURL);
+    return downloadURL;
+  } catch (error) {
+    console.error("Upload error:", error);
+    alert("Error uploading clip to Firebase Storage: " + error.message);
+  }
+}
+
 
     function updateTimeline() {
       timeline.innerHTML = "";
