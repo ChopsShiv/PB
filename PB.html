@@ -346,7 +346,10 @@
       backButton.innerText = "Back";
       backButton.onclick = () => {
         document.body.removeChild(overlay);
-        videoElement.play();
+        // Resume live preview
+        if (videoElement.paused) {
+          videoElement.play().catch(err => console.error("Error resuming live video:", err));
+        }
       };
       
       // Share button to export/share the rally clip
@@ -398,9 +401,8 @@
       document.body.appendChild(overlay);
     }
 
-    // Updated shareClip function using Web Share API and fallback
     async function shareClip(url) {
-      // Check if file sharing is supported using navigator.canShare with files
+      // Check if file sharing is supported using the Web Share API and file sharing capabilities
       if (navigator.share && navigator.canShare && navigator.canShare({ files: [] })) {
         try {
           const response = await fetch(url);
@@ -441,6 +443,7 @@
         alert("Stop recording before toggling camera.");
         return;
       }
+      // Toggle between front ("user") and back ("environment")
       currentFacingMode = (currentFacingMode === "environment") ? "user" : "environment";
       if (videoElement.srcObject) {
         videoElement.srcObject.getTracks().forEach(track => track.stop());
@@ -507,3 +510,4 @@
   </script>
 </body>
 </html>
+
