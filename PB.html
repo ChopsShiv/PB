@@ -31,6 +31,17 @@
       height: 100vh;
       background: black;
     }
+    /* Custom image container */
+    #imageContainer {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    #imageContainer img {
+      max-width: 300px;
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
     #loginContainer input {
       padding: 8px;
       margin: 5px;
@@ -52,7 +63,7 @@
       display: none;
       position: relative;
     }
-    /* Date/time input overlay (centered on screen) */
+    /* Date/time input overlay centered on screen */
     #datetimeContainer {
       position: absolute;
       top: 50%;
@@ -225,12 +236,13 @@
 <body>
   <!-- Login Container -->
   <div id="loginContainer">
+    <!-- Custom Image Container -->
+    <div id="imageContainer">
+      <img src="https://drive.google.com/file/d/1BLnEDxl0Swcmx93mJs1AKqlPLdVW925I/view?usp=drive_link />
+    </div>
     <h2>Login to Access the App</h2>
     <input type="email" id="email" placeholder="Email" required />
     <input type="password" id="password" placeholder="Password" required />
-    <!-- Image Upload Field -->
-    <input type="file" id="profileImage" accept="image/*" />
-    <button onclick="uploadProfileImage()">Upload Profile Image</button>
     <button onclick="login()">Login</button>
   </div>
 
@@ -299,27 +311,6 @@
         alert("Login error: " + error.message);
       }
     }
-    
-    // Function to upload profile image from login page
-    async function uploadProfileImage() {
-      const fileInput = document.getElementById("profileImage");
-      if (!fileInput.files || fileInput.files.length === 0) {
-        alert("Please select an image file first.");
-        return;
-      }
-      const file = fileInput.files[0];
-      const storageRef = storage.ref();
-      const fileName = 'profileImages/' + Date.now() + '-' + file.name;
-      const fileRef = storageRef.child(fileName);
-      try {
-        const snapshot = await fileRef.put(file, { contentType: file.type });
-        const downloadURL = await snapshot.ref.getDownloadURL();
-        alert("Profile image uploaded successfully. URL: " + downloadURL);
-      } catch (error) {
-        console.error("Image upload error:", error);
-        alert("Error uploading image: " + error.message);
-      }
-    }
 
     let mediaRecorder;
     let recordedChunks = [];
@@ -347,7 +338,7 @@
     }
 
     async function startGame() {
-      // Hide the datetime input overlay once "Let's Play" is clicked
+      // Hide the date/time input overlay once "Let's Play" is clicked
       const dtContainer = document.getElementById("datetimeContainer");
       if (dtContainer) {
         dtContainer.style.display = "none";
@@ -630,4 +621,3 @@
   </script>
 </body>
 </html>
-
