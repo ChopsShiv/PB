@@ -52,7 +52,7 @@
       display: none;
       position: relative;
     }
-    /* Date/time input overlay centered on screen */
+    /* Date/time & text input overlay centered on screen */
     #datetimeContainer {
       position: absolute;
       top: 50%;
@@ -62,14 +62,19 @@
       background: rgba(0, 0, 0, 0.7);
       padding: 10px 15px;
       border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
     }
     #datetimeContainer label {
-      margin-right: 5px;
       font-size: 16px;
+      margin-right: 5px;
     }
     #datetimeContainer input {
       padding: 6px;
       font-size: 16px;
+      width: 250px;
     }
     /* Video container fills entire viewport */
     .video-container {
@@ -134,7 +139,7 @@
       bottom: 5%;
       left: 0;
       width: 100%;
-      background: rgba(0,0,0,0.5);
+      background: rgba(0, 0, 0, 0.5);
       z-index: 3;
       display: flex;
       flex-wrap: wrap;
@@ -191,7 +196,7 @@
     .replay-controls button {
       padding: 8px 12px;
       font-size: 14px;
-      background: rgba(0,0,0,0.7);
+      background: rgba(0, 0, 0, 0.7);
       color: white;
       border: 1px solid white;
       border-radius: 4px;
@@ -207,7 +212,7 @@
       top: 20px;
       padding: 10px 15px;
       font-size: 16px;
-      background: rgba(0,0,0,0.7);
+      background: rgba(0, 0, 0, 0.7);
       color: white;
       border: 1px solid white;
       border-radius: 5px;
@@ -233,10 +238,16 @@
 
   <!-- Main App Container (hidden until login) -->
   <div id="appContainer">
-    <!-- Date/Time Input Overlay (centered) -->
+    <!-- Date/Time & Extra Text Input Overlay (centered) -->
     <div id="datetimeContainer">
-      <label for="rallyDatetime">Rally Date & Time:</label>
-      <input type="datetime-local" id="rallyDatetime" />
+      <div>
+        <label for="rallyDatetime">Rally Date & Time:</label>
+        <input type="datetime-local" id="rallyDatetime" />
+      </div>
+      <div>
+        <label for="rallyText">Rally Title:</label>
+        <input type="text" id="rallyText" placeholder="Enter custom text" />
+      </div>
     </div>
     <div class="video-container">
       <video id="liveVideo" autoplay playsinline muted webkit-playsinline></video>
@@ -323,7 +334,7 @@
     }
 
     async function startGame() {
-      // Hide the date/time input overlay once "Let's Play" is clicked
+      // Hide the date/time & text input overlay once "Let's Play" is clicked
       const dtContainer = document.getElementById("datetimeContainer");
       if (dtContainer) {
         dtContainer.style.display = "none";
@@ -403,7 +414,10 @@
         // Get the date/time value from the input (if provided)
         const dtInput = document.getElementById("rallyDatetime");
         let dtValue = dtInput && dtInput.value ? dtInput.value.replace(":", "-") : "";
-        const fileName = 'rallies/rally-' + (dtValue ? dtValue + '-' : '') + Date.now() + '.mp4';
+        // Get extra text value from the input (if provided) and sanitize it
+        const textInput = document.getElementById("rallyText");
+        let textValue = textInput && textInput.value ? textInput.value.replace(/[^a-zA-Z0-9-_]/g, "") : "";
+        const fileName = 'rallies/rally-' + (dtValue ? dtValue + '-' : '') + (textValue ? textValue + '-' : '') + Date.now() + '.mp4';
         const fileRef = storageRef.child(fileName);
         const metadata = { contentType: 'video/mp4' };
         console.log("Starting upload for", fileName);
@@ -606,4 +620,3 @@
   </script>
 </body>
 </html>
-
