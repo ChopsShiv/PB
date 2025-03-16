@@ -47,7 +47,7 @@
       color: white;
       cursor: pointer;
     }
-    /* Main App Container hidden until login */
+    /* Main App Container (hidden until login) */
     #appContainer {
       display: none;
     }
@@ -351,12 +351,19 @@
       }
     }
 
-    function stopGame() {
+    // Updated stopGame function to sign out and return to login page
+    async function stopGame() {
       if (mediaRecorder && mediaRecorder.state === "recording") {
         stopRecording();
       }
       if (videoElement.srcObject) {
         videoElement.srcObject.getTracks().forEach(track => track.stop());
+      }
+      try {
+        await auth.signOut();
+        console.log("User signed out, returning to login screen.");
+      } catch (error) {
+        console.error("Error signing out:", error);
       }
     }
 
@@ -543,4 +550,26 @@
       const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       const speechRecognition = new Recognition();
       speechRecognition.continuous = true;
-      spee
+      speechRecognition.lang = "en-US";
+      speechRecognition.onresult = (event) => {
+        const lastTranscript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
+        console.log("Heard:", lastTranscript);
+        if (lastTranscript === "start") {
+          console.log("Voice command: Starting recording...");
+          startRecording();
+        } else if (lastTranscript === "stop") {
+          console.log("Voice command: Stopping recording...");
+          stopRecording();
+        }
+      };
+      speechRecognition.onerror = (event) => {
+        console.log("Speech recognition error:", event.error);
+      };
+      speechRecognition.start();
+    }
+
+    function manualStart() { startRecording(); }
+    function manualStop() { stopRecording(); }
+  </script>
+</body>
+</html>
