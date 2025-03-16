@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pickleball Instant Replay - iPad Full Screen</title>
+  <title>Pickleball Instant Replay - Login Required</title>
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-storage-compat.js"></script>
@@ -19,8 +19,38 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background: black;
       font-family: Arial, sans-serif;
+      background: black;
+      color: white;
+    }
+    /* Centered login container */
+    #loginContainer {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: black;
+    }
+    #loginContainer input {
+      padding: 8px;
+      margin: 5px;
+      font-size: 16px;
+      width: 250px;
+    }
+    #loginContainer button {
+      padding: 8px 12px;
+      font-size: 16px;
+      margin: 10px;
+      background: green;
+      border: none;
+      border-radius: 4px;
+      color: white;
+      cursor: pointer;
+    }
+    /* Main App Container hidden until login */
+    #appContainer {
+      display: none;
     }
     /* Video container fills entire viewport */
     .video-container {
@@ -182,9 +212,10 @@
   </div>
 
   <!-- Main App Container (hidden until login) -->
-  <div id="appContainer" style="display:none;">
+  <div id="appContainer">
     <div class="video-container">
       <video id="liveVideo" autoplay playsinline muted webkit-playsinline></video>
+      
       <div class="controls">
         <!-- "Let's Play" triggers camera access; disabled after activation -->
         <button id="playButton" onclick="startGame()">Let’s Play</button>
@@ -194,12 +225,13 @@
         <button id="toggleCameraButton" onclick="toggleCamera()">Toggle Camera</button>
         <button id="muteToggleButton" onclick="toggleMute()">🔇</button>
       </div>
+      
       <div class="timeline" id="timeline"></div>
     </div>
   </div>
   
   <script>
-    // Firebase Configuration
+    // Firebase Configuration (replace with your own values)
     const firebaseConfig = {
       apiKey: "AIzaSyCunssONBCjlKuNzwScq0HYCRB0upbL7xA",
       authDomain: "pb01-6dc9b.firebaseapp.com",
@@ -214,12 +246,12 @@
     firebase.initializeApp(firebaseConfig);
     const storage = firebase.storage();
     const auth = firebase.auth();
-    
-    // Set auth persistence to SESSION so user is logged out when window is closed
+
+    // Set auth persistence to SESSION so the user is logged out when the window is closed
     auth.setPersistence(firebase.auth.Auth.Persistence.SESSION)
       .catch(error => console.error("Error setting auth persistence:", error));
 
-    // Check authentication state and show/hide containers
+    // Check authentication state and toggle container visibility
     auth.onAuthStateChanged((user) => {
       if (user) {
         document.getElementById("loginContainer").style.display = "none";
@@ -534,3 +566,4 @@
   </script>
 </body>
 </html>
+
