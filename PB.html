@@ -52,12 +52,12 @@
       display: none;
       position: relative;
     }
-    /* Date/time input overlay */
+    /* Date/time input overlay (centered on screen) */
     #datetimeContainer {
       position: absolute;
-      top: 10%;
+      top: 50%;
       left: 50%;
-      transform: translateX(-50%);
+      transform: translate(-50%, -50%);
       z-index: 5;
       background: rgba(0, 0, 0, 0.7);
       padding: 10px 15px;
@@ -228,17 +228,19 @@
     <h2>Login to Access the App</h2>
     <input type="email" id="email" placeholder="Email" required />
     <input type="password" id="password" placeholder="Password" required />
+    <!-- Image Upload Field -->
+    <input type="file" id="profileImage" accept="image/*" />
+    <button onclick="uploadProfileImage()">Upload Profile Image</button>
     <button onclick="login()">Login</button>
   </div>
 
   <!-- Main App Container (hidden until login) -->
   <div id="appContainer">
-    <!-- Date/Time Input Overlay (visible before "Let's Play" is clicked) -->
+    <!-- Date/Time Input Overlay (centered) -->
     <div id="datetimeContainer">
       <label for="rallyDatetime">Rally Date & Time:</label>
       <input type="datetime-local" id="rallyDatetime" />
     </div>
-
     <div class="video-container">
       <video id="liveVideo" autoplay playsinline muted webkit-playsinline></video>
       
@@ -297,6 +299,27 @@
         alert("Login error: " + error.message);
       }
     }
+    
+    // Function to upload profile image from login page
+    async function uploadProfileImage() {
+      const fileInput = document.getElementById("profileImage");
+      if (!fileInput.files || fileInput.files.length === 0) {
+        alert("Please select an image file first.");
+        return;
+      }
+      const file = fileInput.files[0];
+      const storageRef = storage.ref();
+      const fileName = 'profileImages/' + Date.now() + '-' + file.name;
+      const fileRef = storageRef.child(fileName);
+      try {
+        const snapshot = await fileRef.put(file, { contentType: file.type });
+        const downloadURL = await snapshot.ref.getDownloadURL();
+        alert("Profile image uploaded successfully. URL: " + downloadURL);
+      } catch (error) {
+        console.error("Image upload error:", error);
+        alert("Error uploading image: " + error.message);
+      }
+    }
 
     let mediaRecorder;
     let recordedChunks = [];
@@ -324,7 +347,7 @@
     }
 
     async function startGame() {
-      // Hide the datetime input once "Let's Play" is clicked
+      // Hide the datetime input overlay once "Let's Play" is clicked
       const dtContainer = document.getElementById("datetimeContainer");
       if (dtContainer) {
         dtContainer.style.display = "none";
@@ -383,7 +406,6 @@
       }
     }
 
-    // Updated stopGame function: stops streams and signs out user, returning to login page.
     async function stopGame() {
       if (mediaRecorder && mediaRecorder.state === "recording") {
         stopRecording();
@@ -608,3 +630,4 @@
   </script>
 </body>
 </html>
+
