@@ -18,7 +18,6 @@
     html, body {
       width: 100%;
       height: 100%;
-      overflow: hidden;
       font-family: Arial, sans-serif;
       background: black;
       color: white;
@@ -59,6 +58,7 @@
       left: 0;
       width: 100vw;
       height: 100vh;
+      background: black;
     }
     /* Live video covers the container */
     #liveVideo {
@@ -231,7 +231,7 @@
   </div>
   
   <script>
-    // Firebase Configuration (replace with your own values)
+    // Firebase Configuration
     const firebaseConfig = {
       apiKey: "AIzaSyCunssONBCjlKuNzwScq0HYCRB0upbL7xA",
       authDomain: "pb01-6dc9b.firebaseapp.com",
@@ -246,8 +246,8 @@
     firebase.initializeApp(firebaseConfig);
     const storage = firebase.storage();
     const auth = firebase.auth();
-
-    // Set auth persistence to SESSION so the user is logged out when the window is closed
+    
+    // Set auth persistence to SESSION so the user is logged out when window is closed
     auth.setPersistence(firebase.auth.Auth.Persistence.SESSION)
       .catch(error => console.error("Error setting auth persistence:", error));
 
@@ -543,27 +543,4 @@
       const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       const speechRecognition = new Recognition();
       speechRecognition.continuous = true;
-      speechRecognition.lang = "en-US";
-      speechRecognition.onresult = (event) => {
-        const lastTranscript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
-        console.log("Heard:", lastTranscript);
-        if (lastTranscript === "start") {
-          console.log("Voice command: Starting recording...");
-          startRecording();
-        } else if (lastTranscript === "stop") {
-          console.log("Voice command: Stopping recording...");
-          stopRecording();
-        }
-      };
-      speechRecognition.onerror = (event) => {
-        console.log("Speech recognition error:", event.error);
-      };
-      speechRecognition.start();
-    }
-
-    function manualStart() { startRecording(); }
-    function manualStop() { stopRecording(); }
-  </script>
-</body>
-</html>
-
+      spee
