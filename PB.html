@@ -47,9 +47,29 @@
       color: white;
       cursor: pointer;
     }
-    /* Main App Container (hidden until login) */
+    /* Main App Container hidden until login */
     #appContainer {
       display: none;
+      position: relative;
+    }
+    /* Date/time input overlay */
+    #datetimeContainer {
+      position: absolute;
+      top: 10%;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 5;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 10px 15px;
+      border-radius: 6px;
+    }
+    #datetimeContainer label {
+      margin-right: 5px;
+      font-size: 16px;
+    }
+    #datetimeContainer input {
+      padding: 6px;
+      font-size: 16px;
     }
     /* Video container fills entire viewport */
     .video-container {
@@ -213,6 +233,12 @@
 
   <!-- Main App Container (hidden until login) -->
   <div id="appContainer">
+    <!-- Date/Time Input Overlay (visible before "Let's Play" is clicked) -->
+    <div id="datetimeContainer">
+      <label for="rallyDatetime">Rally Date & Time:</label>
+      <input type="datetime-local" id="rallyDatetime" />
+    </div>
+
     <div class="video-container">
       <video id="liveVideo" autoplay playsinline muted webkit-playsinline></video>
       
@@ -298,6 +324,12 @@
     }
 
     async function startGame() {
+      // Hide the datetime input once "Let's Play" is clicked
+      const dtContainer = document.getElementById("datetimeContainer");
+      if (dtContainer) {
+        dtContainer.style.display = "none";
+      }
+      
       if (videoElement.srcObject) {
         playButton.disabled = true;
         return;
@@ -351,7 +383,7 @@
       }
     }
 
-    // Updated stopGame function to sign out and return to login page
+    // Updated stopGame function: stops streams and signs out user, returning to login page.
     async function stopGame() {
       if (mediaRecorder && mediaRecorder.state === "recording") {
         stopRecording();
@@ -370,7 +402,10 @@
     async function uploadToFirebase(blob) {
       try {
         const storageRef = storage.ref();
-        const fileName = 'rallies/rally-' + Date.now() + '.mp4';
+        // Get the date/time value from the input (if provided)
+        const dtInput = document.getElementById("rallyDatetime");
+        let dtValue = dtInput && dtInput.value ? dtInput.value.replace(":", "-") : "";
+        const fileName = 'rallies/rally-' + (dtValue ? dtValue + '-' : '') + Date.now() + '.mp4';
         const fileRef = storageRef.child(fileName);
         const metadata = { contentType: 'video/mp4' };
         console.log("Starting upload for", fileName);
