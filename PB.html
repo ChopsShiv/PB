@@ -3,55 +3,40 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pickleball Instant Replay - Login Required</title>
+  <title>Pickleball Instant Replay - iPad Full Screen</title>
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-storage-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
   <style>
     /* Reset and full-screen layout */
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; font-family: Arial, sans-serif; }
-    body { background: black; color: white; }
-    /* Login container styling */
-    #loginContainer {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
       background: black;
+      font-family: Arial, sans-serif;
     }
-    #loginContainer input {
-      padding: 8px;
-      margin: 5px;
-      font-size: 16px;
-      width: 250px;
-    }
-    #loginContainer button {
-      padding: 8px 12px;
-      font-size: 16px;
-      margin: 10px;
-      background: green;
-      border: none;
-      border-radius: 4px;
-      color: white;
-      cursor: pointer;
-    }
-    /* Main app container hidden until login */
-    #appContainer { display: none; }
     /* Video container fills entire viewport */
     .video-container {
       position: fixed;
-      top: 0; left: 0;
-      width: 100vw; height: 100vh;
-      background: black;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
     }
     /* Live video covers the container */
     #liveVideo {
       position: absolute;
-      top: 0; left: 0;
-      width: 100vw; height: 100vh;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
       object-fit: cover;
       z-index: 1;
     }
@@ -73,7 +58,7 @@
       font-size: 14px;
       font-weight: bold;
       color: white;
-      background: rgba(0,0,0,0.7);
+      background: rgba(0, 0, 0, 0.7);
       border: 1px solid white;
       border-radius: 6px;
       cursor: pointer;
@@ -84,12 +69,20 @@
       background: white;
       color: black;
     }
-    #playButton { background: green; }
-    #muteToggleButton { background: rgba(0,0,0,0.7); border: 1px solid white; border-radius: 6px; }
+    #playButton {
+      background: green;
+    }
+    /* Mute toggle button style */
+    #muteToggleButton {
+      background: rgba(0, 0, 0, 0.7);
+      border: 1px solid white;
+      border-radius: 6px;
+    }
     /* Responsive timeline at bottom */
     .timeline {
       position: absolute;
-      bottom: 5%; left: 0;
+      bottom: 5%;
+      left: 0;
       width: 100%;
       background: rgba(0,0,0,0.5);
       z-index: 3;
@@ -120,8 +113,10 @@
     /* Replay overlay styles */
     #replayOverlay {
       position: fixed;
-      top: 0; left: 0;
-      width: 100vw; height: 100vh;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
       background: black;
       z-index: 10;
       display: flex;
@@ -130,12 +125,14 @@
       align-items: center;
     }
     #replayOverlay video {
-      width: 100%; height: 100%;
+      width: 100%;
+      height: 100%;
       object-fit: contain;
     }
     .replay-controls {
       position: absolute;
-      top: 20px; left: 50%;
+      top: 20px;
+      left: 50%;
       transform: translateX(-50%);
       display: flex;
       gap: 10px;
@@ -167,8 +164,12 @@
       cursor: pointer;
       z-index: 11;
     }
-    #backButton { left: 20px; }
-    #shareButton { right: 20px; }
+    #backButton {
+      left: 20px;
+    }
+    #shareButton {
+      right: 20px;
+    }
   </style>
 </head>
 <body>
@@ -181,10 +182,11 @@
   </div>
 
   <!-- Main App Container (hidden until login) -->
-  <div id="appContainer">
+  <div id="appContainer" style="display:none;">
     <div class="video-container">
       <video id="liveVideo" autoplay playsinline muted webkit-playsinline></video>
       <div class="controls">
+        <!-- "Let's Play" triggers camera access; disabled after activation -->
         <button id="playButton" onclick="startGame()">Let’s Play</button>
         <button onclick="manualStart()">Start Rec</button>
         <button onclick="manualStop()">Stop Rec</button>
@@ -197,7 +199,7 @@
   </div>
   
   <script>
-    // Firebase Configuration (replace with your own values)
+    // Firebase Configuration
     const firebaseConfig = {
       apiKey: "AIzaSyCunssONBCjlKuNzwScq0HYCRB0upbL7xA",
       authDomain: "pb01-6dc9b.firebaseapp.com",
@@ -212,8 +214,12 @@
     firebase.initializeApp(firebaseConfig);
     const storage = firebase.storage();
     const auth = firebase.auth();
+    
+    // Set auth persistence to SESSION so user is logged out when window is closed
+    auth.setPersistence(firebase.auth.Auth.Persistence.SESSION)
+      .catch(error => console.error("Error setting auth persistence:", error));
 
-    // Check authentication state
+    // Check authentication state and show/hide containers
     auth.onAuthStateChanged((user) => {
       if (user) {
         document.getElementById("loginContainer").style.display = "none";
@@ -238,7 +244,7 @@
     let recordedChunks = [];
     let rallyClips = [];
     let recording = false;
-    let currentFacingMode = "environment"; // Default facing mode: back camera
+    let currentFacingMode = "environment"; // Default: back camera
     const videoElement = document.getElementById("liveVideo");
     const playButton = document.getElementById("playButton");
     const timeline = document.getElementById("timeline");
