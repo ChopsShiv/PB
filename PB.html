@@ -299,23 +299,22 @@
     }
 
     async function uploadToFirebase(blob) {
-  try {
-    const storageRef = storage.ref();
-    const fileName = 'rallies/rally-' + Date.now() + '.mp4';
-    const fileRef = storageRef.child(fileName);
-    const metadata = { contentType: 'video/mp4' };
-    console.log("Starting upload for", fileName);
-    
-    const snapshot = await fileRef.put(blob, metadata);
-    const downloadURL = await snapshot.ref.getDownloadURL();
-    console.log("Uploaded clip available at:", downloadURL);
-    return downloadURL;
-  } catch (error) {
-    console.error("Upload error:", error);
-    alert("Error uploading clip to Firebase Storage: " + error.message);
-  }
-}
-
+      try {
+        const storageRef = storage.ref();
+        const fileName = 'rallies/rally-' + Date.now() + '.mp4';
+        const fileRef = storageRef.child(fileName);
+        const metadata = { contentType: 'video/mp4' };
+        console.log("Starting upload for", fileName);
+        
+        const snapshot = await fileRef.put(blob, metadata);
+        const downloadURL = await snapshot.ref.getDownloadURL();
+        console.log("Uploaded clip available at:", downloadURL);
+        return downloadURL;
+      } catch (error) {
+        console.error("Upload error:", error);
+        alert("Error uploading clip to Firebase Storage: " + error.message);
+      }
+    }
 
     function updateTimeline() {
       timeline.innerHTML = "";
@@ -364,7 +363,7 @@
       replayVideo.style.width = "100%";
       replayVideo.style.height = "100%";
       replayVideo.style.objectFit = "contain";
-      replayVideo.muted = true;
+      replayVideo.muted = true; // Start replay muted
       
       // Replay controls for playback speed
       const replayControls = document.createElement("div");
@@ -416,7 +415,13 @@
           alert("Error sharing the clip.");
         }
       } else {
-        alert("Web Share API not supported on this device.");
+        // Fallback: Copy URL to clipboard
+        try {
+          await navigator.clipboard.writeText(url);
+          alert("Clip URL copied to clipboard. You can now share it manually.");
+        } catch (error) {
+          alert("Web Share API not supported on this device.");
+        }
       }
     }
 
@@ -430,7 +435,6 @@
         alert("Stop recording before toggling camera.");
         return;
       }
-      // Toggle between front ("user") and back ("environment")
       currentFacingMode = (currentFacingMode === "environment") ? "user" : "environment";
       if (videoElement.srcObject) {
         videoElement.srcObject.getTracks().forEach(track => track.stop());
@@ -497,5 +501,3 @@
   </script>
 </body>
 </html>
-
-
