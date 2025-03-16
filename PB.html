@@ -3,40 +3,55 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pickleball Instant Replay - iPad Full Screen</title>
+  <title>Pickleball Instant Replay - Login Required</title>
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-storage-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
   <style>
     /* Reset and full-screen layout */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    html, body {
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; font-family: Arial, sans-serif; }
+    body { background: black; color: white; }
+    /* Login container styling */
+    #loginContainer {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
       background: black;
-      font-family: Arial, sans-serif;
     }
+    #loginContainer input {
+      padding: 8px;
+      margin: 5px;
+      font-size: 16px;
+      width: 250px;
+    }
+    #loginContainer button {
+      padding: 8px 12px;
+      font-size: 16px;
+      margin: 10px;
+      background: green;
+      border: none;
+      border-radius: 4px;
+      color: white;
+      cursor: pointer;
+    }
+    /* Main app container hidden until login */
+    #appContainer { display: none; }
     /* Video container fills entire viewport */
     .video-container {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: black;
     }
     /* Live video covers the container */
     #liveVideo {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
       object-fit: cover;
       z-index: 1;
     }
@@ -58,7 +73,7 @@
       font-size: 14px;
       font-weight: bold;
       color: white;
-      background: rgba(0, 0, 0, 0.7);
+      background: rgba(0,0,0,0.7);
       border: 1px solid white;
       border-radius: 6px;
       cursor: pointer;
@@ -69,20 +84,12 @@
       background: white;
       color: black;
     }
-    #playButton {
-      background: green;
-    }
-    /* Mute toggle button style */
-    #muteToggleButton {
-      background: rgba(0, 0, 0, 0.7);
-      border: 1px solid white;
-      border-radius: 6px;
-    }
+    #playButton { background: green; }
+    #muteToggleButton { background: rgba(0,0,0,0.7); border: 1px solid white; border-radius: 6px; }
     /* Responsive timeline at bottom */
     .timeline {
       position: absolute;
-      bottom: 5%;
-      left: 0;
+      bottom: 5%; left: 0;
       width: 100%;
       background: rgba(0,0,0,0.5);
       z-index: 3;
@@ -113,10 +120,8 @@
     /* Replay overlay styles */
     #replayOverlay {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
       background: black;
       z-index: 10;
       display: flex;
@@ -125,14 +130,12 @@
       align-items: center;
     }
     #replayOverlay video {
-      width: 100%;
-      height: 100%;
+      width: 100%; height: 100%;
       object-fit: contain;
     }
     .replay-controls {
       position: absolute;
-      top: 20px;
-      left: 50%;
+      top: 20px; left: 50%;
       transform: translateX(-50%);
       display: flex;
       gap: 10px;
@@ -164,18 +167,37 @@
       cursor: pointer;
       z-index: 11;
     }
-    #backButton {
-      left: 20px;
-    }
-    #shareButton {
-      right: 20px;
-    }
+    #backButton { left: 20px; }
+    #shareButton { right: 20px; }
   </style>
 </head>
 <body>
-  <!-- Firebase Configuration -->
+  <!-- Login Container -->
+  <div id="loginContainer">
+    <h2>Login to Access the App</h2>
+    <input type="email" id="email" placeholder="Email" required />
+    <input type="password" id="password" placeholder="Password" required />
+    <button onclick="login()">Login</button>
+  </div>
+
+  <!-- Main App Container (hidden until login) -->
+  <div id="appContainer">
+    <div class="video-container">
+      <video id="liveVideo" autoplay playsinline muted webkit-playsinline></video>
+      <div class="controls">
+        <button id="playButton" onclick="startGame()">Let’s Play</button>
+        <button onclick="manualStart()">Start Rec</button>
+        <button onclick="manualStop()">Stop Rec</button>
+        <button onclick="stopGame()">End Session</button>
+        <button id="toggleCameraButton" onclick="toggleCamera()">Toggle Camera</button>
+        <button id="muteToggleButton" onclick="toggleMute()">🔇</button>
+      </div>
+      <div class="timeline" id="timeline"></div>
+    </div>
+  </div>
+  
   <script>
-    // Replace with your own Firebase project config from your Firebase Console
+    // Firebase Configuration (replace with your own values)
     const firebaseConfig = {
       apiKey: "AIzaSyCunssONBCjlKuNzwScq0HYCRB0upbL7xA",
       authDomain: "pb01-6dc9b.firebaseapp.com",
@@ -190,31 +212,33 @@
     firebase.initializeApp(firebaseConfig);
     const storage = firebase.storage();
     const auth = firebase.auth();
-  </script>
 
-  <div class="video-container">
-    <video id="liveVideo" autoplay playsinline muted webkit-playsinline></video>
-    
-    <div class="controls">
-      <!-- "Let's Play" triggers camera access; disabled after activation -->
-      <button id="playButton" onclick="startGame()">Let’s Play</button>
-      <button onclick="manualStart()">Start Rec</button>
-      <button onclick="manualStop()">Stop Rec</button>
-      <button onclick="stopGame()">End Session</button>
-      <button id="toggleCameraButton" onclick="toggleCamera()">Toggle Camera</button>
-      <button id="muteToggleButton" onclick="toggleMute()">🔇</button>
-    </div>
-    
-    <div class="timeline" id="timeline"></div>
-  </div>
-  
-  <script>
+    // Check authentication state
+    auth.onAuthStateChanged((user) => {
+      if (user) {
+        document.getElementById("loginContainer").style.display = "none";
+        document.getElementById("appContainer").style.display = "block";
+      } else {
+        document.getElementById("loginContainer").style.display = "flex";
+        document.getElementById("appContainer").style.display = "none";
+      }
+    });
+
+    async function login() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      try {
+        await auth.signInWithEmailAndPassword(email, password);
+      } catch (error) {
+        alert("Login error: " + error.message);
+      }
+    }
+
     let mediaRecorder;
     let recordedChunks = [];
     let rallyClips = [];
     let recording = false;
-    // Default facing mode: back camera ("environment")
-    let currentFacingMode = "environment";
+    let currentFacingMode = "environment"; // Default facing mode: back camera
     const videoElement = document.getElementById("liveVideo");
     const playButton = document.getElementById("playButton");
     const timeline = document.getElementById("timeline");
@@ -346,10 +370,7 @@
       backButton.innerText = "Back";
       backButton.onclick = () => {
         document.body.removeChild(overlay);
-        // Resume live preview
-        if (videoElement.paused) {
-          videoElement.play().catch(err => console.error("Error resuming live video:", err));
-        }
+        videoElement.play();
       };
       
       // Share button to export/share the rally clip
@@ -402,7 +423,6 @@
     }
 
     async function shareClip(url) {
-      // Check if file sharing is supported using the Web Share API and file sharing capabilities
       if (navigator.share && navigator.canShare && navigator.canShare({ files: [] })) {
         try {
           const response = await fetch(url);
@@ -422,7 +442,6 @@
           alert("Error sharing the clip: " + error.message);
         }
       } else {
-        // Fallback: copy URL to clipboard
         try {
           await navigator.clipboard.writeText(url);
           alert("Clip URL copied to clipboard. You can now share it manually.");
@@ -443,7 +462,6 @@
         alert("Stop recording before toggling camera.");
         return;
       }
-      // Toggle between front ("user") and back ("environment")
       currentFacingMode = (currentFacingMode === "environment") ? "user" : "environment";
       if (videoElement.srcObject) {
         videoElement.srcObject.getTracks().forEach(track => track.stop());
@@ -510,4 +528,3 @@
   </script>
 </body>
 </html>
-
