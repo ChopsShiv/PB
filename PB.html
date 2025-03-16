@@ -7,6 +7,7 @@
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-storage-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
   <style>
     /* Reset and full-screen layout */
     * {
@@ -174,20 +175,21 @@
 <body>
   <!-- Firebase Configuration -->
   <script>
-    // Replace with your own Firebase project config
+    // Replace with your own Firebase project config from your Firebase Console
     const firebaseConfig = {
       apiKey: "AIzaSyCunssONBCjlKuNzwScq0HYCRB0upbL7xA",
-  authDomain: "pb01-6dc9b.firebaseapp.com",
-  projectId: "pb01-6dc9b",
-  storageBucket: "pb01-6dc9b.firebasestorage.app",
-  messagingSenderId: "451766893674",
-  appId: "1:451766893674:web:4526c5aba2c5ff86955e13",
-  measurementId: "G-Y22H853R18"
+      authDomain: "pb01-6dc9b.firebaseapp.com",
+      projectId: "pb01-6dc9b",
+      storageBucket: "pb01-6dc9b.firebasestorage.app",
+      messagingSenderId: "451766893674",
+      appId: "1:451766893674:web:4526c5aba2c5ff86955e13",
+      measurementId: "G-Y22H853R18"
     };
 
     // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     const storage = firebase.storage();
+    const auth = firebase.auth();
   </script>
 
   <div class="video-container">
@@ -256,7 +258,6 @@
       mediaRecorder.onstop = async () => {
         if (recordedChunks.length > 0) {
           const blob = new Blob(recordedChunks, { type: "video/mp4" });
-          // Upload the rally clip to Firebase Storage
           const url = await uploadToFirebase(blob);
           const clip = { url: url, timestamp: new Date().toLocaleTimeString() };
           rallyClips.push(clip);
@@ -300,11 +301,8 @@
     async function uploadToFirebase(blob) {
       try {
         const storageRef = storage.ref();
-        // Create a unique filename using timestamp
         const fileRef = storageRef.child('rallies/rally-' + Date.now() + '.mp4');
-        // Upload the file
-        const snapshot = await fileRef.put(blob);
-        // Get the download URL
+        const snapshot = await fileRef.put(blob, { contentType: 'video/mp4' });
         const downloadURL = await snapshot.ref.getDownloadURL();
         console.log("Uploaded clip available at:", downloadURL);
         return downloadURL;
@@ -361,7 +359,7 @@
       replayVideo.style.width = "100%";
       replayVideo.style.height = "100%";
       replayVideo.style.objectFit = "contain";
-      replayVideo.muted = true; // Start replay muted
+      replayVideo.muted = true;
       
       // Replay controls for playback speed
       const replayControls = document.createElement("div");
@@ -399,7 +397,6 @@
     async function shareClip(url) {
       if (navigator.share) {
         try {
-          // Fetch the file from URL and convert to blob
           const response = await fetch(url);
           const blob = await response.blob();
           const file = new File([blob], "rally.mp4", { type: "video/mp4" });
@@ -448,11 +445,12 @@
           mediaRecorder.onstop = () => {
             if (recordedChunks.length > 0) {
               const blob = new Blob(recordedChunks, { type: "video/mp4" });
-              const url = URL.createObjectURL(blob);
-              const clip = { url: url, timestamp: new Date().toLocaleTimeString() };
-              rallyClips.push(clip);
-              updateTimeline();
-              recordedChunks = [];
+              uploadToFirebase(blob).then(publicUrl => {
+                const clip = { url: publicUrl, timestamp: new Date().toLocaleTimeString() };
+                rallyClips.push(clip);
+                updateTimeline();
+                recordedChunks = [];
+              });
             }
           };
         }
@@ -494,4 +492,5 @@
   </script>
 </body>
 </html>
+
 
