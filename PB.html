@@ -31,17 +31,6 @@
       height: 100vh;
       background: black;
     }
-    /* Custom image container */
-    #imageContainer {
-      margin-bottom: 20px;
-      text-align: center;
-    }
-    #imageContainer img {
-      max-width: 300px;
-      width: 100%;
-      height: auto;
-      border-radius: 8px;
-    }
     #loginContainer input {
       padding: 8px;
       margin: 5px;
@@ -236,15 +225,10 @@
 <body>
   <!-- Login Container -->
   <div id="loginContainer">
-    <!-- Custom Image Container -->
-     <div id="imageContainer">
-      <img src=" />
-    </div>
     <h2>Login to Access the App</h2>
     <input type="email" id="email" placeholder="Email" required />
     <input type="password" id="password" placeholder="Password" required />
     <button onclick="login()">Login</button>
-    
   </div>
 
   <!-- Main App Container (hidden until login) -->
@@ -553,72 +537,5 @@
 
     async function toggleCamera() {
       if (recording) {
-        alert("Stop recording before toggling camera.");
-        return;
-      }
-      currentFacingMode = (currentFacingMode === "environment") ? "user" : "environment";
-      if (videoElement.srcObject) {
-        videoElement.srcObject.getTracks().forEach(track => track.stop());
-      }
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { frameRate: { ideal: 120 }, facingMode: currentFacingMode },
-          audio: true
-        });
-        console.log("Camera switched. New facing mode:", currentFacingMode);
-        videoElement.srcObject = stream;
-        if (mediaRecorder) {
-          mediaRecorder = new MediaRecorder(stream, { mimeType: "video/mp4" });
-          mediaRecorder.ondataavailable = (event) => {
-            if (event.data && event.data.size > 0) recordedChunks.push(event.data);
-          };
-          mediaRecorder.onstop = () => {
-            if (recordedChunks.length > 0) {
-              const blob = new Blob(recordedChunks, { type: "video/mp4" });
-              uploadToFirebase(blob).then(publicUrl => {
-                const clip = { url: publicUrl, timestamp: new Date().toLocaleTimeString() };
-                rallyClips.push(clip);
-                updateTimeline();
-                recordedChunks = [];
-              });
-            }
-          };
-        }
-      } catch (error) {
-        console.error("toggleCamera error:", error);
-        alert("Unable to switch camera.");
-      }
-    }
+        alert("Stop recording befo
 
-    function startVoiceRecognition() {
-      if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
-        console.log("Voice recognition not supported.");
-        alert("Voice commands are not supported in Chrome on iPad. Use manual buttons.");
-        return;
-      }
-      const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      const speechRecognition = new Recognition();
-      speechRecognition.continuous = true;
-      speechRecognition.lang = "en-US";
-      speechRecognition.onresult = (event) => {
-        const lastTranscript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
-        console.log("Heard:", lastTranscript);
-        if (lastTranscript === "start") {
-          console.log("Voice command: Starting recording...");
-          startRecording();
-        } else if (lastTranscript === "stop") {
-          console.log("Voice command: Stopping recording...");
-          stopRecording();
-        }
-      };
-      speechRecognition.onerror = (event) => {
-        console.log("Speech recognition error:", event.error);
-      };
-      speechRecognition.start();
-    }
-
-    function manualStart() { startRecording(); }
-    function manualStop() { stopRecording(); }
-  </script>
-</body>
-</html>
