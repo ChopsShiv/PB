@@ -52,28 +52,37 @@
       display: none;
       position: relative;
     }
-    /* Start overlay: Rally title input and Let’s Play button (centered) */
+    /* Start Overlay: Rally Title input and Let's Play button (full-screen centered) */
     #startOverlay {
       position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 5;
-      background: rgba(0, 0, 0, 0.7);
-      padding: 10px 15px;
-      border-radius: 6px;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 999;
       display: flex;
       flex-direction: column;
+      justify-content: center;
       align-items: center;
-      gap: 10px;
+      gap: 20px;
     }
     #startOverlay label {
-      font-size: 16px;
+      font-size: 18px;
     }
     #startOverlay input {
-      padding: 6px;
-      font-size: 16px;
-      width: 250px;
+      padding: 10px;
+      font-size: 18px;
+      width: 300px;
+    }
+    #startOverlay button {
+      padding: 10px 20px;
+      font-size: 18px;
+      background: green;
+      border: none;
+      border-radius: 4px;
+      color: white;
+      cursor: pointer;
     }
     /* Video container fills entire viewport */
     .video-container {
@@ -94,7 +103,7 @@
       object-fit: cover;
       z-index: 1;
     }
-    /* Overlaid, smaller controls */
+    /* Overlaid controls (hidden behind start overlay initially) */
     .controls {
       position: absolute;
       bottom: 20%;
@@ -122,9 +131,6 @@
     .controls button:hover {
       background: white;
       color: black;
-    }
-    #playButton {
-      background: green;
     }
     /* Mute toggle button style */
     #muteToggleButton {
@@ -237,7 +243,7 @@
 
   <!-- Main App Container (hidden until login) -->
   <div id="appContainer">
-    <!-- Start Overlay: Rally Title and Let's Play button (centered) -->
+    <!-- Start Overlay: Rally Title and Let's Play button -->
     <div id="startOverlay">
       <label for="rallyTitle">Rally Title:</label>
       <input type="text" id="rallyTitle" placeholder="Enter Rally Title" />
@@ -247,7 +253,7 @@
       <video id="liveVideo" autoplay playsinline muted webkit-playsinline></video>
       
       <div class="controls">
-        <button id="playButton" onclick="startGame()">Let’s Play</button>
+        <!-- Controls appear after the start overlay is hidden -->
         <button onclick="manualStart()">Start Rec</button>
         <button onclick="manualStop()">Stop Rec</button>
         <button onclick="stopGame()">End Session</button>
@@ -307,7 +313,6 @@
     let recording = false;
     let currentFacingMode = "environment"; // Default: back camera
     const videoElement = document.getElementById("liveVideo");
-    const playButton = document.getElementById("playButton");
     const timeline = document.getElementById("timeline");
     const muteToggleButton = document.getElementById("muteToggleButton");
 
@@ -333,12 +338,11 @@
         startOverlay.style.display = "none";
       }
       
-      // Get the rally title value for file naming
+      // Get the rally title for file naming
       const titleInput = document.getElementById("rallyTitle");
       let titleValue = titleInput && titleInput.value ? titleInput.value.replace(/[^a-zA-Z0-9-_]/g, "") : "";
       
       if (videoElement.srcObject) {
-        playButton.disabled = true;
         return;
       }
       await startLivePreview();
@@ -366,8 +370,6 @@
           recordedChunks = [];
         }
       };
-      playButton.style.background = "green";
-      playButton.disabled = true;
       startVoiceRecognition();
     }
 
@@ -377,7 +379,7 @@
         recordedChunks = [];
         mediaRecorder.start();
         recording = true;
-        playButton.style.background = "red";
+        // Optional: Change button color if needed.
       }
     }
 
@@ -386,7 +388,6 @@
         console.log("Recording stopped");
         mediaRecorder.stop();
         recording = false;
-        playButton.style.background = "green";
       }
     }
 
@@ -412,7 +413,6 @@
         const fileRef = storageRef.child(fileName);
         const metadata = { contentType: 'video/mp4' };
         console.log("Starting upload for", fileName);
-        
         const snapshot = await fileRef.put(blob, metadata);
         const downloadURL = await snapshot.ref.getDownloadURL();
         console.log("Uploaded clip available at:", downloadURL);
@@ -564,12 +564,13 @@
           mediaRecorder.onstop = () => {
             if (recordedChunks.length > 0) {
               const blob = new Blob(recordedChunks, { type: "video/mp4" });
-              uploadToFirebase(blob).then(publicUrl => {
-                const clip = { url: publicUrl, timestamp: new Date().toLocaleTimeString() };
-                rallyClips.push(clip);
-                updateTimeline();
-                recordedChunks = [];
-              });
+              uploadToFirebase(blob, document.getElementById("rallyTitle").value.replace(/[^a-zA-Z0-9-_]/g, ""))
+                .then(publicUrl => {
+                  const clip = { url: publicUrl, timestamp: new Date().toLocaleTimeString() };
+                  rallyClips.push(clip);
+                  updateTimeline();
+                  recordedChunks = [];
+                });
             }
           };
         }
@@ -611,4 +612,3 @@
   </script>
 </body>
 </html>
-
