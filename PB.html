@@ -52,8 +52,8 @@
       display: none;
       position: relative;
     }
-    /* Date/time & text input overlay centered on screen */
-    #datetimeContainer {
+    /* Start overlay: Rally title input and Let’s Play button (centered) */
+    #startOverlay {
       position: absolute;
       top: 50%;
       left: 50%;
@@ -67,11 +67,10 @@
       align-items: center;
       gap: 10px;
     }
-    #datetimeContainer label {
+    #startOverlay label {
       font-size: 16px;
-      margin-right: 5px;
     }
-    #datetimeContainer input {
+    #startOverlay input {
       padding: 6px;
       font-size: 16px;
       width: 250px;
@@ -139,7 +138,7 @@
       bottom: 5%;
       left: 0;
       width: 100%;
-      background: rgba(0, 0, 0, 0.5);
+      background: rgba(0,0,0,0.5);
       z-index: 3;
       display: flex;
       flex-wrap: wrap;
@@ -196,7 +195,7 @@
     .replay-controls button {
       padding: 8px 12px;
       font-size: 14px;
-      background: rgba(0, 0, 0, 0.7);
+      background: rgba(0,0,0,0.7);
       color: white;
       border: 1px solid white;
       border-radius: 4px;
@@ -212,7 +211,7 @@
       top: 20px;
       padding: 10px 15px;
       font-size: 16px;
-      background: rgba(0, 0, 0, 0.7);
+      background: rgba(0,0,0,0.7);
       color: white;
       border: 1px solid white;
       border-radius: 5px;
@@ -238,22 +237,16 @@
 
   <!-- Main App Container (hidden until login) -->
   <div id="appContainer">
-    <!-- Date/Time & Extra Text Input Overlay (centered) -->
-    <div id="datetimeContainer">
-      <div>
-        <label for="rallyDatetime">Rally Date & Time:</label>
-        <input type="datetime-local" id="rallyDatetime" />
-      </div>
-      <div>
-        <label for="rallyText">Rally Title:</label>
-        <input type="text" id="rallyText" placeholder="Enter custom text" />
-      </div>
+    <!-- Start Overlay: Rally Title and Let's Play button (centered) -->
+    <div id="startOverlay">
+      <label for="rallyTitle">Rally Title:</label>
+      <input type="text" id="rallyTitle" placeholder="Enter Rally Title" />
+      <button onclick="startGame()">Let’s Play</button>
     </div>
     <div class="video-container">
       <video id="liveVideo" autoplay playsinline muted webkit-playsinline></video>
       
       <div class="controls">
-        <!-- "Let's Play" triggers camera access; disabled after activation -->
         <button id="playButton" onclick="startGame()">Let’s Play</button>
         <button onclick="manualStart()">Start Rec</button>
         <button onclick="manualStop()">Stop Rec</button>
@@ -326,7 +319,7 @@
         });
         console.log("Camera stream acquired.");
         videoElement.srcObject = stream;
-        videoElement.muted = true; // Start live video muted
+        videoElement.muted = true;
       } catch (error) {
         console.error("getUserMedia error:", error);
         alert("Unable to access camera/microphone. Check your device settings.");
@@ -334,11 +327,15 @@
     }
 
     async function startGame() {
-      // Hide the date/time & text input overlay once "Let's Play" is clicked
-      const dtContainer = document.getElementById("datetimeContainer");
-      if (dtContainer) {
-        dtContainer.style.display = "none";
+      // Hide the start overlay once "Let's Play" is clicked
+      const startOverlay = document.getElementById("startOverlay");
+      if (startOverlay) {
+        startOverlay.style.display = "none";
       }
+      
+      // Get the rally title value for file naming
+      const titleInput = document.getElementById("rallyTitle");
+      let titleValue = titleInput && titleInput.value ? titleInput.value.replace(/[^a-zA-Z0-9-_]/g, "") : "";
       
       if (videoElement.srcObject) {
         playButton.disabled = true;
@@ -362,7 +359,7 @@
       mediaRecorder.onstop = async () => {
         if (recordedChunks.length > 0) {
           const blob = new Blob(recordedChunks, { type: "video/mp4" });
-          const url = await uploadToFirebase(blob);
+          const url = await uploadToFirebase(blob, titleValue);
           const clip = { url: url, timestamp: new Date().toLocaleTimeString() };
           rallyClips.push(clip);
           updateTimeline();
@@ -408,16 +405,10 @@
       }
     }
 
-    async function uploadToFirebase(blob) {
+    async function uploadToFirebase(blob, titleValue) {
       try {
         const storageRef = storage.ref();
-        // Get the date/time value from the input (if provided)
-        const dtInput = document.getElementById("rallyDatetime");
-        let dtValue = dtInput && dtInput.value ? dtInput.value.replace(":", "-") : "";
-        // Get extra text value from the input (if provided) and sanitize it
-        const textInput = document.getElementById("rallyText");
-        let textValue = textInput && textInput.value ? textInput.value.replace(/[^a-zA-Z0-9-_]/g, "") : "";
-        const fileName = 'rallies/rally-' + (dtValue ? dtValue + '-' : '') + (textValue ? textValue + '-' : '') + Date.now() + '.mp4';
+        const fileName = 'rallies/rally-' + (titleValue ? titleValue + '-' : '') + Date.now() + '.mp4';
         const fileRef = storageRef.child(fileName);
         const metadata = { contentType: 'video/mp4' };
         console.log("Starting upload for", fileName);
@@ -479,7 +470,7 @@
       replayVideo.style.width = "100%";
       replayVideo.style.height = "100%";
       replayVideo.style.objectFit = "contain";
-      replayVideo.muted = true; // Start replay muted
+      replayVideo.muted = true;
       
       // Replay controls for playback speed
       const replayControls = document.createElement("div");
@@ -620,3 +611,4 @@
   </script>
 </body>
 </html>
+
