@@ -47,12 +47,12 @@
       color: white;
       cursor: pointer;
     }
-    /* Main App Container (hidden until login) */
+    /* Main App Container hidden until login */
     #appContainer {
       display: none;
       position: relative;
     }
-    /* Start Overlay: Only Rally Title and Let's Play button centered */
+    /* Start Overlay: Rally Title input and Let's Play button (centered) */
     #startOverlay {
       position: absolute;
       top: 0;
@@ -331,13 +331,13 @@
     }
 
     async function startGame() {
-      // Remove the start overlay (so only the rally title and Let's Play are shown initially)
+      // Remove the start overlay once "Let's Play" is clicked
       const startOverlay = document.getElementById("startOverlay");
       if (startOverlay) {
         startOverlay.remove();
       }
       
-      // Get the rally title for file naming (sanitize the input)
+      // Get the rally title for file naming (sanitize input)
       const titleInput = document.getElementById("rallyTitle");
       let titleValue = titleInput && titleInput.value ? titleInput.value.replace(/[^a-zA-Z0-9-_]/g, "") : "";
       
@@ -350,7 +350,12 @@
         return;
       }
       try {
-        mediaRecorder = new MediaRecorder(videoElement.srcObject, { mimeType: "video/mp4" });
+        // Use lower bitrates to reduce file size without major quality loss
+        mediaRecorder = new MediaRecorder(videoElement.srcObject, { 
+          mimeType: "video/mp4", 
+          videoBitsPerSecond: 2500000,  // 2.5 Mbps video bitrate
+          audioBitsPerSecond: 128000    // 128 Kbps audio bitrate
+        });
       } catch (e) {
         console.error("MediaRecorder init error:", e);
         alert("Failed to initialize recording. Your device may not support this feature.");
@@ -369,6 +374,7 @@
           recordedChunks = [];
         }
       };
+      // Start voice recognition
       startVoiceRecognition();
     }
 
@@ -556,7 +562,11 @@
         console.log("Camera switched. New facing mode:", currentFacingMode);
         videoElement.srcObject = stream;
         if (mediaRecorder) {
-          mediaRecorder = new MediaRecorder(stream, { mimeType: "video/mp4" });
+          mediaRecorder = new MediaRecorder(stream, { 
+            mimeType: "video/mp4",
+            videoBitsPerSecond: 2500000, // 2.5 Mbps
+            audioBitsPerSecond: 128000   // 128 Kbps
+          });
           mediaRecorder.ondataavailable = (event) => {
             if (event.data && event.data.size > 0) recordedChunks.push(event.data);
           };
