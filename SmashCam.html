@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pickleball Instant Replay - Login Required</title>
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-storage-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
+  <style>
+    /* Reset and full-screen layout */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      font-family: Arial, sans-serif;
+      background: black;
+      color: white;
+    }
+    /* Centered login container */
+    #loginContainer {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: black;
+    }
+    /* Logo container (optional styling) */
+    #logoContainer img {
+      max-width: 300px; /* Adjust as needed */
+      margin-bottom: 20px; /* Spacing below logo */
+    }
+    #loginContainer input {
+      padding: 8px;
+      margin: 5px;
+      font-size: 16px;
+      width: 250px;
+    }
+    #loginContainer button {
+      padding: 8px 12px;
+      font-size: 16px;
+      margin: 10px;
+      background: green;
+      border: none;
+      border-radius: 4px;
+      color: white;
+      cursor: pointer;
+    }
+    /* Main App Container (hidden until login) */
+    #appContainer {
+      display: none;
+      position: relative;
+    }
+    /* Start Overlay: Rally Title input and Let's Play button (centered) */
+    #startOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0,0,0,0.9);
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+    }
+    #startOverlay label {
+      font-size: 18px;
+    }
+    #startOverlay input {
+      padding: 10px;
+      font-size: 18px;
+      width: 300px;
+    }
+    #startOverlay button {
+      padding: 10px 20px;
+      font-size: 18px;
+      background: green;
+      border: none;
+      border-radius: 4px;
+      color: white;
+      cursor: pointer;
+    }
+    /* Video container fills entire viewport */
+    .video-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: black;
+    }
+    /* Live video covers the container */
+    #liveVideo {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      z-index: 1;
+    }
+    /* Overlaid controls (appear after start overlay is removed) */
+    .controls {
+      position: absolute;
+      bottom: 20%;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      width: 80%;
+      justify-content: center;
+    }
+    .controls button {
+      padding: 8px 12px;
+      font-size: 14px;
+      font-weight: bold;
+      color: white;
+      background: rgba(0, 0, 0, 0.7);
+      border: 1px solid white;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s;
+      min-width: 80px;
+    }
+    .controls button:hover {
+      background: white;
+      color: black;
+    }
+    /* Recording indicator (hidden by default) */
+    #recordingIndicator {
+      display: none;
+      font-size: 18px;
+      color: red;
+      margin-left: 10px;
+    }
+    /* Mute toggle button style */
+    #muteToggleButton {
+      background: rgba(0, 0, 0, 0.7);
+      border: 1px solid white;
+      border-radius: 6px;
+    }
+    /* Responsive timeline at bottom */
+    .timeline {
+      position: absolute;
+      bottom: 5%;
+      left: 0;
+      width: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 3;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      padding: 5px;
+    }
+    .timeline-item {
+      margin: 5px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .timeline-item video {
+      width: 100px;
+      height: 60px;
+      object-fit: cover;
+      border: 1px solid white;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .timeline-item span {
+      font-size: 10px;
+      color: white;
+      margin-top: 4px;
+    }
+    /* Replay overlay styles */
+    #replayOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: black;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    #replayOverlay video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .replay-controls {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      z-index: 11;
+    }
+    .replay-controls button {
+      padding: 8px 12px;
+      font-size: 14px;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      border: 1px solid white;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .replay-controls button:hover {
+      background: white;
+      color: black;
+    }
+    #backButton, #shareButton {
+      position: absolute;
+      top: 20px;
+      padding: 10px 15px;
+      font-size: 16px;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      border: 1px solid white;
+      border-radius: 5px;
+      cursor: pointer;
+      z-index: 11;
+    }
+    #backButton {
+      left: 20px;
+    }
+    #shareButton {
+      right: 20px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Login Container -->
+  <div id="loginContainer">
+    <!-- Logo Container -->
+    <div id="logoContainer">
+      <!-- Replace 'YOUR_LOGO_URL_HERE' with the actual path or URL to the image -->
+   <img src="https://i.postimg.cc/3NPjP3d9/logo.png" alt="Smash Cam Logo"/>
+    </div>
+    <h2>Login to Access the App</h2>
+    <input type="email" id="email" placeholder="Email" required />
+    <input type="password" id="password" placeholder="Password" required />
+    <button onclick="login()">Login</button>
+  </div>
+
+  <!-- Main App Container (hidden until login) -->
+  <div id="appContainer">
+    <!-- Start Overlay: Only Rally Title input and Let's Play button (centered) -->
+    <div id="startOverlay">
+      <label for="rallyTitle">Rally Title:</label>
+      <input type="text" id="rallyTitle" placeholder="Enter Rally Title" />
+      <button onclick="startGame()">Let’s Play</button>
+    </div>
+    <div class="video-container">
+      <video id="liveVideo" autoplay playsinline muted webkit-playsinline></video>
+      
+      <div class="controls">
+        <button onclick="manualStart()">Start Rec</button>
+        <button onclick="manualStop()">Stop Rec</button>
+        <button onclick="stopGame()">End Session</button>
+        <button id="toggleCameraButton" onclick="toggleCamera()">Toggle Camera</button>
+        <button id="muteToggleButton" onclick="toggleMute()">🔇</button>
+        <div id="recordingIndicator">🔴 Recording</div>
+      </div>
+      
+      <div class="timeline" id="timeline"></div>
+    </div>
+  </div>
+  
+  <script>
+    // Global variable to store rally title for file naming
+    let rallyTitleGlobal = "";
+
+    // Firebase Configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyCunssONBCjlKuNzwScq0HYCRB0upbL7xA",
+      authDomain: "pb01-6dc9b.firebaseapp.com",
+      projectId: "pb01-6dc9b",
+      storageBucket: "pb01-6dc9b.firebasestorage.app",
+      messagingSenderId: "451766893674",
+      appId: "1:451766893674:web:4526c5aba2c5ff86955e13",
+      measurementId: "G-Y22H853R18"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const storage = firebase.storage();
+    const auth = firebase.auth();
+    
+    // Set auth persistence to SESSION so the user is logged out when window is closed
+    auth.setPersistence(firebase.auth.Auth.Persistence.SESSION)
+      .catch(error => console.error("Error setting auth persistence:", error));
+
+    // Check authentication state and toggle container visibility
+    auth.onAuthStateChanged((user) => {
+      if (user) {
+        document.getElementById("loginContainer").style.display = "none";
+        document.getElementById("appContainer").style.display = "block";
+      } else {
+        document.getElementById("loginContainer").style.display = "flex";
+        document.getElementById("appContainer").style.display = "none";
+      }
+    });
+
+    async function login() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      try {
+        await auth.signInWithEmailAndPassword(email, password);
+      } catch (error) {
+        alert("Login error: " + error.message);
+      }
+    }
+
+    let mediaRecorder;
+    let recordedChunks = [];
+    let rallyClips = [];
+    let recording = false;
+    let currentFacingMode = "environment"; // Default: back camera
+    const videoElement = document.getElementById("liveVideo");
+    const timeline = document.getElementById("timeline");
+    const muteToggleButton = document.getElementById("muteToggleButton");
+    const recordingIndicator = document.getElementById("recordingIndicator");
+
+    async function startLivePreview() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { frameRate: { ideal: 120 }, facingMode: currentFacingMode },
+          audio: true
+        });
+        console.log("Camera stream acquired.");
+        videoElement.srcObject = stream;
+        videoElement.muted = true;
+      } catch (error) {
+        console.error("getUserMedia error:", error);
+        alert("Unable to access camera/microphone. Check your device settings.");
+      }
+    }
+
+    async function startGame() {
+      // Remove the start overlay once "Let's Play" is clicked
+      const startOverlay = document.getElementById("startOverlay");
+      if (startOverlay) {
+        // Save the rally title to a global variable
+        const titleInput = document.getElementById("rallyTitle");
+        rallyTitleGlobal = titleInput && titleInput.value ? titleInput.value.replace(/[^a-zA-Z0-9-_]/g, "") : "";
+        startOverlay.remove();
+      }
+      
+      if (videoElement.srcObject) {
+        return;
+      }
+      await startLivePreview();
+      if (typeof MediaRecorder === "undefined") {
+        alert("MediaRecorder not supported. Please use Safari on iOS.");
+        return;
+      }
+      try {
+        // Use lower bitrates to reduce file size
+        mediaRecorder = new MediaRecorder(videoElement.srcObject, { 
+          mimeType: "video/mp4",
+          videoBitsPerSecond: 2500000, // 2.5 Mbps
+          audioBitsPerSecond: 128000   // 128 Kbps
+        });
+      } catch (e) {
+        console.error("MediaRecorder init error:", e);
+        alert("Failed to initialize recording. Your device may not support this feature.");
+        return;
+      }
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) recordedChunks.push(event.data);
+      };
+      mediaRecorder.onstop = async () => {
+        if (recordedChunks.length > 0) {
+          const blob = new Blob(recordedChunks, { type: "video/mp4" });
+          const url = await uploadToFirebase(blob, rallyTitleGlobal);
+          const clip = { url: url, timestamp: new Date().toLocaleTimeString() };
+          rallyClips.push(clip);
+          updateTimeline();
+          recordedChunks = [];
+        }
+      };
+      startVoiceRecognition();
+    }
+
+    function startRecording() {
+      if (!recording && mediaRecorder) {
+        console.log("Recording started");
+        recordedChunks = [];
+        mediaRecorder.start();
+        recording = true;
+        // Show recording indicator
+        recordingIndicator.style.display = "inline-block";
+      }
+    }
+
+    function stopRecording() {
+      if (recording && mediaRecorder) {
+        console.log("Recording stopped");
+        mediaRecorder.stop();
+        recording = false;
+        // Hide recording indicator
+        recordingIndicator.style.display = "none";
+      }
+    }
+
+    async function stopGame() {
+      if (mediaRecorder && mediaRecorder.state === "recording") {
+        stopRecording();
+      }
+      if (videoElement.srcObject) {
+        videoElement.srcObject.getTracks().forEach(track => track.stop());
+      }
+      try {
+        await auth.signOut();
+        console.log("User signed out, returning to login screen.");
+      } catch (error) {
+        console.error("Error signing out:", error);
+      }
+    }
+
+    async function uploadToFirebase(blob, titleValue) {
+      try {
+        const storageRef = storage.ref();
+        const fileName = 'rallies/rally-' + (titleValue ? titleValue + '-' : '') + Date.now() + '.mp4';
+        const fileRef = storageRef.child(fileName);
+        const metadata = { contentType: 'video/mp4' };
+        console.log("Starting upload for", fileName);
+        
+        const snapshot = await fileRef.put(blob, metadata);
+        const downloadURL = await snapshot.ref.getDownloadURL();
+        console.log("Uploaded clip available at:", downloadURL);
+        return downloadURL;
+      } catch (error) {
+        console.error("Upload error:", error);
+        alert("Error uploading clip to Firebase Storage: " + error.message);
+      }
+    }
+
+    function updateTimeline() {
+      timeline.innerHTML = "";
+      rallyClips.forEach((clip, index) => {
+        const div = document.createElement("div");
+        div.className = "timeline-item";
+        const thumb = document.createElement("video");
+        thumb.src = clip.url;
+        thumb.muted = true;
+        thumb.playsInline = true;
+        thumb.autoplay = true;
+        thumb.loop = true;
+        thumb.onclick = () => replayRally(clip.url);
+        const label = document.createElement("span");
+        label.innerText = `Rally ${index + 1}`;
+        div.appendChild(thumb);
+        div.appendChild(label);
+        timeline.appendChild(div);
+      });
+    }
+
+    function replayRally(url) {
+      const overlay = document.createElement("div");
+      overlay.id = "replayOverlay";
+      
+      // Back button to return to live view; resumes live video playback
+      const backButton = document.createElement("button");
+      backButton.id = "backButton";
+      backButton.innerText = "Back";
+      backButton.onclick = () => {
+        document.body.removeChild(overlay);
+        videoElement.play();
+      };
+      
+      // Share button to export/share the rally clip
+      const shareButton = document.createElement("button");
+      shareButton.id = "shareButton";
+      shareButton.innerText = "Share";
+      shareButton.onclick = () => shareClip(url);
+      
+      // Replay video element
+      const replayVideo = document.createElement("video");
+      replayVideo.src = url;
+      replayVideo.controls = true;
+      replayVideo.autoplay = true;
+      replayVideo.style.width = "100%";
+      replayVideo.style.height = "100%";
+      replayVideo.style.objectFit = "contain";
+      replayVideo.muted = true;
+      
+      // Replay controls for playback speed
+      const replayControls = document.createElement("div");
+      replayControls.className = "replay-controls";
+      const speeds = [
+        { label: "0.25x", value: 0.25 },
+        { label: "0.5x", value: 0.5 },
+        { label: "1.0x", value: 1.0 }
+      ];
+      speeds.forEach(speedOption => {
+        const btn = document.createElement("button");
+        btn.innerText = speedOption.label;
+        btn.onclick = () => {
+          replayVideo.playbackRate = speedOption.value;
+        };
+        replayControls.appendChild(btn);
+      });
+      
+      // Mute toggle for replay video
+      const replayMuteBtn = document.createElement("button");
+      replayMuteBtn.innerText = "🔇";
+      replayMuteBtn.onclick = () => {
+        replayVideo.muted = !replayVideo.muted;
+        replayMuteBtn.innerText = replayVideo.muted ? "🔇" : "🔊";
+      };
+      
+      overlay.appendChild(replayVideo);
+      overlay.appendChild(replayControls);
+      overlay.appendChild(replayMuteBtn);
+      overlay.appendChild(backButton);
+      overlay.appendChild(shareButton);
+      document.body.appendChild(overlay);
+    }
+
+    async function shareClip(url) {
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [] })) {
+        try {
+          const response = await fetch(url);
+          const blob = await response.blob();
+          const file = new File([blob], "rally.mp4", { type: "video/mp4" });
+          if (!navigator.canShare({ files: [file] })) {
+            throw new Error("Sharing files is not supported on this device.");
+          }
+          await navigator.share({
+            title: "Pickleball Rally",
+            text: "Check out this rally clip!",
+            files: [file],
+          });
+          console.log("Share successful.");
+        } catch (error) {
+          console.error("Error sharing:", error);
+          alert("Error sharing the clip: " + error.message);
+        }
+      } else {
+        try {
+          await navigator.clipboard.writeText(url);
+          alert("Clip URL copied to clipboard. You can now share it manually.");
+        } catch (error) {
+          console.error("Clipboard error:", error);
+          alert("Sharing not supported on this device.");
+        }
+      }
+    }
+
+    function toggleMute() {
+      videoElement.muted = !videoElement.muted;
+      muteToggleButton.innerText = videoElement.muted ? "🔇" : "🔊";
+    }
+
+    async function toggleCamera() {
+      if (recording) {
+        alert("Stop recording before toggling camera.");
+        return;
+      }
+      currentFacingMode = (currentFacingMode === "environment") ? "user" : "environment";
+      if (videoElement.srcObject) {
+        videoElement.srcObject.getTracks().forEach(track => track.stop());
+      }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { frameRate: { ideal: 120 }, facingMode: currentFacingMode },
+          audio: true
+        });
+        console.log("Camera switched. New facing mode:", currentFacingMode);
+        videoElement.srcObject = stream;
+        if (mediaRecorder) {
+          mediaRecorder = new MediaRecorder(stream, { 
+            mimeType: "video/mp4",
+            videoBitsPerSecond: 2500000, // 2.5 Mbps
+            audioBitsPerSecond: 128000   // 128 Kbps
+          });
+          mediaRecorder.ondataavailable = (event) => {
+            if (event.data && event.data.size > 0) recordedChunks.push(event.data);
+          };
+          mediaRecorder.onstop = () => {
+            if (recordedChunks.length > 0) {
+              const blob = new Blob(recordedChunks, { type: "video/mp4" });
+              uploadToFirebase(blob, rallyTitleGlobal)
+                .then(publicUrl => {
+                  const clip = { url: publicUrl, timestamp: new Date().toLocaleTimeString() };
+                  rallyClips.push(clip);
+                  updateTimeline();
+                  recordedChunks = [];
+                });
+            }
+          };
+        }
+      } catch (error) {
+        console.error("toggleCamera error:", error);
+        alert("Unable to switch camera.");
+      }
+    }
+
+    function startVoiceRecognition() {
+      if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
+        console.log("Voice recognition not supported.");
+        alert("Voice commands are not supported in Chrome on iPad. Use manual buttons.");
+        return;
+      }
+      const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const speechRecognition = new Recognition();
+      speechRecognition.continuous = true;
+      speechRecognition.lang = "en-US";
+      speechRecognition.onresult = (event) => {
+        const lastTranscript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
+        console.log("Heard:", lastTranscript);
+        if (lastTranscript === "start") {
+          console.log("Voice command: Starting recording...");
+          startRecording();
+        } else if (lastTranscript === "stop") {
+          console.log("Voice command: Stopping recording...");
+          stopRecording();
+        }
+      };
+      speechRecognition.onerror = (event) => {
+        console.log("Speech recognition error:", event.error);
+      };
+      speechRecognition.start();
+    }
+
+    function manualStart() { startRecording(); }
+    function manualStop() { stopRecording(); }
+  </script>
+</body>
+</html>
