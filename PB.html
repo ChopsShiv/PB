@@ -9,12 +9,235 @@
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-storage-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
-
+  
   <!-- FFmpeg.wasm -->
   <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
 
   <style>
-    /* ... your existing CSS from previous code ... */
+    /* Reset and full-screen layout */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      font-family: Arial, sans-serif;
+      background: black;
+      color: white;
+    }
+    /* Centered login container */
+    #loginContainer {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: black;
+    }
+    #loginContainer input {
+      padding: 8px;
+      margin: 5px;
+      font-size: 16px;
+      width: 250px;
+    }
+    #loginContainer button {
+      padding: 8px 12px;
+      font-size: 16px;
+      margin: 10px;
+      background: green;
+      border: none;
+      border-radius: 4px;
+      color: white;
+      cursor: pointer;
+    }
+    /* Main App Container hidden until login */
+    #appContainer {
+      display: none;
+      position: relative;
+    }
+    /* Start Overlay: Contains only Rally Title input and Let's Play button (centered) */
+    #startOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+    }
+    #startOverlay label {
+      font-size: 18px;
+    }
+    #startOverlay input {
+      padding: 10px;
+      font-size: 18px;
+      width: 300px;
+    }
+    #startOverlay button {
+      padding: 10px 20px;
+      font-size: 18px;
+      background: green;
+      border: none;
+      border-radius: 4px;
+      color: white;
+      cursor: pointer;
+    }
+    /* Video container fills entire viewport */
+    .video-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: black;
+    }
+    /* Live video covers the container */
+    #liveVideo {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      z-index: 1;
+    }
+    /* Controls container (will appear after start overlay is removed) */
+    .controls {
+      position: absolute;
+      bottom: 20%;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      width: 80%;
+      justify-content: center;
+    }
+    .controls button {
+      padding: 8px 12px;
+      font-size: 14px;
+      font-weight: bold;
+      color: white;
+      background: rgba(0,0,0,0.7);
+      border: 1px solid white;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s;
+      min-width: 80px;
+    }
+    .controls button:hover {
+      background: white;
+      color: black;
+    }
+    /* Recording indicator */
+    #recordingIndicator {
+      display: none;
+      font-size: 18px;
+      color: red;
+      margin-left: 10px;
+    }
+    /* Mute toggle button style */
+    #muteToggleButton {
+      background: rgba(0,0,0,0.7);
+      border: 1px solid white;
+      border-radius: 6px;
+    }
+    /* Timeline container */
+    .timeline {
+      position: absolute;
+      bottom: 5%;
+      left: 0;
+      width: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 3;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      padding: 5px;
+    }
+    .timeline-item {
+      margin: 5px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .timeline-item video {
+      width: 100px;
+      height: 60px;
+      object-fit: cover;
+      border: 1px solid white;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .timeline-item span {
+      font-size: 10px;
+      color: white;
+      margin-top: 4px;
+    }
+    /* Replay overlay styles */
+    #replayOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: black;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    #replayOverlay video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .replay-controls {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      z-index: 11;
+    }
+    .replay-controls button {
+      padding: 8px 12px;
+      font-size: 14px;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      border: 1px solid white;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .replay-controls button:hover {
+      background: white;
+      color: black;
+    }
+    #backButton, #shareButton {
+      position: absolute;
+      top: 20px;
+      padding: 10px 15px;
+      font-size: 16px;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      border: 1px solid white;
+      border-radius: 5px;
+      cursor: pointer;
+      z-index: 11;
+    }
+    #backButton { left: 20px; }
+    #shareButton { right: 20px; }
   </style>
 </head>
 <body>
@@ -28,7 +251,7 @@
 
   <!-- Main App Container (hidden until login) -->
   <div id="appContainer">
-    <!-- Start Overlay: Rally Title input and Let's Play button (centered) -->
+    <!-- Start Overlay: Only Rally Title input and Let's Play button centered -->
     <div id="startOverlay">
       <label for="rallyTitle">Rally Title:</label>
       <input type="text" id="rallyTitle" placeholder="Enter Rally Title" />
@@ -43,7 +266,7 @@
         <button onclick="stopGame()">End Session</button>
         <button id="toggleCameraButton" onclick="toggleCamera()">Toggle Camera</button>
         <button id="muteToggleButton" onclick="toggleMute()">🔇</button>
-        <div id="recordingIndicator" style="display:none; color:red; font-size:18px;">🔴 Recording</div>
+        <div id="recordingIndicator">🔴 Recording</div>
       </div>
       
       <div class="timeline" id="timeline"></div>
@@ -51,13 +274,14 @@
   </div>
   
   <script>
-    // Import from FFmpeg
-    const { createFFmpeg, fetchFile } = FFmpeg;
-    const ffmpeg = createFFmpeg({ log: true }); // set log: false if you want to hide console logs
-
+    // Global variable to store rally title for file naming
     let rallyTitleGlobal = "";
 
-    // Firebase config
+    // FFmpeg setup
+    const { createFFmpeg, fetchFile } = FFmpeg;
+    const ffmpeg = createFFmpeg({ log: true });
+
+    // Firebase Configuration
     const firebaseConfig = {
       apiKey: "AIzaSyCunssONBCjlKuNzwScq0HYCRB0upbL7xA",
       authDomain: "pb01-6dc9b.firebaseapp.com",
@@ -73,10 +297,11 @@
     const storage = firebase.storage();
     const auth = firebase.auth();
 
-    // Set auth persistence
+    // Set auth persistence to SESSION
     auth.setPersistence(firebase.auth.Auth.Persistence.SESSION)
       .catch(error => console.error("Error setting auth persistence:", error));
 
+    // Check authentication state and toggle container visibility
     auth.onAuthStateChanged((user) => {
       if (user) {
         document.getElementById("loginContainer").style.display = "none";
@@ -101,7 +326,7 @@
     let recordedChunks = [];
     let rallyClips = [];
     let recording = false;
-    let currentFacingMode = "environment"; // Default: back camera
+    let currentFacingMode = "environment";
     const videoElement = document.getElementById("liveVideo");
     const timeline = document.getElementById("timeline");
     const muteToggleButton = document.getElementById("muteToggleButton");
@@ -123,6 +348,7 @@
     }
 
     async function startGame() {
+      // Remove start overlay and store rally title
       const startOverlay = document.getElementById("startOverlay");
       if (startOverlay) {
         const titleInput = document.getElementById("rallyTitle");
@@ -132,16 +358,15 @@
       
       if (videoElement.srcObject) return;
       await startLivePreview();
-
       if (typeof MediaRecorder === "undefined") {
-        alert("MediaRecorder not supported. Use Safari on iOS or a modern browser.");
+        alert("MediaRecorder not supported. Please use Safari on iOS.");
         return;
       }
       try {
         mediaRecorder = new MediaRecorder(videoElement.srcObject, { 
           mimeType: "video/mp4",
-          videoBitsPerSecond: 2500000, // 2.5 Mbps
-          audioBitsPerSecond: 128000   // 128 Kbps
+          videoBitsPerSecond: 2500000,
+          audioBitsPerSecond: 128000
         });
       } catch (e) {
         console.error("MediaRecorder init error:", e);
@@ -190,14 +415,12 @@
       if (videoElement.srcObject) {
         videoElement.srcObject.getTracks().forEach(track => track.stop());
       }
-
-      // Prompt for highlights
+      // Prompt for session highlights
       const confirmHighlights = confirm("Would you like to download session highlights?");
       if (confirmHighlights) {
         try {
           const highlightUrl = await combineAndDownloadHighlights();
           if (highlightUrl) {
-            // Provide link to download
             const a = document.createElement("a");
             a.href = highlightUrl;
             a.download = "highlights.mp4";
@@ -210,8 +433,6 @@
           alert("Error creating highlights. Please try again.");
         }
       }
-
-      // Then sign out
       try {
         await auth.signOut();
         console.log("User signed out, returning to login screen.");
@@ -227,7 +448,6 @@
         const fileRef = storageRef.child(fileName);
         const metadata = { contentType: 'video/mp4' };
         console.log("Starting upload for", fileName);
-        
         const snapshot = await fileRef.put(blob, metadata);
         const downloadURL = await snapshot.ref.getDownloadURL();
         console.log("Uploaded clip available at:", downloadURL);
@@ -369,7 +589,7 @@
         if (mediaRecorder) {
           mediaRecorder = new MediaRecorder(stream, { 
             mimeType: "video/mp4",
-            videoBitsPerSecond: 2500000, 
+            videoBitsPerSecond: 2500000,
             audioBitsPerSecond: 128000
           });
           mediaRecorder.ondataavailable = (event) => {
@@ -424,51 +644,30 @@
     function manualStart() { startRecording(); }
     function manualStop() { stopRecording(); }
 
-    /**
-     * Combine all rally clips into a single "highlights" video using FFmpeg.wasm,
-     * re-encoding with H.264 & AAC to avoid MP4 concat issues.
-     */
+    // Combine rally clips using FFmpeg.wasm and return a download URL for highlights.
     async function combineAndDownloadHighlights() {
       if (rallyClips.length === 0) {
         alert("No rally clips recorded this session.");
         return null;
       }
-
       if (!ffmpeg.isLoaded()) {
         await ffmpeg.load();
       }
-
-      // Cleanup from previous runs (ignore errors if file doesn't exist)
+      // Remove any previous list or output files
       try { ffmpeg.FS('unlink', 'list.txt'); } catch (e) {}
       try { ffmpeg.FS('unlink', 'output.mp4'); } catch (e) {}
 
-      let listFileContent = "";
-      // Write each rally clip to FFmpeg FS
+      let listContent = "";
       for (let i = 0; i < rallyClips.length; i++) {
         const clipUrl = rallyClips[i].url;
         const clipName = `clip${i}.mp4`;
-        
-        // Fetch the clip data
         const response = await fetch(clipUrl);
-        const arrayBuffer = await response.arrayBuffer();
-
-        // Write to FS
-        ffmpeg.FS('writeFile', clipName, new Uint8Array(arrayBuffer));
-        
-        // Add to list file (using single quotes around filenames)
-        listFileContent += `file '${clipName}'\n`;
+        const data = await response.arrayBuffer();
+        ffmpeg.FS('writeFile', clipName, new Uint8Array(data));
+        listContent += `file '${clipName}'\n`;
       }
+      ffmpeg.FS('writeFile', 'list.txt', listContent);
 
-      // Write list.txt
-      ffmpeg.FS('writeFile', 'list.txt', listFileContent);
-
-      // Re-encode each clip to ensure proper concat
-      // We'll do a 2-step approach: 
-      // 1) concat demuxer to combine
-      // 2) encode to H.264 & AAC with faststart
-      // Or we can do a single step with re-encode: 
-      // But let's do single step: 
-      // -f concat -safe 0 -i list.txt -y -c:v libx264 -c:a aac -strict -2 -movflags +faststart output.mp4
       await ffmpeg.run(
         '-y',
         '-f', 'concat',
@@ -476,16 +675,13 @@
         '-i', 'list.txt',
         '-c:v', 'libx264',
         '-c:a', 'aac',
-        '-strict', '-2',
         '-movflags', '+faststart',
         'output.mp4'
       );
 
-      // Read the output
-      const data = ffmpeg.FS('readFile', 'output.mp4');
-      const highlightsBlob = new Blob([data.buffer], { type: 'video/mp4' });
+      const outputData = ffmpeg.FS('readFile', 'output.mp4');
+      const highlightsBlob = new Blob([outputData.buffer], { type: 'video/mp4' });
       const highlightsURL = URL.createObjectURL(highlightsBlob);
-
       return highlightsURL;
     }
   </script>
