@@ -47,19 +47,19 @@
       color: white;
       cursor: pointer;
     }
-    /* Main App Container hidden until login */
+    /* Main App Container (hidden until login) */
     #appContainer {
       display: none;
       position: relative;
     }
-    /* Start Overlay: Rally Title input and Let's Play button (full-screen centered) */
+    /* Start Overlay: Only Rally Title and Let's Play button centered */
     #startOverlay {
       position: absolute;
       top: 0;
       left: 0;
       width: 100vw;
       height: 100vh;
-      background: rgba(0, 0, 0, 0.9);
+      background: rgba(0,0,0,0.9);
       z-index: 999;
       display: flex;
       flex-direction: column;
@@ -103,7 +103,7 @@
       object-fit: cover;
       z-index: 1;
     }
-    /* Overlaid controls (hidden behind start overlay initially) */
+    /* Overlaid controls (appear after start overlay is removed) */
     .controls {
       position: absolute;
       bottom: 20%;
@@ -243,7 +243,7 @@
 
   <!-- Main App Container (hidden until login) -->
   <div id="appContainer">
-    <!-- Start Overlay: Rally Title and Let's Play button -->
+    <!-- Start Overlay: Rally Title input and Let's Play button (centered) -->
     <div id="startOverlay">
       <label for="rallyTitle">Rally Title:</label>
       <input type="text" id="rallyTitle" placeholder="Enter Rally Title" />
@@ -253,7 +253,6 @@
       <video id="liveVideo" autoplay playsinline muted webkit-playsinline></video>
       
       <div class="controls">
-        <!-- Controls appear after the start overlay is hidden -->
         <button onclick="manualStart()">Start Rec</button>
         <button onclick="manualStop()">Stop Rec</button>
         <button onclick="stopGame()">End Session</button>
@@ -332,13 +331,13 @@
     }
 
     async function startGame() {
-      // Hide the start overlay once "Let's Play" is clicked
+      // Remove the start overlay (so only the rally title and Let's Play are shown initially)
       const startOverlay = document.getElementById("startOverlay");
       if (startOverlay) {
-        startOverlay.style.display = "none";
+        startOverlay.remove();
       }
       
-      // Get the rally title for file naming
+      // Get the rally title for file naming (sanitize the input)
       const titleInput = document.getElementById("rallyTitle");
       let titleValue = titleInput && titleInput.value ? titleInput.value.replace(/[^a-zA-Z0-9-_]/g, "") : "";
       
@@ -379,7 +378,6 @@
         recordedChunks = [];
         mediaRecorder.start();
         recording = true;
-        // Optional: Change button color if needed.
       }
     }
 
@@ -413,6 +411,7 @@
         const fileRef = storageRef.child(fileName);
         const metadata = { contentType: 'video/mp4' };
         console.log("Starting upload for", fileName);
+        
         const snapshot = await fileRef.put(blob, metadata);
         const downloadURL = await snapshot.ref.getDownloadURL();
         console.log("Uploaded clip available at:", downloadURL);
