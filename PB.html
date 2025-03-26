@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Pickleball Instant Replay - Login Required</title>
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
@@ -31,6 +31,11 @@
       height: 100vh;
       background: black;
     }
+    /* Logo container (optional styling) */
+    #logoContainer img {
+      max-width: 300px; /* Adjust as needed */
+      margin-bottom: 20px; /* Spacing below logo */
+    }
     #loginContainer input {
       padding: 8px;
       margin: 5px;
@@ -47,7 +52,7 @@
       color: white;
       cursor: pointer;
     }
-    /* Main App Container hidden until login */
+    /* Main App Container (hidden until login) */
     #appContainer {
       display: none;
       position: relative;
@@ -242,6 +247,11 @@
 <body>
   <!-- Login Container -->
   <div id="loginContainer">
+    <!-- Logo Container -->
+    <div id="logoContainer">
+      <!-- Replace 'YOUR_LOGO_URL_HERE' with the actual path or URL to the image -->
+      <img src="YOUR_LOGO_URL_HERE" alt="Smash Cam Logo"/>
+    </div>
     <h2>Login to Access the App</h2>
     <input type="email" id="email" placeholder="Email" required />
     <input type="password" id="password" placeholder="Password" required />
@@ -250,7 +260,7 @@
 
   <!-- Main App Container (hidden until login) -->
   <div id="appContainer">
-    <!-- Start Overlay: Only Rally Title input and Let's Play button centered -->
+    <!-- Start Overlay: Only Rally Title input and Let's Play button (centered) -->
     <div id="startOverlay">
       <label for="rallyTitle">Rally Title:</label>
       <input type="text" id="rallyTitle" placeholder="Enter Rally Title" />
@@ -343,7 +353,7 @@
     }
 
     async function startGame() {
-      // Remove the start overlay once "Let's Play" is clicked and store the rally title
+      // Remove the start overlay once "Let's Play" is clicked
       const startOverlay = document.getElementById("startOverlay");
       if (startOverlay) {
         // Save the rally title to a global variable
@@ -395,7 +405,7 @@
         mediaRecorder.start();
         recording = true;
         // Show recording indicator
-        recordingIndicator.style.display = "block";
+        recordingIndicator.style.display = "inline-block";
       }
     }
 
