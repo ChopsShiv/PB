@@ -132,6 +132,13 @@
       background: white;
       color: black;
     }
+    /* Recording indicator (hidden by default) */
+    #recordingIndicator {
+      display: none;
+      font-size: 18px;
+      color: red;
+      margin-left: 10px;
+    }
     /* Mute toggle button style */
     #muteToggleButton {
       background: rgba(0, 0, 0, 0.7);
@@ -243,7 +250,7 @@
 
   <!-- Main App Container (hidden until login) -->
   <div id="appContainer">
-    <!-- Start Overlay: Rally Title input and Let's Play button (centered) -->
+    <!-- Start Overlay: Only Rally Title input and Let's Play button centered -->
     <div id="startOverlay">
       <label for="rallyTitle">Rally Title:</label>
       <input type="text" id="rallyTitle" placeholder="Enter Rally Title" />
@@ -258,6 +265,7 @@
         <button onclick="stopGame()">End Session</button>
         <button id="toggleCameraButton" onclick="toggleCamera()">Toggle Camera</button>
         <button id="muteToggleButton" onclick="toggleMute()">🔇</button>
+        <div id="recordingIndicator">🔴 Recording</div>
       </div>
       
       <div class="timeline" id="timeline"></div>
@@ -265,6 +273,9 @@
   </div>
   
   <script>
+    // Global variable to store rally title for file naming
+    let rallyTitleGlobal = "";
+
     // Firebase Configuration
     const firebaseConfig = {
       apiKey: "AIzaSyCunssONBCjlKuNzwScq0HYCRB0upbL7xA",
@@ -314,6 +325,7 @@
     const videoElement = document.getElementById("liveVideo");
     const timeline = document.getElementById("timeline");
     const muteToggleButton = document.getElementById("muteToggleButton");
+    const recordingIndicator = document.getElementById("recordingIndicator");
 
     async function startLivePreview() {
       try {
@@ -331,15 +343,14 @@
     }
 
     async function startGame() {
-      // Remove the start overlay once "Let's Play" is clicked
+      // Remove the start overlay once "Let's Play" is clicked and store the rally title
       const startOverlay = document.getElementById("startOverlay");
       if (startOverlay) {
+        // Save the rally title to a global variable
+        const titleInput = document.getElementById("rallyTitle");
+        rallyTitleGlobal = titleInput && titleInput.value ? titleInput.value.replace(/[^a-zA-Z0-9-_]/g, "") : "";
         startOverlay.remove();
       }
-      
-      // Get the rally title for file naming (sanitize input)
-      const titleInput = document.getElementById("rallyTitle");
-      let titleValue = titleInput && titleInput.value ? titleInput.value.replace(/[^a-zA-Z0-9-_]/g, "") : "";
       
       if (videoElement.srcObject) {
         return;
@@ -350,11 +361,11 @@
         return;
       }
       try {
-        // Use lower bitrates to reduce file size without major quality loss
+        // Use lower bitrates to reduce file size
         mediaRecorder = new MediaRecorder(videoElement.srcObject, { 
-          mimeType: "video/mp4", 
-          videoBitsPerSecond: 2500000,  // 2.5 Mbps video bitrate
-          audioBitsPerSecond: 128000    // 128 Kbps audio bitrate
+          mimeType: "video/mp4",
+          videoBitsPerSecond: 2500000, // 2.5 Mbps
+          audioBitsPerSecond: 128000   // 128 Kbps
         });
       } catch (e) {
         console.error("MediaRecorder init error:", e);
@@ -367,14 +378,13 @@
       mediaRecorder.onstop = async () => {
         if (recordedChunks.length > 0) {
           const blob = new Blob(recordedChunks, { type: "video/mp4" });
-          const url = await uploadToFirebase(blob, titleValue);
+          const url = await uploadToFirebase(blob, rallyTitleGlobal);
           const clip = { url: url, timestamp: new Date().toLocaleTimeString() };
           rallyClips.push(clip);
           updateTimeline();
           recordedChunks = [];
         }
       };
-      // Start voice recognition
       startVoiceRecognition();
     }
 
@@ -384,6 +394,8 @@
         recordedChunks = [];
         mediaRecorder.start();
         recording = true;
+        // Show recording indicator
+        recordingIndicator.style.display = "block";
       }
     }
 
@@ -392,6 +404,8 @@
         console.log("Recording stopped");
         mediaRecorder.stop();
         recording = false;
+        // Hide recording indicator
+        recordingIndicator.style.display = "none";
       }
     }
 
@@ -573,7 +587,7 @@
           mediaRecorder.onstop = () => {
             if (recordedChunks.length > 0) {
               const blob = new Blob(recordedChunks, { type: "video/mp4" });
-              uploadToFirebase(blob, document.getElementById("rallyTitle").value.replace(/[^a-zA-Z0-9-_]/g, ""))
+              uploadToFirebase(blob, rallyTitleGlobal)
                 .then(publicUrl => {
                   const clip = { url: publicUrl, timestamp: new Date().toLocaleTimeString() };
                   rallyClips.push(clip);
