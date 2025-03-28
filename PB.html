@@ -536,7 +536,7 @@
     function manualStart() { startRecording(); }
     function manualStop() { stopRecording(); }
   
-    // Show overlay for download options using EmailJS to send an email with the download links
+    // Show download overlay for session highlights using EmailJS to send an email with the download links
     function showDownloadOverlay() {
       const overlay = document.createElement("div");
       overlay.id = "downloadOverlay";
@@ -589,7 +589,6 @@
           alert("Please select at least one rally clip.");
           return;
         }
-        // Retrieve the email from the overlay
         const emailInput = overlay.querySelector("#downloadEmail");
         const to_email = emailInput ? emailInput.value.trim() : "";
         if (!to_email) {
@@ -598,7 +597,7 @@
         }
   
         // Prepare EmailJS template parameters.
-        // In your EmailJS template, use the placeholder {{to_email}}.
+        // In your EmailJS template, use the placeholders: {{to_email}}, {{subject}}, and {{message}}.
         const templateParams = {
           to_email: to_email,
           subject: "Session Highlights Download Link",
@@ -606,10 +605,13 @@
         };
   
         try {
-          await emailjs.send('service_5an1el5', 'template_gph38u7', templateParams);
+          const response = await emailjs.send('service_5an1el5', 'template_gph38u7', templateParams);
+          console.log("EmailJS response:", response);
           alert("Download link sent to your email.");
         } catch (error) {
-          alert("Error sending email: " + error.message);
+          console.error("Email send error:", error);
+          const errorMsg = error && error.text ? error.text : (error.message || "Unknown error");
+          alert("Error sending email: " + errorMsg);
         }
   
         setTimeout(async () => {
