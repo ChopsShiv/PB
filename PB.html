@@ -537,7 +537,7 @@
     function manualStart() { startRecording(); }
     function manualStop() { stopRecording(); }
   
-    // Show overlay for download options and send email using EmailJS
+    // Show download overlay for session highlights using EmailJS to send an email
     function showDownloadOverlay() {
       const overlay = document.createElement("div");
       overlay.id = "downloadOverlay";
@@ -581,7 +581,7 @@
       overlay.querySelector("#downloadButton").onclick = async () => {
         const selectedUrls = [];
         rallyClips.forEach((clip, index) => {
-          const checkbox = document.getElementById("clipCheckbox" + index);
+          const checkbox = overlay.querySelector("#clipCheckbox" + index);
           if (checkbox && checkbox.checked) {
             selectedUrls.push(clip.url);
           }
@@ -590,14 +590,16 @@
           alert("Please select at least one rally clip.");
           return;
         }
-        // Retrieve the email address entered by the user
-        const user_email = overlay.querySelector("#downloadEmail").value;
+        // Retrieve the email from the overlay
+        const emailInput = overlay.querySelector("#downloadEmail");
+        const user_email = emailInput ? emailInput.value : "";
         if (!user_email) {
           alert("Please enter your email.");
           return;
         }
+  
         // Prepare EmailJS template parameters.
-        // Note: In your EmailJS template, ensure you include the placeholder {{user_email}}.
+        // In your EmailJS template, use {{user_email}}, {{subject}}, and {{message}} as placeholders.
         const templateParams = {
           user_email: user_email,
           subject: "Session Highlights Download Link",
