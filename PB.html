@@ -616,22 +616,21 @@
           alert("Please enter your email.");
           return;
         }
-  
-        // Prepare the email template parameters for EmailJS.
+
         const templateParams = {
-          to_email: email,
-          subject: "Session Highlights Download Link",
-          message: "Here are your download links:\n\n" + selectedUrls.join("\n")
-        };
-  
-        try {
-          await emailjs.send('service_5an1el5', 'template_smashpreview', templateParams);
-          alert("Download link sent to your email.");
-        } catch (error) {
-          console.error("Email send error:", error);
-          alert("Error sending email: " + error.message);
-        }
-  
+  to_email: "user@example.com", // the recipient's email from your form
+  subject: "Your Session Highlights Download Link",
+  message: "Link1\nLink2\nLink3" // the rally video URLs, each on a new line
+};
+emailjs.send('service_5an1el5', 'template_smashpreview', templateParams)
+  .then(response => {
+    alert("Download link sent to your email.");
+  })
+  .catch(error => {
+    console.error("Email send error:", error);
+    alert("Error sending email: " + error.message);
+  });
+
         // After a short delay, remove overlay and sign out.
         setTimeout(async () => {
           document.body.removeChild(overlay);
