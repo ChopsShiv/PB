@@ -4,237 +4,146 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Pickleball Instant Replay - Login Required</title>
-
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-storage-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
-  
-  <!-- FFmpeg.wasm -->
+  <!-- FFmpeg.wasm is still included for future use if needed -->
   <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
-
   <style>
     /* Reset and full-screen layout */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body {
-      width: 100%;
-      height: 100%;
+      width: 100%; height: 100%;
       font-family: Arial, sans-serif;
-      background: black;
-      color: white;
+      background: black; color: white;
     }
     /* Centered login container */
     #loginContainer {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      background: black;
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: center;
+      height: 100vh; background: black;
     }
     #loginContainer input {
-      padding: 8px;
-      margin: 5px;
-      font-size: 16px;
-      width: 250px;
+      padding: 8px; margin: 5px; font-size: 16px; width: 250px;
     }
     #loginContainer button {
-      padding: 8px 12px;
-      font-size: 16px;
-      margin: 10px;
-      background: green;
-      border: none;
-      border-radius: 4px;
-      color: white;
-      cursor: pointer;
+      padding: 8px 12px; font-size: 16px; margin: 10px;
+      background: green; border: none; border-radius: 4px; color: white; cursor: pointer;
     }
     /* Main App Container hidden until login */
     #appContainer {
-      display: none;
-      position: relative;
+      display: none; position: relative;
     }
-    /* Start Overlay: Contains only Rally Title input and Let's Play button (centered) */
+    /* Start Overlay: Only Rally Title input and Let's Play button (centered) */
     #startOverlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(0, 0, 0, 0.9);
-      z-index: 999;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      gap: 20px;
+      position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.9); z-index: 999;
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: center; gap: 20px;
     }
-    #startOverlay label {
-      font-size: 18px;
-    }
+    #startOverlay label { font-size: 18px; }
     #startOverlay input {
-      padding: 10px;
-      font-size: 18px;
-      width: 300px;
+      padding: 10px; font-size: 18px; width: 300px;
     }
     #startOverlay button {
-      padding: 10px 20px;
-      font-size: 18px;
-      background: green;
-      border: none;
-      border-radius: 4px;
-      color: white;
-      cursor: pointer;
+      padding: 10px 20px; font-size: 18px;
+      background: green; border: none; border-radius: 4px; color: white; cursor: pointer;
     }
     /* Video container fills entire viewport */
     .video-container {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: black;
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: black;
     }
     /* Live video covers the container */
     #liveVideo {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      object-fit: cover;
-      z-index: 1;
+      position: absolute; top: 0; left: 0;
+      width: 100vw; height: 100vh; object-fit: cover; z-index: 1;
     }
-    /* Controls container (will appear after start overlay is removed) */
+    /* Overlaid controls (appear after overlay is removed) */
     .controls {
-      position: absolute;
-      bottom: 20%;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 2;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      width: 80%;
-      justify-content: center;
+      position: absolute; bottom: 20%; left: 50%;
+      transform: translateX(-50%); z-index: 2;
+      display: flex; flex-wrap: wrap; gap: 8px;
+      width: 80%; justify-content: center;
     }
     .controls button {
-      padding: 8px 12px;
-      font-size: 14px;
-      font-weight: bold;
-      color: white;
-      background: rgba(0,0,0,0.7);
-      border: 1px solid white;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: background 0.3s;
-      min-width: 80px;
+      padding: 8px 12px; font-size: 14px; font-weight: bold; color: white;
+      background: rgba(0,0,0,0.7); border: 1px solid white;
+      border-radius: 6px; cursor: pointer; transition: background 0.3s; min-width: 80px;
     }
-    .controls button:hover {
-      background: white;
-      color: black;
-    }
+    .controls button:hover { background: white; color: black; }
     /* Recording indicator */
     #recordingIndicator {
-      display: none;
-      font-size: 18px;
-      color: red;
-      margin-left: 10px;
+      display: none; font-size: 18px; color: red; margin-left: 10px;
     }
     /* Mute toggle button style */
     #muteToggleButton {
-      background: rgba(0,0,0,0.7);
-      border: 1px solid white;
-      border-radius: 6px;
+      background: rgba(0,0,0,0.7); border: 1px solid white; border-radius: 6px;
     }
     /* Timeline container */
     .timeline {
-      position: absolute;
-      bottom: 5%;
-      left: 0;
-      width: 100%;
-      background: rgba(0,0,0,0.5);
-      z-index: 3;
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      padding: 5px;
+      position: absolute; bottom: 5%; left: 0; width: 100%;
+      background: rgba(0,0,0,0.5); z-index: 3;
+      display: flex; flex-wrap: wrap; justify-content: center; padding: 5px;
     }
     .timeline-item {
-      margin: 5px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      margin: 5px; display: flex; flex-direction: column; align-items: center;
     }
     .timeline-item video {
-      width: 100px;
-      height: 60px;
-      object-fit: cover;
-      border: 1px solid white;
-      border-radius: 4px;
-      cursor: pointer;
+      width: 100px; height: 60px; object-fit: cover;
+      border: 1px solid white; border-radius: 4px; cursor: pointer;
     }
     .timeline-item span {
-      font-size: 10px;
-      color: white;
-      margin-top: 4px;
+      font-size: 10px; color: white; margin-top: 4px;
+    }
+    /* Download Overlay for session highlights */
+    #downloadOverlay {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.9); z-index: 1000;
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      overflow-y: auto; padding: 20px;
+    }
+    #downloadOverlay h2 { margin-bottom: 20px; }
+    #downloadOverlay .clipItem {
+      border: 1px solid white; padding: 5px; margin: 5px;
+      text-align: center;
+    }
+    #downloadOverlay .clipItem video {
+      width: 120px; height: 80px; object-fit: cover;
+      display: block; margin: 0 auto;
+    }
+    #downloadOverlay input[type="email"] {
+      padding: 8px; font-size: 16px; width: 300px; margin-top: 20px;
+    }
+    #downloadOverlay button {
+      padding: 10px 20px; font-size: 18px;
+      background: green; border: none; border-radius: 4px;
+      color: white; cursor: pointer; margin-top: 20px;
     }
     /* Replay overlay styles */
     #replayOverlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: black;
-      z-index: 10;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: black; z-index: 10;
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
     }
     #replayOverlay video {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
+      width: 100%; height: 100%; object-fit: contain;
     }
     .replay-controls {
-      position: absolute;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 10px;
-      z-index: 11;
+      position: absolute; top: 20px; left: 50%;
+      transform: translateX(-50%); display: flex; gap: 10px; z-index: 11;
     }
     .replay-controls button {
-      padding: 8px 12px;
-      font-size: 14px;
-      background: rgba(0,0,0,0.7);
-      color: white;
-      border: 1px solid white;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: background 0.3s;
+      padding: 8px 12px; font-size: 14px;
+      background: rgba(0,0,0,0.7); color: white;
+      border: 1px solid white; border-radius: 4px;
+      cursor: pointer; transition: background 0.3s;
     }
-    .replay-controls button:hover {
-      background: white;
-      color: black;
-    }
+    .replay-controls button:hover { background: white; color: black; }
     #backButton, #shareButton {
-      position: absolute;
-      top: 20px;
-      padding: 10px 15px;
-      font-size: 16px;
-      background: rgba(0,0,0,0.7);
-      color: white;
-      border: 1px solid white;
-      border-radius: 5px;
-      cursor: pointer;
-      z-index: 11;
+      position: absolute; top: 20px; padding: 10px 15px; font-size: 16px;
+      background: rgba(0,0,0,0.7); color: white; border: 1px solid white;
+      border-radius: 5px; cursor: pointer; z-index: 11;
     }
     #backButton { left: 20px; }
     #shareButton { right: 20px; }
@@ -259,7 +168,6 @@
     </div>
     <div class="video-container">
       <video id="liveVideo" autoplay playsinline muted webkit-playsinline></video>
-      
       <div class="controls">
         <button onclick="manualStart()">Start Rec</button>
         <button onclick="manualStop()">Stop Rec</button>
@@ -268,7 +176,6 @@
         <button id="muteToggleButton" onclick="toggleMute()">🔇</button>
         <div id="recordingIndicator">🔴 Recording</div>
       </div>
-      
       <div class="timeline" id="timeline"></div>
     </div>
   </div>
@@ -277,7 +184,7 @@
     // Global variable to store rally title for file naming
     let rallyTitleGlobal = "";
 
-    // FFmpeg setup
+    // FFmpeg setup (for future use if needed)
     const { createFFmpeg, fetchFile } = FFmpeg;
     const ffmpeg = createFFmpeg({ log: true });
 
@@ -297,11 +204,11 @@
     const storage = firebase.storage();
     const auth = firebase.auth();
 
-    // Set auth persistence to SESSION
+    // Set auth persistence
     auth.setPersistence(firebase.auth.Auth.Persistence.SESSION)
       .catch(error => console.error("Error setting auth persistence:", error));
 
-    // Check authentication state and toggle container visibility
+    // Toggle visibility based on auth state
     auth.onAuthStateChanged((user) => {
       if (user) {
         document.getElementById("loginContainer").style.display = "none";
@@ -348,7 +255,6 @@
     }
 
     async function startGame() {
-      // Remove start overlay and store rally title
       const startOverlay = document.getElementById("startOverlay");
       if (startOverlay) {
         const titleInput = document.getElementById("rallyTitle");
@@ -379,8 +285,8 @@
       mediaRecorder.onstop = async () => {
         if (recordedChunks.length > 0) {
           const blob = new Blob(recordedChunks, { type: "video/mp4" });
-          const url = await uploadToFirebase(blob, rallyTitleGlobal);
-          const clip = { url: url, timestamp: new Date().toLocaleTimeString() };
+          const result = await uploadToFirebase(blob, rallyTitleGlobal);
+          const clip = { url: result.url, timestamp: new Date().toLocaleTimeString(), filename: result.filename };
           rallyClips.push(clip);
           updateTimeline();
           recordedChunks = [];
@@ -415,30 +321,9 @@
       if (videoElement.srcObject) {
         videoElement.srcObject.getTracks().forEach(track => track.stop());
       }
-      // Prompt for session highlights
-      const confirmHighlights = confirm("Would you like to download session highlights?");
-      if (confirmHighlights) {
-        try {
-          const highlightUrl = await combineAndDownloadHighlights();
-          if (highlightUrl) {
-            const a = document.createElement("a");
-            a.href = highlightUrl;
-            a.download = "highlights.mp4";
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-          }
-        } catch (err) {
-          console.error("Error creating highlights:", err);
-          alert("Error creating highlights. Please try again.");
-        }
-      }
-      try {
-        await auth.signOut();
-        console.log("User signed out, returning to login screen.");
-      } catch (error) {
-        console.error("Error signing out:", error);
-      }
+      
+      // Show download overlay for session highlights
+      showDownloadOverlay();
     }
 
     async function uploadToFirebase(blob, titleValue) {
@@ -448,10 +333,11 @@
         const fileRef = storageRef.child(fileName);
         const metadata = { contentType: 'video/mp4' };
         console.log("Starting upload for", fileName);
+        
         const snapshot = await fileRef.put(blob, metadata);
         const downloadURL = await snapshot.ref.getDownloadURL();
         console.log("Uploaded clip available at:", downloadURL);
-        return downloadURL;
+        return { url: downloadURL, filename: fileName };
       } catch (error) {
         console.error("Upload error:", error);
         alert("Error uploading clip to Firebase Storage: " + error.message);
@@ -471,7 +357,7 @@
         thumb.loop = true;
         thumb.onclick = () => replayRally(clip.url);
         const label = document.createElement("span");
-        label.innerText = `Rally ${index + 1}`;
+        label.innerText = clip.filename || `Rally ${index + 1}`;
         div.appendChild(thumb);
         div.appendChild(label);
         timeline.appendChild(div);
@@ -599,8 +485,8 @@
             if (recordedChunks.length > 0) {
               const blob = new Blob(recordedChunks, { type: "video/mp4" });
               uploadToFirebase(blob, rallyTitleGlobal)
-                .then(publicUrl => {
-                  const clip = { url: publicUrl, timestamp: new Date().toLocaleTimeString() };
+                .then(result => {
+                  const clip = { url: result.url, timestamp: new Date().toLocaleTimeString(), filename: result.filename };
                   rallyClips.push(clip);
                   updateTimeline();
                   recordedChunks = [];
@@ -644,45 +530,142 @@
     function manualStart() { startRecording(); }
     function manualStop() { stopRecording(); }
 
-    // Combine rally clips using FFmpeg.wasm and return a download URL for highlights.
-    async function combineAndDownloadHighlights() {
-      if (rallyClips.length === 0) {
-        alert("No rally clips recorded this session.");
-        return null;
-      }
-      if (!ffmpeg.isLoaded()) {
-        await ffmpeg.load();
-      }
-      // Remove any previous list or output files
-      try { ffmpeg.FS('unlink', 'list.txt'); } catch (e) {}
-      try { ffmpeg.FS('unlink', 'output.mp4'); } catch (e) {}
-
-      let listContent = "";
-      for (let i = 0; i < rallyClips.length; i++) {
-        const clipUrl = rallyClips[i].url;
-        const clipName = `clip${i}.mp4`;
-        const response = await fetch(clipUrl);
-        const data = await response.arrayBuffer();
-        ffmpeg.FS('writeFile', clipName, new Uint8Array(data));
-        listContent += `file '${clipName}'\n`;
-      }
-      ffmpeg.FS('writeFile', 'list.txt', listContent);
-
-      await ffmpeg.run(
-        '-y',
-        '-f', 'concat',
-        '-safe', '0',
-        '-i', 'list.txt',
-        '-c:v', 'libx264',
-        '-c:a', 'aac',
-        '-movflags', '+faststart',
-        'output.mp4'
-      );
-
-      const outputData = ffmpeg.FS('readFile', 'output.mp4');
-      const highlightsBlob = new Blob([outputData.buffer], { type: 'video/mp4' });
-      const highlightsURL = URL.createObjectURL(highlightsBlob);
-      return highlightsURL;
+    function showDownloadOverlay() {
+      const overlay = document.createElement("div");
+      overlay.id = "downloadOverlay";
+      overlay.style.position = "fixed";
+      overlay.style.top = "0";
+      overlay.style.left = "0";
+      overlay.style.width = "100vw";
+      overlay.style.height = "100vh";
+      overlay.style.background = "rgba(0,0,0,0.9)";
+      overlay.style.zIndex = "1000";
+      overlay.style.display = "flex";
+      overlay.style.flexDirection = "column";
+      overlay.style.justifyContent = "center";
+      overlay.style.alignItems = "center";
+      overlay.style.overflowY = "auto";
+      overlay.style.padding = "20px";
+      
+      const header = document.createElement("h2");
+      header.innerText = "Download Session Highlights";
+      overlay.appendChild(header);
+      
+      // Container for rally clip selection
+      const clipsContainer = document.createElement("div");
+      clipsContainer.style.display = "flex";
+      clipsContainer.style.flexWrap = "wrap";
+      clipsContainer.style.justifyContent = "center";
+      clipsContainer.style.gap = "10px";
+      clipsContainer.style.width = "80%";
+      
+      rallyClips.forEach((clip, index) => {
+        const clipDiv = document.createElement("div");
+        clipDiv.className = "clipItem";
+        clipDiv.style.border = "1px solid white";
+        clipDiv.style.padding = "5px";
+        clipDiv.style.textAlign = "center";
+        
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.id = "clipCheckbox" + index;
+        checkbox.value = clip.url;
+        
+        const thumb = document.createElement("video");
+        thumb.src = clip.url;
+        thumb.muted = true;
+        thumb.playsInline = true;
+        thumb.autoplay = true;
+        thumb.loop = true;
+        thumb.style.width = "120px";
+        thumb.style.height = "80px";
+        
+        const label = document.createElement("div");
+        label.innerText = clip.filename || ("Rally " + (index + 1));
+        label.style.fontSize = "12px";
+        label.style.marginTop = "5px";
+        
+        clipDiv.appendChild(checkbox);
+        clipDiv.appendChild(thumb);
+        clipDiv.appendChild(label);
+        clipsContainer.appendChild(clipDiv);
+      });
+      
+      overlay.appendChild(clipsContainer);
+      
+      // Email input field
+      const emailLabel = document.createElement("label");
+      emailLabel.innerText = "Enter your email:";
+      emailLabel.style.marginTop = "20px";
+      emailLabel.style.fontSize = "16px";
+      overlay.appendChild(emailLabel);
+      
+      const emailInput = document.createElement("input");
+      emailInput.type = "email";
+      emailInput.placeholder = "your.email@example.com";
+      emailInput.style.padding = "8px";
+      emailInput.style.fontSize = "16px";
+      emailInput.style.marginTop = "10px";
+      emailInput.style.width = "300px";
+      overlay.appendChild(emailInput);
+      
+      // Button to get download links
+      const downloadButton = document.createElement("button");
+      downloadButton.innerText = "Get Download Link";
+      downloadButton.style.padding = "10px 20px";
+      downloadButton.style.fontSize = "18px";
+      downloadButton.style.marginTop = "20px";
+      downloadButton.style.background = "green";
+      downloadButton.style.border = "none";
+      downloadButton.style.borderRadius = "4px";
+      downloadButton.style.color = "white";
+      downloadButton.style.cursor = "pointer";
+      
+      downloadButton.onclick = () => {
+        const selectedUrls = [];
+        rallyClips.forEach((clip, index) => {
+          const checkbox = document.getElementById("clipCheckbox" + index);
+          if (checkbox && checkbox.checked) {
+            selectedUrls.push(clip.url);
+          }
+        });
+        
+        if (selectedUrls.length === 0) {
+          alert("Please select at least one rally clip.");
+          return;
+        }
+        
+        if (!emailInput.value) {
+          alert("Please enter your email.");
+          return;
+        }
+        
+        const textContent = selectedUrls.join("\n");
+        const blob = new Blob([textContent], { type: "text/plain" });
+        const link = URL.createObjectURL(blob);
+        
+        const linkMessage = document.createElement("div");
+        linkMessage.innerHTML = `<p>Your download link:</p><a href="${link}" download="highlights.txt">${link}</a>`;
+        linkMessage.style.marginTop = "20px";
+        linkMessage.style.fontSize = "16px";
+        linkMessage.style.textAlign = "center";
+        
+        overlay.appendChild(linkMessage);
+        
+        // After a delay, remove overlay and sign out
+        setTimeout(async () => {
+          document.body.removeChild(overlay);
+          try {
+            await auth.signOut();
+            console.log("User signed out, returning to login screen.");
+          } catch (error) {
+            console.error("Error signing out:", error);
+          }
+        }, 10000);
+      };
+      
+      overlay.appendChild(downloadButton);
+      document.body.appendChild(overlay);
     }
   </script>
 </body>
