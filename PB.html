@@ -16,7 +16,7 @@
   <!-- EmailJS SDK -->
   <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
   <script>
-    // Initialize EmailJS with your EmailJS User ID
+    // Initialize EmailJS with your EmailJS User ID (replace with your actual ID)
     emailjs.init('9IH3dz_bfpWORWxZH');
   </script>
   
@@ -101,19 +101,19 @@
     }
     /* Timeline container */
     .timeline {
-      position: absolute; bottom: 5%; left: 0; width: 100%;
-      background: rgba(0,0,0,0.5); z-index: 3;
-      display: flex; flex-wrap: wrap; justify-content: center;
-      padding: 5px;
+      position: absolute; bottom: 5%; left: 0;
+      width: 100%; background: rgba(0,0,0,0.5);
+      z-index: 3; display: flex; flex-wrap: wrap;
+      justify-content: center; padding: 5px;
     }
     .timeline-item {
       margin: 5px; display: flex; flex-direction: column;
       align-items: center;
     }
     .timeline-item video {
-      width: 100px; height: 60px; object-fit: cover;
-      border: 1px solid white; border-radius: 4px;
-      cursor: pointer;
+      width: 100px; height: 60px;
+      object-fit: cover; border: 1px solid white;
+      border-radius: 4px; cursor: pointer;
     }
     .timeline-item span {
       font-size: 10px; color: white;
@@ -134,8 +134,8 @@
       text-align: center;
     }
     #downloadOverlay .clipItem video {
-      width: 120px; height: 80px; object-fit: cover;
-      display: block; margin: 0 auto;
+      width: 120px; height: 80px;
+      object-fit: cover; display: block; margin: 0 auto;
     }
     #downloadOverlay input[type="email"] {
       padding: 8px; font-size: 16px; width: 300px;
@@ -155,7 +155,8 @@
       justify-content: center; align-items: center;
     }
     #replayOverlay video {
-      width: 100%; height: 100%; object-fit: contain;
+      width: 100%; height: 100%;
+      object-fit: contain;
     }
     .replay-controls {
       position: absolute; top: 20px; left: 50%;
@@ -188,7 +189,7 @@
     <input type="password" id="password" placeholder="Password" required />
     <button onclick="login()">Login</button>
   </div>
-
+  
   <!-- Main App Container (hidden until login) -->
   <div id="appContainer">
     <!-- Start Overlay: Only Rally Title input and Let's Play button (centered) -->
@@ -214,11 +215,11 @@
   <script>
     // Global variable to store rally title for file naming
     let rallyTitleGlobal = "";
-
+  
     // FFmpeg setup (for future use)
     const { createFFmpeg, fetchFile } = FFmpeg;
     const ffmpeg = createFFmpeg({ log: true });
-
+  
     // Firebase Configuration
     const firebaseConfig = {
       apiKey: "AIzaSyCunssONBCjlKuNzwScq0HYCRB0upbL7xA",
@@ -229,16 +230,16 @@
       appId: "1:451766893674:web:4526c5aba2c5ff86955e13",
       measurementId: "G-Y22H853R18"
     };
-
+  
     // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     const storage = firebase.storage();
     const auth = firebase.auth();
-
+  
     // Set auth persistence
     auth.setPersistence(firebase.auth.Auth.Persistence.SESSION)
       .catch(error => console.error("Error setting auth persistence:", error));
-
+  
     auth.onAuthStateChanged((user) => {
       if (user) {
         document.getElementById("loginContainer").style.display = "none";
@@ -248,7 +249,7 @@
         document.getElementById("appContainer").style.display = "none";
       }
     });
-
+  
     async function login() {
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
@@ -258,7 +259,7 @@
         alert("Login error: " + error.message);
       }
     }
-
+  
     let mediaRecorder;
     let recordedChunks = [];
     let rallyClips = [];
@@ -268,7 +269,7 @@
     const timeline = document.getElementById("timeline");
     const muteToggleButton = document.getElementById("muteToggleButton");
     const recordingIndicator = document.getElementById("recordingIndicator");
-
+  
     async function startLivePreview() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -283,7 +284,7 @@
         alert("Unable to access camera/microphone. Check your device settings.");
       }
     }
-
+  
     async function startGame() {
       const startOverlay = document.getElementById("startOverlay");
       if (startOverlay) {
@@ -324,7 +325,7 @@
       };
       startVoiceRecognition();
     }
-
+  
     function startRecording() {
       if (!recording && mediaRecorder) {
         console.log("Recording started");
@@ -334,7 +335,7 @@
         recordingIndicator.style.display = "inline-block";
       }
     }
-
+  
     function stopRecording() {
       if (recording && mediaRecorder) {
         console.log("Recording stopped");
@@ -343,7 +344,7 @@
         recordingIndicator.style.display = "none";
       }
     }
-
+  
     async function stopGame() {
       if (mediaRecorder && mediaRecorder.state === "recording") {
         stopRecording();
@@ -352,10 +353,10 @@
         videoElement.srcObject.getTracks().forEach(track => track.stop());
       }
       
-      // Show download overlay for session highlights
+      // Show download overlay for session highlights using EmailJS
       showDownloadOverlay();
     }
-
+  
     async function uploadToFirebase(blob, titleValue) {
       try {
         const storageRef = storage.ref();
@@ -372,7 +373,7 @@
         alert("Error uploading clip to Firebase Storage: " + error.message);
       }
     }
-
+  
     function updateTimeline() {
       timeline.innerHTML = "";
       rallyClips.forEach((clip, index) => {
@@ -392,7 +393,7 @@
         timeline.appendChild(div);
       });
     }
-
+  
     function replayRally(url) {
       const overlay = document.createElement("div");
       overlay.id = "replayOverlay";
@@ -447,7 +448,7 @@
       overlay.appendChild(shareButton);
       document.body.appendChild(overlay);
     }
-
+  
     async function shareClip(url) {
       if (navigator.share && navigator.canShare && navigator.canShare({ files: [] })) {
         try {
@@ -477,12 +478,12 @@
         }
       }
     }
-
+  
     function toggleMute() {
       videoElement.muted = !videoElement.muted;
       muteToggleButton.innerText = videoElement.muted ? "🔇" : "🔊";
     }
-
+  
     async function toggleCamera() {
       if (recording) {
         alert("Stop recording before toggling camera.");
@@ -526,7 +527,7 @@
         alert("Unable to switch camera.");
       }
     }
-
+  
     function startVoiceRecognition() {
       if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
         console.log("Voice recognition not supported.");
@@ -553,11 +554,11 @@
       };
       speechRecognition.start();
     }
-
+  
     function manualStart() { startRecording(); }
     function manualStop() { stopRecording(); }
-
-    // Show overlay for download options after session end.
+  
+    // Show overlay for download options using EmailJS to send an email with the download links
     function showDownloadOverlay() {
       const overlay = document.createElement("div");
       overlay.id = "downloadOverlay";
@@ -569,7 +570,6 @@
         <button id="downloadButton" style="padding: 10px 20px; font-size: 18px; margin-top: 20px; background: green; border: none; border-radius: 4px; color: white; cursor: pointer;">Get Download Link</button>
       `;
       
-      // Populate clips selection area
       const clipsSelection = overlay.querySelector("#clipsSelection");
       rallyClips.forEach((clip, index) => {
         const clipDiv = document.createElement("div");
@@ -599,7 +599,6 @@
         clipsSelection.appendChild(clipDiv);
       });
       
-      // When user clicks "Get Download Link", use EmailJS to send email
       overlay.querySelector("#downloadButton").onclick = async () => {
         const selectedUrls = [];
         rallyClips.forEach((clip, index) => {
@@ -617,12 +616,14 @@
           alert("Please enter your email.");
           return;
         }
-        // Prepare email template parameters
+  
+        // Prepare the email template parameters for EmailJS.
         const templateParams = {
           to_email: email,
           subject: "Session Highlights Download Link",
           message: "Here are your download links:\n\n" + selectedUrls.join("\n")
         };
+  
         try {
           await emailjs.send('service_5an1el5', 'template_smashpreview', templateParams);
           alert("Download link sent to your email.");
@@ -630,8 +631,8 @@
           console.error("Email send error:", error);
           alert("Error sending email: " + error.message);
         }
-        
-        // Remove overlay and sign out after delay
+  
+        // After a short delay, remove overlay and sign out.
         setTimeout(async () => {
           document.body.removeChild(overlay);
           try {
