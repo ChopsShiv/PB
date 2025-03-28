@@ -14,16 +14,11 @@
   <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
   
   <!-- EmailJS SDK -->
-  <script type="text/javascript"
-  src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js">
+  <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
+  <script>
+    // Initialize EmailJS with your EmailJS User ID (replace with your actual ID)
+    emailjs.init('9IH3dz_bfpWORWxZH');
   </script>
-  <script type="text/javascript">
-   (function(){
-      emailjs.init({
-        publicKey: "9IH3dz_bfpWORWxZH",
-      });
-   })();
-</script>
   
   <style>
     /* Reset and full-screen layout */
@@ -190,8 +185,8 @@
   <!-- Login Container -->
   <div id="loginContainer">
     <h2>Login to Access the App</h2>
-    <input type="email" id="email" placeholder="Email" required />
-    <input type="password" id="password" placeholder="Password" required />
+    <input type="email" id="email" placeholder="Email" required>
+    <input type="password" id="password" placeholder="Password" required>
     <button onclick="login()">Login</button>
   </div>
   
@@ -200,7 +195,7 @@
     <!-- Start Overlay: Only Rally Title input and Let's Play button (centered) -->
     <div id="startOverlay">
       <label for="rallyTitle">Rally Title:</label>
-      <input type="text" id="rallyTitle" placeholder="Enter Rally Title" />
+      <input type="text" id="rallyTitle" placeholder="Enter Rally Title">
       <button onclick="startGame()">Let’s Play</button>
     </div>
     <div class="video-container">
@@ -297,7 +292,6 @@
         rallyTitleGlobal = titleInput && titleInput.value ? titleInput.value.replace(/[^a-zA-Z0-9-_]/g, "") : "";
         startOverlay.remove();
       }
-      
       if (videoElement.srcObject) return;
       await startLivePreview();
       if (typeof MediaRecorder === "undefined") {
@@ -305,7 +299,7 @@
         return;
       }
       try {
-        mediaRecorder = new MediaRecorder(videoElement.srcObject, { 
+        mediaRecorder = new MediaRecorder(videoElement.srcObject, {
           mimeType: "video/mp4",
           videoBitsPerSecond: 2500000,
           audioBitsPerSecond: 128000
@@ -333,7 +327,6 @@
   
     function startRecording() {
       if (!recording && mediaRecorder) {
-        console.log("Recording started");
         recordedChunks = [];
         mediaRecorder.start();
         recording = true;
@@ -343,7 +336,6 @@
   
     function stopRecording() {
       if (recording && mediaRecorder) {
-        console.log("Recording stopped");
         mediaRecorder.stop();
         recording = false;
         recordingIndicator.style.display = "none";
@@ -357,8 +349,7 @@
       if (videoElement.srcObject) {
         videoElement.srcObject.getTracks().forEach(track => track.stop());
       }
-      
-      // Show download overlay for session highlights using EmailJS
+      // Show download overlay that sends an email via EmailJS
       showDownloadOverlay();
     }
   
@@ -368,14 +359,11 @@
         const fileName = 'rallies/rally-' + (titleValue ? titleValue + '-' : '') + Date.now() + '.mp4';
         const fileRef = storageRef.child(fileName);
         const metadata = { contentType: 'video/mp4' };
-        console.log("Starting upload for", fileName);
         const snapshot = await fileRef.put(blob, metadata);
         const downloadURL = await snapshot.ref.getDownloadURL();
-        console.log("Uploaded clip available at:", downloadURL);
         return { url: downloadURL, filename: fileName };
       } catch (error) {
-        console.error("Upload error:", error);
-        alert("Error uploading clip to Firebase Storage: " + error.message);
+        alert("Error uploading clip: " + error.message);
       }
     }
   
@@ -402,7 +390,6 @@
     function replayRally(url) {
       const overlay = document.createElement("div");
       overlay.id = "replayOverlay";
-      
       const backButton = document.createElement("button");
       backButton.id = "backButton";
       backButton.innerText = "Back";
@@ -410,12 +397,10 @@
         document.body.removeChild(overlay);
         videoElement.play();
       };
-      
       const shareButton = document.createElement("button");
       shareButton.id = "shareButton";
       shareButton.innerText = "Share";
       shareButton.onclick = () => shareClip(url);
-      
       const replayVideo = document.createElement("video");
       replayVideo.src = url;
       replayVideo.controls = true;
@@ -424,7 +409,6 @@
       replayVideo.style.height = "100%";
       replayVideo.style.objectFit = "contain";
       replayVideo.muted = true;
-      
       const replayControls = document.createElement("div");
       replayControls.className = "replay-controls";
       const speeds = [
@@ -438,14 +422,12 @@
         btn.onclick = () => { replayVideo.playbackRate = speedOption.value; };
         replayControls.appendChild(btn);
       });
-      
       const replayMuteBtn = document.createElement("button");
       replayMuteBtn.innerText = "🔇";
       replayMuteBtn.onclick = () => {
         replayVideo.muted = !replayVideo.muted;
         replayMuteBtn.innerText = replayVideo.muted ? "🔇" : "🔊";
       };
-      
       overlay.appendChild(replayVideo);
       overlay.appendChild(replayControls);
       overlay.appendChild(replayMuteBtn);
@@ -466,11 +448,9 @@
           await navigator.share({
             title: "Pickleball Rally",
             text: "Check out this rally clip!",
-            files: [file],
+            files: [file]
           });
-          console.log("Share successful.");
         } catch (error) {
-          console.error("Error sharing:", error);
           alert("Error sharing the clip: " + error.message);
         }
       } else {
@@ -478,7 +458,6 @@
           await navigator.clipboard.writeText(url);
           alert("Clip URL copied to clipboard. You can now share it manually.");
         } catch (error) {
-          console.error("Clipboard error:", error);
           alert("Sharing not supported on this device.");
         }
       }
@@ -503,10 +482,9 @@
           video: { frameRate: { ideal: 120 }, facingMode: currentFacingMode },
           audio: true
         });
-        console.log("Camera switched. New facing mode:", currentFacingMode);
         videoElement.srcObject = stream;
         if (mediaRecorder) {
-          mediaRecorder = new MediaRecorder(stream, { 
+          mediaRecorder = new MediaRecorder(stream, {
             mimeType: "video/mp4",
             videoBitsPerSecond: 2500000,
             audioBitsPerSecond: 128000
@@ -528,14 +506,12 @@
           };
         }
       } catch (error) {
-        console.error("toggleCamera error:", error);
         alert("Unable to switch camera.");
       }
     }
   
     function startVoiceRecognition() {
       if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
-        console.log("Voice recognition not supported.");
         alert("Voice commands are not supported in Chrome on iPad. Use manual buttons.");
         return;
       }
@@ -545,12 +521,9 @@
       speechRecognition.lang = "en-US";
       speechRecognition.onresult = (event) => {
         const lastTranscript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
-        console.log("Heard:", lastTranscript);
         if (lastTranscript === "start") {
-          console.log("Voice command: Starting recording...");
           startRecording();
         } else if (lastTranscript === "stop") {
-          console.log("Voice command: Stopping recording...");
           stopRecording();
         }
       };
@@ -563,7 +536,7 @@
     function manualStart() { startRecording(); }
     function manualStop() { stopRecording(); }
   
-    // Show overlay for download options using EmailJS to send an email with the download links
+    // Show download overlay for session highlights using EmailJS to send an email
     function showDownloadOverlay() {
       const overlay = document.createElement("div");
       overlay.id = "downloadOverlay";
@@ -571,7 +544,7 @@
         <h2>Download Session Highlights</h2>
         <div id="clipsSelection" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; width: 80%;"></div>
         <label style="margin-top: 20px; font-size: 16px;">Enter your email:</label>
-        <input type="email" id="downloadEmail" placeholder="your.email@example.com" style="padding: 8px; font-size: 16px; width: 300px; margin-top: 10px;" required />
+        <input type="email" id="downloadEmail" placeholder="your.email@example.com" style="padding: 8px; font-size: 16px; width: 300px; margin-top: 10px;" required>
         <button id="downloadButton" style="padding: 10px 20px; font-size: 18px; margin-top: 20px; background: green; border: none; border-radius: 4px; color: white; cursor: pointer;">Get Download Link</button>
       `;
       
@@ -621,19 +594,20 @@
           alert("Please enter your email.");
           return;
         }
-  
-        // Prepare the email template parameters for EmailJS.
-        function sendMail(){
-          let parms = {
-          email: document.getElementById("email").value
+        // Prepare EmailJS template parameters
+        const templateParams = {
+          to_email: email,
           subject: "Session Highlights Download Link",
           message: "Here are your download links:\n\n" + selectedUrls.join("\n")
+        };
+  
+        try {
+          await emailjs.send('service_5an1el5', 'template_smashpreview', templateParams);
+          alert("Download link sent to your email.");
+        } catch (error) {
+          alert("Error sending email: " + error.message);
         }
   
-         emailjs.send('service_5an1el5', 'template_smashpreview',parms).then(alert("Download link sent to your email."));
-      }
-  
-        // After a short delay, remove overlay and sign out.
         setTimeout(async () => {
           document.body.removeChild(overlay);
           try {
@@ -650,3 +624,4 @@
   </script>
 </body>
 </html>
+
