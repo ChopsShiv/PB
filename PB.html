@@ -13,6 +13,13 @@
   <!-- FFmpeg.wasm (for future use) -->
   <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
   
+  <!-- EmailJS SDK -->
+  <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
+  <script>
+    // Initialize EmailJS with your EmailJS User ID
+    emailjs.init('9IH3dz_bfpWORWxZH');
+  </script>
+  
   <style>
     /* Reset and full-screen layout */
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -41,11 +48,9 @@
     #startOverlay {
       position: absolute; top: 0; left: 0;
       width: 100vw; height: 100vh;
-      background: rgba(0,0,0,0.9);
-      z-index: 999;
+      background: rgba(0,0,0,0.9); z-index: 999;
       display: flex; flex-direction: column;
-      justify-content: center; align-items: center;
-      gap: 20px;
+      justify-content: center; align-items: center; gap: 20px;
     }
     #startOverlay label { font-size: 18px; }
     #startOverlay input {
@@ -68,7 +73,7 @@
       width: 100vw; height: 100vh;
       object-fit: cover; z-index: 1;
     }
-    /* Controls container (appears after overlay is removed) */
+    /* Controls container */
     .controls {
       position: absolute; bottom: 20%; left: 50%;
       transform: translateX(-50%);
@@ -234,7 +239,6 @@
     auth.setPersistence(firebase.auth.Auth.Persistence.SESSION)
       .catch(error => console.error("Error setting auth persistence:", error));
 
-    // Toggle container visibility based on auth state
     auth.onAuthStateChanged((user) => {
       if (user) {
         document.getElementById("loginContainer").style.display = "none";
@@ -359,7 +363,6 @@
         const fileRef = storageRef.child(fileName);
         const metadata = { contentType: 'video/mp4' };
         console.log("Starting upload for", fileName);
-        
         const snapshot = await fileRef.put(blob, metadata);
         const downloadURL = await snapshot.ref.getDownloadURL();
         console.log("Uploaded clip available at:", downloadURL);
@@ -426,9 +429,7 @@
       speeds.forEach(speedOption => {
         const btn = document.createElement("button");
         btn.innerText = speedOption.label;
-        btn.onclick = () => {
-          replayVideo.playbackRate = speedOption.value;
-        };
+        btn.onclick = () => { replayVideo.playbackRate = speedOption.value; };
         replayControls.appendChild(btn);
       });
       
@@ -564,11 +565,11 @@
         <h2>Download Session Highlights</h2>
         <div id="clipsSelection" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; width: 80%;"></div>
         <label style="margin-top: 20px; font-size: 16px;">Enter your email:</label>
-        <input type="email" id="downloadEmail" placeholder="your.email@example.com" style="padding: 8px; font-size: 16px; width: 300px; margin-top: 10px;" />
+        <input type="email" id="downloadEmail" placeholder="your.email@example.com" style="padding: 8px; font-size: 16px; width: 300px; margin-top: 10px;" required />
         <button id="downloadButton" style="padding: 10px 20px; font-size: 18px; margin-top: 20px; background: green; border: none; border-radius: 4px; color: white; cursor: pointer;">Get Download Link</button>
       `;
       
-      // Populate clips selection
+      // Populate clips selection area
       const clipsSelection = overlay.querySelector("#clipsSelection");
       rallyClips.forEach((clip, index) => {
         const clipDiv = document.createElement("div");
@@ -598,7 +599,8 @@
         clipsSelection.appendChild(clipDiv);
       });
       
-      overlay.querySelector("#downloadButton").onclick = () => {
+      // When user clicks "Get Download Link", use EmailJS to send email
+      overlay.querySelector("#downloadButton").onclick = async () => {
         const selectedUrls = [];
         rallyClips.forEach((clip, index) => {
           const checkbox = document.getElementById("clipCheckbox" + index);
@@ -615,15 +617,21 @@
           alert("Please enter your email.");
           return;
         }
-        // Create mailto link with the selected URLs in the email body
-        const subject = encodeURIComponent("Session Highlights Download Link");
-        const body = encodeURIComponent("Here are your download links:\n\n" + selectedUrls.join("\n"));
-        const mailtoLink = `mailto:${email}?subject=${subject}&body=${body}`;
+        // Prepare email template parameters
+        const templateParams = {
+          to_email: email,
+          subject: "Session Highlights Download Link",
+          message: "Here are your download links:\n\n" + selectedUrls.join("\n")
+        };
+        try {
+          await emailjs.send('service_5an1el5', 'template_smashpreview', templateParams);
+          alert("Download link sent to your email.");
+        } catch (error) {
+          console.error("Email send error:", error);
+          alert("Error sending email: " + error.message);
+        }
         
-        // Open the mailto link (this will open the user's default email client)
-        window.location.href = mailtoLink;
-        
-        // Remove overlay and sign out after a short delay
+        // Remove overlay and sign out after delay
         setTimeout(async () => {
           document.body.removeChild(overlay);
           try {
@@ -640,4 +648,3 @@
   </script>
 </body>
 </html>
-
