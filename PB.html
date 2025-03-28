@@ -14,11 +14,16 @@
   <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
   
   <!-- EmailJS SDK -->
-  <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
-  <script>
-    // Initialize EmailJS with your EmailJS User ID (replace with your actual ID)
-    emailjs.init('9IH3dz_bfpWORWxZH');
+  <script type="text/javascript"
+  src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js">
   </script>
+  <script type="text/javascript">
+   (function(){
+      emailjs.init({
+        publicKey: "9IH3dz_bfpWORWxZH",
+      });
+   })();
+</script>
   
   <style>
     /* Reset and full-screen layout */
@@ -618,19 +623,15 @@
         }
   
         // Prepare the email template parameters for EmailJS.
-        const templateParams = {
-          to_email: email,
+        function sendMail(){
+          let parms = {
+          email: document.getElementById("email").value
           subject: "Session Highlights Download Link",
           message: "Here are your download links:\n\n" + selectedUrls.join("\n")
-        };
-  
-        try {
-          await emailjs.send('service_5an1el5', 'template_smashpreview', templateParams);
-          alert("Download link sent to your email.");
-        } catch (error) {
-          console.error("Email send error:", error);
-          alert("Error sending email: " + error.message);
         }
+  
+         emailjs.send('service_5an1el5', 'template_smashpreview',parms).then(alert("Download link sent to your email."));
+      }
   
         // After a short delay, remove overlay and sign out.
         setTimeout(async () => {
