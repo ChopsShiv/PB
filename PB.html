@@ -64,8 +64,7 @@
     /* Video container fills entire viewport */
     .video-container {
       position: fixed; top: 0; left: 0;
-      width: 100vw; height: 100vh;
-      background: black;
+      width: 100vw; height: 100vh; background: black;
     }
     /* Live video covers the container */
     #liveVideo {
@@ -292,6 +291,7 @@
         rallyTitleGlobal = titleInput && titleInput.value ? titleInput.value.replace(/[^a-zA-Z0-9-_]/g, "") : "";
         startOverlay.remove();
       }
+      
       if (videoElement.srcObject) return;
       await startLivePreview();
       if (typeof MediaRecorder === "undefined") {
@@ -349,7 +349,8 @@
       if (videoElement.srcObject) {
         videoElement.srcObject.getTracks().forEach(track => track.stop());
       }
-      // Show download overlay that sends an email via EmailJS
+      
+      // Show download overlay for session highlights using EmailJS
       showDownloadOverlay();
     }
   
@@ -536,7 +537,7 @@
     function manualStart() { startRecording(); }
     function manualStop() { stopRecording(); }
   
-    // Show download overlay for session highlights using EmailJS to send an email
+    // Show overlay for download options and send email using EmailJS
     function showDownloadOverlay() {
       const overlay = document.createElement("div");
       overlay.id = "downloadOverlay";
@@ -589,20 +590,22 @@
           alert("Please select at least one rally clip.");
           return;
         }
-        const email = overlay.querySelector("#downloadEmail").value;
-        if (!email) {
+        // Retrieve the email address entered by the user
+        const user_email = overlay.querySelector("#downloadEmail").value;
+        if (!user_email) {
           alert("Please enter your email.");
           return;
         }
-        // Prepare EmailJS template parameters
+        // Prepare EmailJS template parameters.
+        // Note: In your EmailJS template, ensure you include the placeholder {{user_email}}.
         const templateParams = {
-          to_email: email,
+          user_email: user_email,
           subject: "Session Highlights Download Link",
           message: "Here are your download links:\n\n" + selectedUrls.join("\n")
         };
   
         try {
-          await emailjs.send('service_5an1el5', 'template_smashpreview', templateParams);
+          await emailjs.send('service_5an1el5', 'template_gph38u7', templateParams);
           alert("Download link sent to your email.");
         } catch (error) {
           alert("Error sending email: " + error.message);
@@ -624,4 +627,3 @@
   </script>
 </body>
 </html>
-
