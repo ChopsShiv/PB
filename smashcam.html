@@ -28,7 +28,7 @@
       font-family: Arial, sans-serif;
       background: black; color: white;
     }
-    /* Centered login container */
+    /* Centered login container with logo */
     #loginContainer {
       display: flex;
       flex-direction: column;
@@ -180,6 +180,29 @@
       color: white;
       margin-top: 4px;
     }
+    /* Review Button Container (hidden by default; only shown when recording) */
+    #reviewButtonContainer {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 4;
+      display: none;
+    }
+    /* Updated Review Button style: double size, purple background, white text, 50% opacity */
+    #reviewButton {
+      background: purple;
+      color: white;
+      padding: 24px 40px; /* double size */
+      border: none;
+      border-radius: 4px;
+      font-size: 36px;
+      cursor: pointer;
+      opacity: 0.5;
+    }
+    #reviewButton:hover {
+      opacity: 0.8;
+    }
     /* Download Overlay for session highlights */
     #downloadOverlay {
       position: fixed;
@@ -284,7 +307,7 @@
 <body>
   <!-- Login Container with Logo -->
   <div id="loginContainer">
-    <!-- App Logo -->
+    <!-- App Logo (update src with your logo URL or local path) -->
     <img id="loginLogo" src="https://i.postimg.cc/3NPjP3d9/logo.png" alt="App Logo">
     <h2>Login to Access the App</h2>
     <input type="email" id="email" placeholder="Email" required>
@@ -302,6 +325,10 @@
     </div>
     <div class="video-container">
       <video id="liveVideo" autoplay playsinline muted webkit-playsinline></video>
+      <!-- Review Button Container (hidden by default; shown during recording) -->
+      <div id="reviewButtonContainer">
+        <button id="reviewButton" onclick="reviewLastClip()">Review</button>
+      </div>
       <div class="controls">
         <button onclick="manualStart()">Start Rec</button>
         <button onclick="manualStop()">Stop Rec</button>
@@ -315,8 +342,11 @@
   </div>
   
   <script>
-    // Global variable to store rally title for file naming
+    // Global variables for rally title, clip counter, and segmented recording
     let rallyTitleGlobal = "";
+    let clipCounter = 0;
+    let segmentedMode = false;    // segmented recording mode flag
+    let segmentTimer = null;      // timer for 3-minute segments
   
     // FFmpeg setup (for future use)
     const { createFFmpeg, fetchFile } = FFmpeg;
@@ -371,6 +401,7 @@
     const timeline = document.getElementById("timeline");
     const muteToggleButton = document.getElementById("muteToggleButton");
     const recordingIndicator = document.getElementById("recordingIndicator");
+    const reviewButtonContainer = document.getElementById("reviewButtonContainer");
   
     async function startLivePreview() {
       try {
@@ -385,6 +416,21 @@
         console.error("getUserMedia error:", error);
         alert("Unable to access camera/microphone. Check your device settings.");
       }
+    }
+  
+    // Generate file name in format: NNN_HHMM_MMDDYYYY.mp4
+    function getFormattedFileName() {
+      clipCounter++;
+      const clipNumber = clipCounter.toString().padStart(3, '0');
+      const now = new Date();
+      const hh = now.getHours().toString().padStart(2, '0');
+      const mm = now.getMinutes().toString().padStart(2, '0');
+      const timeStr = hh + mm;
+      const month = (now.getMonth() + 1).toString().padStart(2, '0');
+      const dd = now.getDate().toString().padStart(2, '0');
+      const yyyy = now.getFullYear().toString();
+      const dateStr = month + dd + yyyy;
+      return `${clipNumber}_${timeStr}_${dateStr}.mp4`;
     }
   
     async function startGame() {
@@ -418,34 +464,71 @@
       mediaRecorder.onstop = async () => {
         if (recordedChunks.length > 0) {
           const blob = new Blob(recordedChunks, { type: "video/mp4" });
-          const result = await uploadToFirebase(blob, rallyTitleGlobal);
+          const result = await uploadToFirebase(blob);
           const clip = { url: result.url, timestamp: new Date().toLocaleTimeString(), filename: result.filename };
           rallyClips.push(clip);
           updateTimeline();
           recordedChunks = [];
+          // If segmented mode is active, start a new segment automatically
+          if(segmentedMode) {
+            startRecording();
+          }
+          // Ensure maximum 5 clips are stored; delete the oldest if necessary
+          if(rallyClips.length > 5) {
+            const oldestClip = rallyClips.shift();
+            storage.ref('rallies/' + oldestClip.filename).delete()
+              .then(() => console.log("Old clip deleted from Firebase Storage."))
+              .catch(error => console.error("Error deleting old clip:", error));
+          }
         }
       };
+      segmentedMode = false; // By default, segmented mode is off until user clicks Start Rec.
       startVoiceRecognition();
     }
   
+    // When user clicks Start Rec, enable segmented mode and start recording.
+    function manualStart() { 
+      segmentedMode = true;
+      startRecording(); 
+    }
+  
+    // When user clicks Stop Rec, disable segmented mode and stop recording.
+    function manualStop() { 
+      segmentedMode = false;
+      if(segmentTimer) clearTimeout(segmentTimer);
+      stopRecording(); 
+    }
+  
+    // Start recording; if in segmented mode, set a 1-minute timer and show the Review button.
     function startRecording() {
       if (!recording && mediaRecorder) {
         recordedChunks = [];
         mediaRecorder.start();
         recording = true;
         recordingIndicator.style.display = "inline-block";
+        // Show the Review button while recording is active.
+        reviewButtonContainer.style.display = "block";
+        if(segmentedMode) {
+          segmentTimer = setTimeout(() => {
+            stopRecording();
+          }, 60000); // 1 minute = 60,000 ms
+        }
       }
     }
   
+    // Stop recording and hide the Review button.
     function stopRecording() {
       if (recording && mediaRecorder) {
         mediaRecorder.stop();
         recording = false;
         recordingIndicator.style.display = "none";
+        reviewButtonContainer.style.display = "none";
+        if(segmentTimer) clearTimeout(segmentTimer);
       }
     }
   
     async function stopGame() {
+      segmentedMode = false;
       if (mediaRecorder && mediaRecorder.state === "recording") {
         stopRecording();
       }
@@ -456,11 +539,11 @@
       showDownloadOverlay();
     }
   
-    async function uploadToFirebase(blob, titleValue) {
+    async function uploadToFirebase(blob) {
       try {
         const storageRef = storage.ref();
-        const fileName = 'rallies/rally-' + (titleValue ? titleValue + '-' : '') + Date.now() + '.mp4';
-        const fileRef = storageRef.child(fileName);
+        const fileName = getFormattedFileName();
+        const fileRef = storageRef.child('rallies/' + fileName);
         const metadata = { contentType: 'video/mp4' };
         const snapshot = await fileRef.put(blob, metadata);
         const downloadURL = await snapshot.ref.getDownloadURL();
@@ -488,6 +571,24 @@
         div.appendChild(label);
         timeline.appendChild(div);
       });
+    }
+  
+    // Review function: When clicked, if recording is active, stop recording,
+    // then wait a short period for the clip to be saved, and finally play the most recent clip.
+    async function reviewLastClip() {
+      // Disable segmented mode to prevent auto-resume
+      segmentedMode = false;
+      if (recording) {
+        stopRecording();
+        // Wait 1.5 seconds for the clip to be processed and saved
+        await new Promise(resolve => setTimeout(resolve, 1500));
+      }
+      if (rallyClips.length === 0) {
+        alert("No rally recording available for review.");
+        return;
+      }
+      const lastClip = rallyClips[rallyClips.length - 1];
+      replayRally(lastClip.url);
     }
   
     function replayRally(url) {
@@ -636,10 +737,17 @@
       speechRecognition.start();
     }
   
-    function manualStart() { startRecording(); }
-    function manualStop() { stopRecording(); }
+    function manualStart() { 
+      segmentedMode = true;
+      startRecording(); 
+    }
+    function manualStop() { 
+      segmentedMode = false;
+      if(segmentTimer) clearTimeout(segmentTimer);
+      stopRecording(); 
+    }
   
-    // Show download overlay using a hidden form and emailjs.sendForm to send email
+    // Show download overlay using a hidden form and emailjs.sendForm to send email with download links
     function showDownloadOverlay() {
       const overlay = document.createElement("div");
       overlay.id = "downloadOverlay";
@@ -654,7 +762,6 @@
         </form>
       `;
       
-      // Populate the clips selection area
       const clipsSelection = overlay.querySelector("#clipsSelection");
       rallyClips.forEach((clip, index) => {
         const clipDiv = document.createElement("div");
@@ -684,7 +791,6 @@
         clipsSelection.appendChild(clipDiv);
       });
       
-      // Add form submission event listener
       const downloadForm = overlay.querySelector("#downloadForm");
       downloadForm.addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -699,7 +805,14 @@
           alert("Please select at least one rally clip.");
           return;
         }
-        // Set the hidden textarea value with the selected URLs
+        const emailInput = overlay.querySelector("#downloadEmail");
+        const to_email = emailInput ? emailInput.value.trim() : "";
+        if (!to_email) {
+          alert("Please enter your email.");
+          return;
+        }
+  
+        // Set the hidden textarea value with selected URLs.
         const downloadMessage = overlay.querySelector("#downloadMessage");
         downloadMessage.value = "Here are your download links:\n\n" + selectedUrls.join("\n");
   
