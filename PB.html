@@ -174,7 +174,7 @@
       color: white;
       margin-top: 4px;
     }
-    /* Review Button Container (hidden by default; only shown when recording) */
+    /* Review Button Container (shown only during recording) */
     #reviewButtonContainer {
       position: absolute;
       top: 50%;
@@ -393,12 +393,12 @@
   
     async function startLivePreview() {
       try {
-        // Request a 16:9 video stream at 1280x720 resolution
+        // Request a 16:9 stream with an ideal resolution of 816x480
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { 
             aspectRatio: { ideal: 16/9 },
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
+            width: { ideal: 816 },
+            height: { ideal: 480 },
             frameRate: { ideal: 120 },
             facingMode: currentFacingMode 
           },
@@ -428,15 +428,15 @@
       return `${clipNumber}_${timeStr}_${dateStr}.mp4`;
     }
   
-    // Compress video using FFmpeg.wasm
+    // Compress video using FFmpeg.wasm with a target bitrate of 500k
     async function compressVideo(blob) {
       if (!ffmpeg.isLoaded()) {
         await ffmpeg.load();
       }
-      // Write input file
+      // Write the input file
       ffmpeg.FS('writeFile', 'input.mp4', await fetchFile(blob));
-      // Run FFmpeg to compress video to 1Mbps bitrate, preserving aspect ratio (input is 16:9)
-      await ffmpeg.run('-i', 'input.mp4', '-b:v', '1M', '-c:a', 'copy', 'output.mp4');
+      // Compress video: target video bitrate is 500k (half of previous 1M)
+      await ffmpeg.run('-i', 'input.mp4', '-b:v', '500k', '-c:a', 'copy', 'output.mp4');
       const data = ffmpeg.FS('readFile', 'output.mp4');
       // Clean up temporary files
       ffmpeg.FS('unlink', 'input.mp4');
@@ -446,7 +446,7 @@
   
     async function uploadToFirebase(blob) {
       try {
-        // Compress the video before uploading
+        // First compress the video
         const compressedBlob = await compressVideo(blob);
         const storageRef = storage.ref();
         const fileName = getFormattedFileName();
@@ -475,9 +475,10 @@
         return;
       }
       try {
+        // Set MediaRecorder's videoBitsPerSecond to 1250000 (half of previous 2500000)
         mediaRecorder = new MediaRecorder(videoElement.srcObject, {
           mimeType: "video/mp4",
-          videoBitsPerSecond: 2500000,
+          videoBitsPerSecond: 1250000,
           audioBitsPerSecond: 128000
         });
       } catch (e) {
@@ -695,8 +696,8 @@
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { 
             aspectRatio: { ideal: 16/9 },
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
+            width: { ideal: 816 },
+            height: { ideal: 480 },
             frameRate: { ideal: 120 },
             facingMode: currentFacingMode 
           },
@@ -706,7 +707,7 @@
         if (mediaRecorder) {
           mediaRecorder = new MediaRecorder(stream, {
             mimeType: "video/mp4",
-            videoBitsPerSecond: 2500000,
+            videoBitsPerSecond: 1250000,
             audioBitsPerSecond: 128000
           });
           mediaRecorder.ondataavailable = (event) => {
@@ -858,4 +859,3 @@
   </script>
 </body>
 </html>
-
