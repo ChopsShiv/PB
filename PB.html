@@ -536,18 +536,22 @@
     function manualStart() { startRecording(); }
     function manualStop() { stopRecording(); }
   
-    // Show download overlay for session highlights using EmailJS to send an email with the download links
+    // Show download overlay using a hidden form and send email via EmailJS sendForm
     function showDownloadOverlay() {
       const overlay = document.createElement("div");
       overlay.id = "downloadOverlay";
       overlay.innerHTML = `
         <h2>Download Session Highlights</h2>
         <div id="clipsSelection" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; width: 80%;"></div>
-        <label style="margin-top: 20px; font-size: 16px;">Enter your email:</label>
-        <input type="email" id="downloadEmail" placeholder="your.email@example.com" style="padding: 8px; font-size: 16px; width: 300px; margin-top: 10px;" required>
-        <button id="downloadButton" style="padding: 10px 20px; font-size: 18px; margin-top: 20px; background: green; border: none; border-radius: 4px; color: white; cursor: pointer;">Get Download Link</button>
+        <form id="downloadForm">
+          <label style="margin-top: 20px; font-size: 16px;">Enter your email:</label>
+          <input type="email" name="to_email" id="downloadEmail" placeholder="your.email@example.com" style="padding: 8px; font-size: 16px; width: 300px; margin-top: 10px;" required>
+          <textarea name="message" id="downloadMessage" style="display:none;"></textarea>
+          <button type="submit" style="padding: 10px 20px; font-size: 18px; margin-top: 20px; background: green; border: none; border-radius: 4px; color: white; cursor: pointer;">Get Download Link</button>
+        </form>
       `;
       
+      // Populate the clips selection area with checkboxes, thumbnails, and filenames
       const clipsSelection = overlay.querySelector("#clipsSelection");
       rallyClips.forEach((clip, index) => {
         const clipDiv = document.createElement("div");
@@ -577,7 +581,10 @@
         clipsSelection.appendChild(clipDiv);
       });
       
-      overlay.querySelector("#downloadButton").onclick = async () => {
+      // Get the form element and add a submit event listener
+      const downloadForm = overlay.querySelector("#downloadForm");
+      downloadForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
         const selectedUrls = [];
         rallyClips.forEach((clip, index) => {
           const checkbox = overlay.querySelector("#clipCheckbox" + index);
@@ -589,23 +596,12 @@
           alert("Please select at least one rally clip.");
           return;
         }
-        const emailInput = overlay.querySelector("#downloadEmail");
-        const to_email = emailInput ? emailInput.value.trim() : "";
-        if (!to_email) {
-          alert("Please enter your email.");
-          return;
-        }
-  
-        // Prepare EmailJS template parameters.
-        // In your EmailJS template, use the placeholders: {{to_email}}, {{subject}}, and {{message}}.
-        const templateParams = {
-          to_email: to_email,
-          subject: "Session Highlights Download Link",
-          message: "Here are your download links:\n\n" + selectedUrls.join("\n")
-        };
+        // Set the hidden textarea value to the selected URLs.
+        const downloadMessage = overlay.querySelector("#downloadMessage");
+        downloadMessage.value = "Here are your download links:\n\n" + selectedUrls.join("\n");
   
         try {
-          const response = await emailjs.send('service_5an1el5', 'template_gph38u7', templateParams);
+          const response = await emailjs.sendForm('service_5an1el5', 'template_gph38u7', downloadForm);
           console.log("EmailJS response:", response);
           alert("Download link sent to your email.");
         } catch (error) {
@@ -623,7 +619,7 @@
             console.error("Error signing out:", error);
           }
         }, 5000);
-      };
+      });
       
       document.body.appendChild(overlay);
     }
