@@ -17,7 +17,7 @@
   <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
   <script>
     // Initialize EmailJS with your EmailJS User ID (replace with your actual ID)
-    emailjs.init('YOUR_EMAILJS_USER_ID');
+    emailjs.init('9IH3dz_bfpWORWxZH');
   </script>
   
   <style>
@@ -180,13 +180,14 @@
       color: white;
       margin-top: 4px;
     }
-    /* Review button (center of screen) */
+    /* Review Button Container (hidden by default) */
     #reviewButtonContainer {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
       z-index: 4;
+      display: none;
     }
     #reviewButton {
       background: purple;
@@ -304,7 +305,7 @@
 <body>
   <!-- Login Container with Logo -->
   <div id="loginContainer">
-    <!-- App Logo (update src with your logo URL or path) -->
+    <!-- App Logo (update src with your logo URL or local path) -->
     <img id="loginLogo" src="logo.png" alt="App Logo">
     <h2>Login to Access the App</h2>
     <input type="email" id="email" placeholder="Email" required>
@@ -322,7 +323,7 @@
     </div>
     <div class="video-container">
       <video id="liveVideo" autoplay playsinline muted webkit-playsinline></video>
-      <!-- Review Button in the middle of the screen -->
+      <!-- Review Button Container (hidden by default) -->
       <div id="reviewButtonContainer">
         <button id="reviewButton" onclick="reviewLastClip()">Review</button>
       </div>
@@ -398,6 +399,7 @@
     const timeline = document.getElementById("timeline");
     const muteToggleButton = document.getElementById("muteToggleButton");
     const recordingIndicator = document.getElementById("recordingIndicator");
+    const reviewButtonContainer = document.getElementById("reviewButtonContainer");
   
     async function startLivePreview() {
       try {
@@ -469,7 +471,7 @@
           if(segmentedMode) {
             startRecording();
           }
-          // Ensure maximum 5 clips are stored
+          // Ensure maximum 5 clips are stored; delete the oldest if necessary
           if(rallyClips.length > 5) {
             const oldestClip = rallyClips.shift();
             storage.ref('rallies/' + oldestClip.filename).delete()
@@ -495,26 +497,30 @@
       stopRecording();
     }
   
-    // Start recording; if in segmented mode, set a 1-minute timer.
+    // Start recording; if in segmented mode, set a 1-minute timer and show the Review button.
     function startRecording() {
       if (!recording && mediaRecorder) {
         recordedChunks = [];
         mediaRecorder.start();
         recording = true;
         recordingIndicator.style.display = "inline-block";
+        // Show the Review button while recording is active.
+        reviewButtonContainer.style.display = "block";
         if(segmentedMode) {
           segmentTimer = setTimeout(() => {
             stopRecording();
-          }, 60000); // 1 minute = 60,000 ms
+          }, 60000); // 1 minutes = 60,000 ms
         }
       }
     }
   
+    // Stop recording and hide the Review button.
     function stopRecording() {
       if (recording && mediaRecorder) {
         mediaRecorder.stop();
         recording = false;
         recordingIndicator.style.display = "none";
+        reviewButtonContainer.style.display = "none";
         if(segmentTimer) clearTimeout(segmentTimer);
       }
     }
@@ -563,6 +569,19 @@
         div.appendChild(label);
         timeline.appendChild(div);
       });
+    }
+  
+    // Review function: When clicked, if recording is active, stop it. Then, play the most recent clip.
+    function reviewLastClip() {
+      if (recording) {
+        stopRecording();
+      }
+      if (rallyClips.length === 0) {
+        alert("No rally recording available for review.");
+        return;
+      }
+      const lastClip = rallyClips[rallyClips.length - 1];
+      replayRally(lastClip.url);
     }
   
     function replayRally(url) {
@@ -721,7 +740,8 @@
       stopRecording(); 
     }
   
-    // Review button functionality: Stop recording (if needed) and play the last rally clip.
+    // Review button functionality:
+    // When clicked, if recording is active, stop recording and then play the most recent clip.
     function reviewLastClip() {
       if (recording) {
         stopRecording();
@@ -804,7 +824,7 @@
         downloadMessage.value = "Here are your download links:\n\n" + selectedUrls.join("\n");
   
         try {
-          const response = await emailjs.sendForm('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', downloadForm);
+          const response = await emailjs.sendForm('service_5an1el5', 'template_gph38u7', downloadForm);
           console.log("EmailJS response:", response);
           alert("Download link sent to your email.");
         } catch (error) {
