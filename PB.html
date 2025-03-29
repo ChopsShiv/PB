@@ -189,14 +189,16 @@
       z-index: 4;
       display: none;
     }
+    /* Updated Review Button style: Double size and 50% opacity */
     #reviewButton {
       background: purple;
       color: white;
-      padding: 12px 20px;
+      padding: 24px 40px; /* double the original padding */
       border: none;
       border-radius: 4px;
-      font-size: 18px;
+      font-size: 36px;    /* double the original font-size */
       cursor: pointer;
+      opacity: 0.5;
     }
     #reviewButton:hover {
       opacity: 0.8;
@@ -323,7 +325,7 @@
     </div>
     <div class="video-container">
       <video id="liveVideo" autoplay playsinline muted webkit-playsinline></video>
-      <!-- Review Button Container (hidden by default) -->
+      <!-- Review Button Container (hidden by default; shown only during recording) -->
       <div id="reviewButtonContainer">
         <button id="reviewButton" onclick="reviewLastClip()">Review</button>
       </div>
@@ -509,7 +511,7 @@
         if(segmentedMode) {
           segmentTimer = setTimeout(() => {
             stopRecording();
-          }, 60000); // 1 minutes = 60,000 ms
+          }, 60000); // 1 minute = 60,000 ms
         }
       }
     }
@@ -571,8 +573,11 @@
       });
     }
   
-    // Review function: When clicked, if recording is active, stop it. Then, play the most recent clip.
+    // Review function: When clicked, disable segmented mode and stop recording (if active) 
+    // then play the most recent saved clip.
     function reviewLastClip() {
+      // Disable segmented mode so recording does not auto-resume
+      segmentedMode = false;
       if (recording) {
         stopRecording();
       }
@@ -738,20 +743,6 @@
       segmentedMode = false;
       if(segmentTimer) clearTimeout(segmentTimer);
       stopRecording(); 
-    }
-  
-    // Review button functionality:
-    // When clicked, if recording is active, stop recording and then play the most recent clip.
-    function reviewLastClip() {
-      if (recording) {
-        stopRecording();
-      }
-      if (rallyClips.length === 0) {
-        alert("No rally recording available for review.");
-        return;
-      }
-      const lastClip = rallyClips[rallyClips.length - 1];
-      replayRally(lastClip.url);
     }
   
     // Show download overlay using a hidden form and emailjs.sendForm to send email with download links
