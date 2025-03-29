@@ -2,6 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <!-- Set the required policies as meta tags (best set via server headers in production) -->
+  <meta http-equiv="Cross-Origin-Embedder-Policy" content="require-corp">
+  <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Pickleball Instant Replay - Login Required</title>
   
@@ -174,7 +177,7 @@
       color: white;
       margin-top: 4px;
     }
-    /* Review Button Container (shown only during recording) */
+    /* Review Button Container (shown only when recording) */
     #reviewButtonContainer {
       position: absolute;
       top: 50%;
@@ -313,7 +316,7 @@
     </div>
     <div class="video-container">
       <video id="liveVideo" autoplay playsinline muted webkit-playsinline></video>
-      <!-- Review Button Container (shown only when recording) -->
+      <!-- Review Button Container (shown only during recording) -->
       <div id="reviewButtonContainer">
         <button id="reviewButton" onclick="reviewLastClip()">Review</button>
       </div>
@@ -428,17 +431,14 @@
       return `${clipNumber}_${timeStr}_${dateStr}.mp4`;
     }
   
-    // Compress video using FFmpeg.wasm with a target bitrate of 500k
+    // Compress video using FFmpeg.wasm with target bitrate 500k
     async function compressVideo(blob) {
       if (!ffmpeg.isLoaded()) {
         await ffmpeg.load();
       }
-      // Write the input file
       ffmpeg.FS('writeFile', 'input.mp4', await fetchFile(blob));
-      // Compress video: target video bitrate is 500k (half of previous 1M)
       await ffmpeg.run('-i', 'input.mp4', '-b:v', '500k', '-c:a', 'copy', 'output.mp4');
       const data = ffmpeg.FS('readFile', 'output.mp4');
-      // Clean up temporary files
       ffmpeg.FS('unlink', 'input.mp4');
       ffmpeg.FS('unlink', 'output.mp4');
       return new Blob([data.buffer], { type: 'video/mp4' });
@@ -446,7 +446,6 @@
   
     async function uploadToFirebase(blob) {
       try {
-        // First compress the video
         const compressedBlob = await compressVideo(blob);
         const storageRef = storage.ref();
         const fileName = getFormattedFileName();
@@ -475,10 +474,9 @@
         return;
       }
       try {
-        // Set MediaRecorder's videoBitsPerSecond to 1250000 (half of previous 2500000)
         mediaRecorder = new MediaRecorder(videoElement.srcObject, {
           mimeType: "video/mp4",
-          videoBitsPerSecond: 1250000,
+          videoBitsPerSecond: 1250000, // half of 2500000
           audioBitsPerSecond: 128000
         });
       } catch (e) {
@@ -497,11 +495,9 @@
           rallyClips.push(clip);
           updateTimeline();
           recordedChunks = [];
-          // If segmented mode is active, start a new segment automatically
           if(segmentedMode) {
             startRecording();
           }
-          // Ensure maximum 5 clips are stored; delete the oldest if necessary
           if(rallyClips.length > 5) {
             const oldestClip = rallyClips.shift();
             storage.ref('rallies/' + oldestClip.filename).delete()
@@ -534,12 +530,11 @@
         mediaRecorder.start();
         recording = true;
         recordingIndicator.style.display = "inline-block";
-        // Show the Review button while recording is active.
         reviewButtonContainer.style.display = "block";
         if(segmentedMode) {
           segmentTimer = setTimeout(() => {
             stopRecording();
-          }, 180000); // 3 minutes = 180,000 ms
+          }, 180000);
         }
       }
     }
@@ -586,8 +581,7 @@
       });
     }
   
-    // Review function: When clicked, if recording is active, stop recording and save the clip.
-    // Then, after a short delay, play back the most recent clip.
+    // Review function: When clicked, if recording is active, stop recording, save the clip, and then play back the most recent clip.
     async function reviewLastClip() {
       segmentedMode = false;
       if (recording) {
