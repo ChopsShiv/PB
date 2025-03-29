@@ -17,7 +17,7 @@
   <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
   <script>
     // Initialize EmailJS with your EmailJS User ID (replace with your actual ID)
-    emailjs.init('9IH3dz_bfpWORWxZH');
+    emailjs.init('YOUR_EMAILJS_USER_ID');
   </script>
   
   <style>
@@ -193,7 +193,7 @@
     #reviewButton {
       background: purple;
       color: white;
-      padding: 24px 40px; /* double size */
+      padding: 24px 40px;
       border: none;
       border-radius: 4px;
       font-size: 36px;
@@ -308,7 +308,7 @@
   <!-- Login Container with Logo -->
   <div id="loginContainer">
     <!-- App Logo (update src with your logo URL or local path) -->
-    <img id="loginLogo" src="https://i.postimg.cc/3NPjP3d9/logo.png" alt="App Logo">
+    <img id="loginLogo" src="logo.png" alt="App Logo">
     <h2>Login to Access the App</h2>
     <input type="email" id="email" placeholder="Email" required>
     <input type="password" id="password" placeholder="Password" required>
@@ -405,8 +405,15 @@
   
     async function startLivePreview() {
       try {
+        // Request 16:9 video (e.g., 1280x720)
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { frameRate: { ideal: 120 }, facingMode: currentFacingMode },
+          video: { 
+            aspectRatio: { ideal: 16/9 },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            frameRate: { ideal: 120 },
+            facingMode: currentFacingMode 
+          },
           audio: true
         });
         console.log("Camera stream acquired.");
@@ -499,7 +506,7 @@
       stopRecording(); 
     }
   
-    // Start recording; if in segmented mode, set a 1-minute timer and show the Review button.
+    // Start recording; if in segmented mode, set a 3-minute timer and show the Review button.
     function startRecording() {
       if (!recording && mediaRecorder) {
         recordedChunks = [];
@@ -511,7 +518,7 @@
         if(segmentedMode) {
           segmentTimer = setTimeout(() => {
             stopRecording();
-          }, 60000); // 1 minute = 60,000 ms
+          }, 180000); // 3 minutes = 180,000 ms
         }
       }
     }
@@ -573,14 +580,13 @@
       });
     }
   
-    // Review function: When clicked, if recording is active, stop recording,
-    // then wait a short period for the clip to be saved, and finally play the most recent clip.
+    // Review function: When clicked, if recording is active, stop recording and save the clip,
+    // then wait a short period and play the most recent clip.
     async function reviewLastClip() {
-      // Disable segmented mode to prevent auto-resume
       segmentedMode = false;
       if (recording) {
         stopRecording();
-        // Wait 1.5 seconds for the clip to be processed and saved
+        // Wait a short period for the clip to be processed and saved
         await new Promise(resolve => setTimeout(resolve, 1500));
       }
       if (rallyClips.length === 0) {
@@ -683,7 +689,13 @@
       }
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { frameRate: { ideal: 120 }, facingMode: currentFacingMode },
+          video: { 
+            aspectRatio: { ideal: 16/9 },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            frameRate: { ideal: 120 },
+            facingMode: currentFacingMode 
+          },
           audio: true
         });
         videoElement.srcObject = stream;
@@ -817,7 +829,7 @@
         downloadMessage.value = "Here are your download links:\n\n" + selectedUrls.join("\n");
   
         try {
-          const response = await emailjs.sendForm('service_5an1el5', 'template_gph38u7', downloadForm);
+          const response = await emailjs.sendForm('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', downloadForm);
           console.log("EmailJS response:", response);
           alert("Download link sent to your email.");
         } catch (error) {
