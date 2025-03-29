@@ -2,9 +2,6 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <!-- Set the required policies as meta tags (best set via server headers in production) -->
-  <meta http-equiv="Cross-Origin-Embedder-Policy" content="require-corp">
-  <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Pickleball Instant Replay - Login Required</title>
   
@@ -12,9 +9,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-storage-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
-  
-  <!-- FFmpeg.wasm (for video compression) -->
-  <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
   
   <!-- EmailJS SDK -->
   <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
@@ -316,7 +310,7 @@
     </div>
     <div class="video-container">
       <video id="liveVideo" autoplay playsinline muted webkit-playsinline></video>
-      <!-- Review Button Container (shown only during recording) -->
+      <!-- Review Button Container (shown only when recording) -->
       <div id="reviewButtonContainer">
         <button id="reviewButton" onclick="reviewLastClip()">Review</button>
       </div>
@@ -338,10 +332,6 @@
     let clipCounter = 0;
     let segmentedMode = false;    // segmented recording mode flag
     let segmentTimer = null;      // timer for 3-minute segments
-  
-    // FFmpeg setup (for video compression)
-    const { createFFmpeg, fetchFile } = FFmpeg;
-    const ffmpeg = createFFmpeg({ log: true });
   
     // Firebase Configuration
     const firebaseConfig = {
@@ -396,14 +386,10 @@
   
     async function startLivePreview() {
       try {
-        // Request a 16:9 stream with an ideal resolution of 816x480
+        // Request a 16:9 stream (resolution will be determined by device/browser)
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { 
-            aspectRatio: { ideal: 16/9 },
-            width: { ideal: 816 },
-            height: { ideal: 480 },
-            frameRate: { ideal: 120 },
-            facingMode: currentFacingMode 
+            aspectRatio: { ideal: 16/9 } 
           },
           audio: true
         });
@@ -431,27 +417,13 @@
       return `${clipNumber}_${timeStr}_${dateStr}.mp4`;
     }
   
-    // Compress video using FFmpeg.wasm with target bitrate 500k
-    async function compressVideo(blob) {
-      if (!ffmpeg.isLoaded()) {
-        await ffmpeg.load();
-      }
-      ffmpeg.FS('writeFile', 'input.mp4', await fetchFile(blob));
-      await ffmpeg.run('-i', 'input.mp4', '-b:v', '500k', '-c:a', 'copy', 'output.mp4');
-      const data = ffmpeg.FS('readFile', 'output.mp4');
-      ffmpeg.FS('unlink', 'input.mp4');
-      ffmpeg.FS('unlink', 'output.mp4');
-      return new Blob([data.buffer], { type: 'video/mp4' });
-    }
-  
     async function uploadToFirebase(blob) {
       try {
-        const compressedBlob = await compressVideo(blob);
         const storageRef = storage.ref();
         const fileName = getFormattedFileName();
         const fileRef = storageRef.child('rallies/' + fileName);
         const metadata = { contentType: 'video/mp4' };
-        const snapshot = await fileRef.put(compressedBlob, metadata);
+        const snapshot = await fileRef.put(blob, metadata);
         const downloadURL = await snapshot.ref.getDownloadURL();
         return { url: downloadURL, filename: fileName };
       } catch (error) {
@@ -474,9 +446,10 @@
         return;
       }
       try {
+        // Original MediaRecorder configuration (videoBitsPerSecond: 2500000)
         mediaRecorder = new MediaRecorder(videoElement.srcObject, {
           mimeType: "video/mp4",
-          videoBitsPerSecond: 1250000, // half of 2500000
+          videoBitsPerSecond: 2500000,
           audioBitsPerSecond: 128000
         });
       } catch (e) {
@@ -581,7 +554,8 @@
       });
     }
   
-    // Review function: When clicked, if recording is active, stop recording, save the clip, and then play back the most recent clip.
+    // Review function: When clicked, if recording is active, stop recording and save the clip.
+    // Then, after a short delay, play back the most recent clip.
     async function reviewLastClip() {
       segmentedMode = false;
       if (recording) {
@@ -701,7 +675,7 @@
         if (mediaRecorder) {
           mediaRecorder = new MediaRecorder(stream, {
             mimeType: "video/mp4",
-            videoBitsPerSecond: 1250000,
+            videoBitsPerSecond: 2500000,
             audioBitsPerSecond: 128000
           });
           mediaRecorder.ondataavailable = (event) => {
@@ -758,7 +732,7 @@
       stopRecording(); 
     }
   
-    // Show download overlay using a hidden form and emailjs.sendForm to send email with download links
+    // Show download overlay using a hidden form and EmailJS sendForm
     function showDownloadOverlay() {
       const overlay = document.createElement("div");
       overlay.id = "downloadOverlay";
@@ -823,7 +797,6 @@
           return;
         }
   
-        // Set the hidden textarea value with selected URLs.
         const downloadMessage = overlay.querySelector("#downloadMessage");
         downloadMessage.value = "Here are your download links:\n\n" + selectedUrls.join("\n");
   
