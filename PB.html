@@ -17,7 +17,7 @@
   <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
   <script>
     // Initialize EmailJS with your EmailJS User ID (replace with your actual ID)
-    emailjs.init('YOUR_EMAILJS_USER_ID');
+    emailjs.init('9IH3dz_bfpWORWxZH');
   </script>
   
   <style>
@@ -499,7 +499,7 @@
       stopRecording(); 
     }
   
-    // Start recording; if in segmented mode, set a 3-minute timer and show the Review button.
+    // Start recording; if in segmented mode, set a 1-minute timer and show the Review button.
     function startRecording() {
       if (!recording && mediaRecorder) {
         recordedChunks = [];
@@ -511,7 +511,7 @@
         if(segmentedMode) {
           segmentTimer = setTimeout(() => {
             stopRecording();
-          }, 180000); // 3 minutes = 180,000 ms
+          }, 60000); // 1 minute = 60,000 ms
         }
       }
     }
@@ -817,7 +817,7 @@
         downloadMessage.value = "Here are your download links:\n\n" + selectedUrls.join("\n");
   
         try {
-          const response = await emailjs.sendForm('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', downloadForm);
+          const response = await emailjs.sendForm('service_5an1el5', 'template_gph38u7', downloadForm);
           console.log("EmailJS response:", response);
           alert("Download link sent to your email.");
         } catch (error) {
