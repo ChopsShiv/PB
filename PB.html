@@ -180,6 +180,26 @@
       color: white;
       margin-top: 4px;
     }
+    /* Review button (center of screen) */
+    #reviewButtonContainer {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 4;
+    }
+    #reviewButton {
+      background: purple;
+      color: white;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 4px;
+      font-size: 18px;
+      cursor: pointer;
+    }
+    #reviewButton:hover {
+      opacity: 0.8;
+    }
     /* Download Overlay for session highlights */
     #downloadOverlay {
       position: fixed;
@@ -284,7 +304,7 @@
 <body>
   <!-- Login Container with Logo -->
   <div id="loginContainer">
-    <!-- App Logo (update the src attribute with your logo URL or local path) -->
+    <!-- App Logo (update src with your logo URL or path) -->
     <img id="loginLogo" src="logo.png" alt="App Logo">
     <h2>Login to Access the App</h2>
     <input type="email" id="email" placeholder="Email" required>
@@ -302,6 +322,10 @@
     </div>
     <div class="video-container">
       <video id="liveVideo" autoplay playsinline muted webkit-playsinline></video>
+      <!-- Review Button in the middle of the screen -->
+      <div id="reviewButtonContainer">
+        <button id="reviewButton" onclick="reviewLastClip()">Review</button>
+      </div>
       <div class="controls">
         <button onclick="manualStart()">Start Rec</button>
         <button onclick="manualStop()">Stop Rec</button>
@@ -315,10 +339,11 @@
   </div>
   
   <script>
-    // Global variables for rally title and segmented recording
+    // Global variables for rally title, clip counter, and segmented recording
     let rallyTitleGlobal = "";
-    let segmentedMode = false;    // true when segmented mode is active (user clicked start)
-    let segmentTimer = null;      // will store timer id for 3-minute segments
+    let clipCounter = 0;
+    let segmentedMode = false;    // segmented recording mode flag
+    let segmentTimer = null;      // timer for 3-minute segments
   
     // FFmpeg setup (for future use)
     const { createFFmpeg, fetchFile } = FFmpeg;
@@ -389,8 +414,22 @@
       }
     }
   
+    // Generate file name in format: NNN_HHMM_MMDDYYYY.mp4
+    function getFormattedFileName() {
+      clipCounter++;
+      const clipNumber = clipCounter.toString().padStart(3, '0');
+      const now = new Date();
+      const hh = now.getHours().toString().padStart(2, '0');
+      const mm = now.getMinutes().toString().padStart(2, '0');
+      const timeStr = hh + mm;
+      const month = (now.getMonth() + 1).toString().padStart(2, '0');
+      const dd = now.getDate().toString().padStart(2, '0');
+      const yyyy = now.getFullYear().toString();
+      const dateStr = month + dd + yyyy;
+      return `${clipNumber}_${timeStr}_${dateStr}.mp4`;
+    }
+  
     async function startGame() {
-      // Remove start overlay and store rally title
       const startOverlay = document.getElementById("startOverlay");
       if (startOverlay) {
         const titleInput = document.getElementById("rallyTitle");
@@ -421,26 +460,25 @@
       mediaRecorder.onstop = async () => {
         if (recordedChunks.length > 0) {
           const blob = new Blob(recordedChunks, { type: "video/mp4" });
-          const result = await uploadToFirebase(blob, rallyTitleGlobal);
+          const result = await uploadToFirebase(blob);
           const clip = { url: result.url, timestamp: new Date().toLocaleTimeString(), filename: result.filename };
           rallyClips.push(clip);
           updateTimeline();
           recordedChunks = [];
-          // If segmented mode is still active, automatically start a new segment
+          // If segmented mode is active, start a new segment automatically
           if(segmentedMode) {
             startRecording();
           }
-          // Keep only the latest 5 clips. Delete the oldest from Firebase Storage.
+          // Ensure maximum 5 clips are stored
           if(rallyClips.length > 5) {
             const oldestClip = rallyClips.shift();
-            storage.ref(oldestClip.filename).delete()
+            storage.ref('rallies/' + oldestClip.filename).delete()
               .then(() => console.log("Old clip deleted from Firebase Storage."))
               .catch(error => console.error("Error deleting old clip:", error));
           }
         }
       };
-      // Begin segmented recording automatically if user clicks Start Rec
-      segmentedMode = false; // Do not auto-segment until user clicks Start Rec.
+      segmentedMode = false; // By default, segmented mode is off until user clicks Start Rec.
       startVoiceRecognition();
     }
   
@@ -457,7 +495,7 @@
       stopRecording();
     }
   
-    // Modified startRecording: if in segmented mode, set a 1-minute timer.
+    // Start recording; if in segmented mode, set a 1-minute timer.
     function startRecording() {
       if (!recording && mediaRecorder) {
         recordedChunks = [];
@@ -466,7 +504,6 @@
         recordingIndicator.style.display = "inline-block";
         if(segmentedMode) {
           segmentTimer = setTimeout(() => {
-            // Automatically end the current segment
             stopRecording();
           }, 60000); // 1 minute = 60,000 ms
         }
@@ -494,11 +531,11 @@
       showDownloadOverlay();
     }
   
-    async function uploadToFirebase(blob, titleValue) {
+    async function uploadToFirebase(blob) {
       try {
         const storageRef = storage.ref();
-        const fileName = 'rallies/rally-' + (titleValue ? titleValue + '-' : '') + Date.now() + '.mp4';
-        const fileRef = storageRef.child(fileName);
+        const fileName = getFormattedFileName();
+        const fileRef = storageRef.child('rallies/' + fileName);
         const metadata = { contentType: 'video/mp4' };
         const snapshot = await fileRef.put(blob, metadata);
         const downloadURL = await snapshot.ref.getDownloadURL();
@@ -675,13 +712,26 @@
     }
   
     function manualStart() { 
-      segmentedMode = true; 
+      segmentedMode = true;
       startRecording(); 
     }
     function manualStop() { 
-      segmentedMode = false; 
+      segmentedMode = false;
       if(segmentTimer) clearTimeout(segmentTimer);
       stopRecording(); 
+    }
+  
+    // Review button functionality: Stop recording (if needed) and play the last rally clip.
+    function reviewLastClip() {
+      if (recording) {
+        stopRecording();
+      }
+      if (rallyClips.length === 0) {
+        alert("No rally recording available for review.");
+        return;
+      }
+      const lastClip = rallyClips[rallyClips.length - 1];
+      replayRally(lastClip.url);
     }
   
     // Show download overlay using a hidden form and emailjs.sendForm to send email with download links
@@ -749,7 +799,7 @@
           return;
         }
   
-        // Set the hidden textarea with selected URLs
+        // Set the hidden textarea value with selected URLs.
         const downloadMessage = overlay.querySelector("#downloadMessage");
         downloadMessage.value = "Here are your download links:\n\n" + selectedUrls.join("\n");
   
