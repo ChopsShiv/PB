@@ -457,7 +457,7 @@
       stopRecording();
     }
   
-    // Modified startRecording: if in segmented mode, set a 3-minute timer.
+    // Modified startRecording: if in segmented mode, set a 1-minute timer.
     function startRecording() {
       if (!recording && mediaRecorder) {
         recordedChunks = [];
@@ -468,7 +468,7 @@
           segmentTimer = setTimeout(() => {
             // Automatically end the current segment
             stopRecording();
-          }, 180000); // 3 minutes = 180,000 ms
+          }, 60000); // 1 minute = 60,000 ms
         }
       }
     }
