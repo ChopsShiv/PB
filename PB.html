@@ -17,7 +17,7 @@
   <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
   <script>
     // Initialize EmailJS with your EmailJS User ID (replace with your actual ID)
-    emailjs.init('9IH3dz_bfpWORWxZH');
+    emailjs.init('YOUR_EMAILJS_USER_ID');
   </script>
   
   <style>
@@ -180,7 +180,7 @@
       color: white;
       margin-top: 4px;
     }
-    /* Review Button Container (hidden by default) */
+    /* Review Button Container (hidden by default; only shown when recording) */
     #reviewButtonContainer {
       position: absolute;
       top: 50%;
@@ -189,14 +189,14 @@
       z-index: 4;
       display: none;
     }
-    /* Updated Review Button style: Double size and 50% opacity */
+    /* Updated Review Button style: double size, purple background, white text, 50% opacity */
     #reviewButton {
       background: purple;
       color: white;
-      padding: 24px 40px; /* double the original padding */
+      padding: 24px 40px; /* double size */
       border: none;
       border-radius: 4px;
-      font-size: 36px;    /* double the original font-size */
+      font-size: 36px;
       cursor: pointer;
       opacity: 0.5;
     }
@@ -325,7 +325,7 @@
     </div>
     <div class="video-container">
       <video id="liveVideo" autoplay playsinline muted webkit-playsinline></video>
-      <!-- Review Button Container (hidden by default; shown only during recording) -->
+      <!-- Review Button Container (hidden by default; shown during recording) -->
       <div id="reviewButtonContainer">
         <button id="reviewButton" onclick="reviewLastClip()">Review</button>
       </div>
@@ -487,19 +487,19 @@
     }
   
     // When user clicks Start Rec, enable segmented mode and start recording.
-    function manualStart() {
+    function manualStart() { 
       segmentedMode = true;
-      startRecording();
+      startRecording(); 
     }
   
     // When user clicks Stop Rec, disable segmented mode and stop recording.
-    function manualStop() {
+    function manualStop() { 
       segmentedMode = false;
       if(segmentTimer) clearTimeout(segmentTimer);
-      stopRecording();
+      stopRecording(); 
     }
   
-    // Start recording; if in segmented mode, set a 1-minute timer and show the Review button.
+    // Start recording; if in segmented mode, set a 3-minute timer and show the Review button.
     function startRecording() {
       if (!recording && mediaRecorder) {
         recordedChunks = [];
@@ -511,7 +511,7 @@
         if(segmentedMode) {
           segmentTimer = setTimeout(() => {
             stopRecording();
-          }, 60000); // 1 minute = 60,000 ms
+          }, 180000); // 3 minutes = 180,000 ms
         }
       }
     }
@@ -573,13 +573,15 @@
       });
     }
   
-    // Review function: When clicked, disable segmented mode and stop recording (if active) 
-    // then play the most recent saved clip.
-    function reviewLastClip() {
-      // Disable segmented mode so recording does not auto-resume
+    // Review function: When clicked, if recording is active, stop recording,
+    // then wait a short period for the clip to be saved, and finally play the most recent clip.
+    async function reviewLastClip() {
+      // Disable segmented mode to prevent auto-resume
       segmentedMode = false;
       if (recording) {
         stopRecording();
+        // Wait 1.5 seconds for the clip to be processed and saved
+        await new Promise(resolve => setTimeout(resolve, 1500));
       }
       if (rallyClips.length === 0) {
         alert("No rally recording available for review.");
@@ -815,7 +817,7 @@
         downloadMessage.value = "Here are your download links:\n\n" + selectedUrls.join("\n");
   
         try {
-          const response = await emailjs.sendForm('service_5an1el5', 'template_gph38u7', downloadForm);
+          const response = await emailjs.sendForm('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', downloadForm);
           console.log("EmailJS response:", response);
           alert("Download link sent to your email.");
         } catch (error) {
