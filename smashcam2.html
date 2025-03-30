@@ -2,6 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <!-- For cross‑origin isolation (best set via server headers in production) -->
+  <meta http-equiv="Cross-Origin-Embedder-Policy" content="require-corp">
+  <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Pickleball Instant Replay - Login Required</title>
   
@@ -9,9 +12,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-storage-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
-  
-  <!-- FFmpeg.wasm (for future use) -->
-  <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
   
   <!-- EmailJS SDK -->
   <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
@@ -26,7 +26,8 @@
     html, body {
       width: 100%; height: 100%;
       font-family: Arial, sans-serif;
-      background: black; color: white;
+      background: black; 
+      color: white;
     }
     /* Centered login container with logo */
     #loginContainer {
@@ -48,11 +49,12 @@
       font-size: 16px;
       width: 250px;
     }
+    /* Updated login button style */
     #loginContainer button {
       padding: 8px 12px;
       font-size: 16px;
       margin: 10px;
-      background: green;
+      background: #3a739d;
       border: none;
       border-radius: 4px;
       color: white;
@@ -60,13 +62,11 @@
     }
     /* Main App Container hidden until login */
     #appContainer { display: none; position: relative; }
-    /* Start Overlay: Only Rally Title input and Let's Play button (centered) */
+    /* Start Overlay: Only Game Title input and Let's Play button (centered) */
     #startOverlay {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
       background: rgba(0,0,0,0.9);
       z-index: 999;
       display: flex;
@@ -75,16 +75,18 @@
       align-items: center;
       gap: 20px;
     }
+    /* Renamed "Rally Title" to "Game Title" */
     #startOverlay label { font-size: 18px; }
     #startOverlay input {
       padding: 10px;
       font-size: 18px;
       width: 300px;
     }
+    /* Updated Let's Play button style */
     #startOverlay button {
       padding: 10px 20px;
       font-size: 18px;
-      background: green;
+      background: #3a739d;
       border: none;
       border-radius: 4px;
       color: white;
@@ -93,34 +95,38 @@
     /* Video container fills entire viewport */
     .video-container {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
       background: black;
     }
     /* Live video covers the container */
     #liveVideo {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
       object-fit: cover;
       z-index: 1;
     }
-    /* Controls container */
+    /* New Recording Indicator positioned at top-right and 50% smaller */
+    #recordingIndicator {
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      font-size: 9px; /* 50% of 18px */
+      color: red;
+      display: none;
+      z-index: 5;
+    }
+    /* Updated Controls container: Stack buttons vertically on the right side */
     .controls {
       position: absolute;
-      bottom: 20%;
-      left: 50%;
-      transform: translateX(-50%);
+      top: 50%;
+      right: 20px;
+      transform: translateY(-50%);
       z-index: 2;
       display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      width: 80%;
-      justify-content: center;
+      flex-direction: column;
+      gap: 12px;
     }
     .controls button {
       padding: 8px 12px;
@@ -135,13 +141,6 @@
       min-width: 80px;
     }
     .controls button:hover { background: white; color: black; }
-    /* Recording indicator */
-    #recordingIndicator {
-      display: none;
-      font-size: 18px;
-      color: red;
-      margin-left: 10px;
-    }
     /* Mute toggle button style */
     #muteToggleButton {
       background: rgba(0,0,0,0.7);
@@ -180,7 +179,7 @@
       color: white;
       margin-top: 4px;
     }
-    /* Review Button Container (hidden by default; only shown when recording) */
+    /* Review Button Container remains centered */
     #reviewButtonContainer {
       position: absolute;
       top: 50%;
@@ -193,23 +192,19 @@
     #reviewButton {
       background: purple;
       color: white;
-      padding: 24px 40px; /* double size */
+      padding: 24px 40px;
       border: none;
       border-radius: 4px;
       font-size: 36px;
       cursor: pointer;
       opacity: 0.5;
     }
-    #reviewButton:hover {
-      opacity: 0.8;
-    }
+    #reviewButton:hover { opacity: 0.8; }
     /* Download Overlay for session highlights */
     #downloadOverlay {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
       background: rgba(0,0,0,0.9);
       z-index: 1000;
       display: flex;
@@ -252,10 +247,8 @@
     /* Replay overlay styles */
     #replayOverlay {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
       background: black;
       z-index: 10;
       display: flex;
@@ -307,8 +300,7 @@
 <body>
   <!-- Login Container with Logo -->
   <div id="loginContainer">
-    <!-- App Logo (update src with your logo URL or local path) -->
-    <img id="loginLogo" src="https://i.postimg.cc/3NPjP3d9/logo.png" alt="App Logo">
+    <img id="loginLogo" src="https://i.postimg.cc/1tsKBkMk/SC-logo.png" alt="App Logo">
     <h2>Login to Access the App</h2>
     <input type="email" id="email" placeholder="Email" required>
     <input type="password" id="password" placeholder="Password" required>
@@ -317,40 +309,38 @@
   
   <!-- Main App Container (hidden until login) -->
   <div id="appContainer">
-    <!-- Start Overlay: Only Rally Title input and Let's Play button (centered) -->
+    <!-- Start Overlay: Only Game Title input and Let's Play button (centered) -->
     <div id="startOverlay">
-      <label for="rallyTitle">Rally Title:</label>
-      <input type="text" id="rallyTitle" placeholder="Enter Rally Title">
+      <label for="rallyTitle">Game Title:</label>
+      <input type="text" id="rallyTitle" placeholder="Enter Game Title">
       <button onclick="startGame()">Let’s Play</button>
     </div>
     <div class="video-container">
       <video id="liveVideo" autoplay playsinline muted webkit-playsinline></video>
-      <!-- Review Button Container (hidden by default; shown during recording) -->
+      <!-- Recording Indicator positioned at top-right -->
+      <div id="recordingIndicator">🔴 Recording</div>
+      <!-- Review Button Container (shown only when recording) -->
       <div id="reviewButtonContainer">
         <button id="reviewButton" onclick="reviewLastClip()">Review</button>
       </div>
+      <!-- Controls Container: Stacked vertically on the right side -->
       <div class="controls">
         <button onclick="manualStart()">Start Rec</button>
         <button onclick="manualStop()">Stop Rec</button>
         <button onclick="stopGame()">End Session</button>
         <button id="toggleCameraButton" onclick="toggleCamera()">Toggle Camera</button>
         <button id="muteToggleButton" onclick="toggleMute()">🔇</button>
-        <div id="recordingIndicator">🔴 Recording</div>
       </div>
       <div class="timeline" id="timeline"></div>
     </div>
   </div>
   
   <script>
-    // Global variables for rally title, clip counter, and segmented recording
+    // Global variables for game title, clip counter, and segmented recording
     let rallyTitleGlobal = "";
     let clipCounter = 0;
-    let segmentedMode = false;    // segmented recording mode flag
-    let segmentTimer = null;      // timer for 3-minute segments
-  
-    // FFmpeg setup (for future use)
-    const { createFFmpeg, fetchFile } = FFmpeg;
-    const ffmpeg = createFFmpeg({ log: true });
+    let segmentedMode = true; // Set segmented mode to true by default
+    let segmentTimer = null;
   
     // Firebase Configuration
     const firebaseConfig = {
@@ -362,13 +352,10 @@
       appId: "1:451766893674:web:4526c5aba2c5ff86955e13",
       measurementId: "G-Y22H853R18"
     };
-  
-    // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     const storage = firebase.storage();
     const auth = firebase.auth();
   
-    // Set auth persistence
     auth.setPersistence(firebase.auth.Auth.Persistence.SESSION)
       .catch(error => console.error("Error setting auth persistence:", error));
   
@@ -406,7 +393,13 @@
     async function startLivePreview() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { frameRate: { ideal: 120 }, facingMode: currentFacingMode },
+          video: { 
+            aspectRatio: { ideal: 16/9 },
+            width: { ideal: 816 },
+            height: { ideal: 480 },
+            frameRate: { ideal: 120 },
+            facingMode: currentFacingMode 
+          },
           audio: true
         });
         console.log("Camera stream acquired.");
@@ -418,7 +411,6 @@
       }
     }
   
-    // Generate file name in format: NNN_HHMM_MMDDYYYY.mp4
     function getFormattedFileName() {
       clipCounter++;
       const clipNumber = clipCounter.toString().padStart(3, '0');
@@ -431,6 +423,20 @@
       const yyyy = now.getFullYear().toString();
       const dateStr = month + dd + yyyy;
       return `${clipNumber}_${timeStr}_${dateStr}.mp4`;
+    }
+  
+    async function uploadToFirebase(blob) {
+      try {
+        const storageRef = storage.ref();
+        const fileName = getFormattedFileName();
+        const fileRef = storageRef.child('rallies/' + fileName);
+        const metadata = { contentType: 'video/mp4' };
+        const snapshot = await fileRef.put(blob, metadata);
+        const downloadURL = await snapshot.ref.getDownloadURL();
+        return { url: downloadURL, filename: fileName };
+      } catch (error) {
+        alert("Error uploading clip: " + error.message);
+      }
     }
   
     async function startGame() {
@@ -469,11 +475,9 @@
           rallyClips.push(clip);
           updateTimeline();
           recordedChunks = [];
-          // If segmented mode is active, start a new segment automatically
           if(segmentedMode) {
-            startRecording();
+            setTimeout(() => { startRecording(); }, 500);
           }
-          // Ensure maximum 5 clips are stored; delete the oldest if necessary
           if(rallyClips.length > 5) {
             const oldestClip = rallyClips.shift();
             storage.ref('rallies/' + oldestClip.filename).delete()
@@ -482,41 +486,39 @@
           }
         }
       };
-      segmentedMode = false; // By default, segmented mode is off until user clicks Start Rec.
+      segmentedMode = true; // Enable segmented mode by default
       startVoiceRecognition();
+      // Start recording automatically once game starts
+      startRecording();
     }
   
-    // When user clicks Start Rec, enable segmented mode and start recording.
     function manualStart() { 
       segmentedMode = true;
       startRecording(); 
     }
   
-    // When user clicks Stop Rec, disable segmented mode and stop recording.
     function manualStop() { 
       segmentedMode = false;
       if(segmentTimer) clearTimeout(segmentTimer);
       stopRecording(); 
     }
   
-    // Start recording; if in segmented mode, set a 1-minute timer and show the Review button.
     function startRecording() {
       if (!recording && mediaRecorder) {
         recordedChunks = [];
         mediaRecorder.start();
         recording = true;
-        recordingIndicator.style.display = "inline-block";
-        // Show the Review button while recording is active.
+        recordingIndicator.style.display = "block";
         reviewButtonContainer.style.display = "block";
         if(segmentedMode) {
+          // For mobiles, using 1 minute segments (60000ms) as per provided code
           segmentTimer = setTimeout(() => {
             stopRecording();
-          }, 60000); // 1 minute = 60,000 ms
+          }, 60000);
         }
       }
     }
   
-    // Stop recording and hide the Review button.
     function stopRecording() {
       if (recording && mediaRecorder) {
         mediaRecorder.stop();
@@ -535,22 +537,7 @@
       if (videoElement.srcObject) {
         videoElement.srcObject.getTracks().forEach(track => track.stop());
       }
-      // Show download overlay for session highlights using EmailJS
       showDownloadOverlay();
-    }
-  
-    async function uploadToFirebase(blob) {
-      try {
-        const storageRef = storage.ref();
-        const fileName = getFormattedFileName();
-        const fileRef = storageRef.child('rallies/' + fileName);
-        const metadata = { contentType: 'video/mp4' };
-        const snapshot = await fileRef.put(blob, metadata);
-        const downloadURL = await snapshot.ref.getDownloadURL();
-        return { url: downloadURL, filename: fileName };
-      } catch (error) {
-        alert("Error uploading clip: " + error.message);
-      }
     }
   
     function updateTimeline() {
@@ -573,14 +560,10 @@
       });
     }
   
-    // Review function: When clicked, if recording is active, stop recording,
-    // then wait a short period for the clip to be saved, and finally play the most recent clip.
     async function reviewLastClip() {
-      // Disable segmented mode to prevent auto-resume
       segmentedMode = false;
       if (recording) {
         stopRecording();
-        // Wait 1.5 seconds for the clip to be processed and saved
         await new Promise(resolve => setTimeout(resolve, 1500));
       }
       if (rallyClips.length === 0) {
@@ -683,15 +666,21 @@
       }
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { frameRate: { ideal: 120 }, facingMode: currentFacingMode },
+          video: { 
+            aspectRatio: { ideal: 16/9 },
+            width: { ideal: 816 },
+            height: { ideal: 480 },
+            frameRate: { ideal: 120 },
+            facingMode: currentFacingMode 
+          },
           audio: true
         });
         videoElement.srcObject = stream;
         if (mediaRecorder) {
           mediaRecorder = new MediaRecorder(stream, {
             mimeType: "video/mp4",
-            videoBitsPerSecond: 1250000,
-            audioBitsPerSecond: 44000
+            videoBitsPerSecond: 2500000,
+            audioBitsPerSecond: 128000
           });
           mediaRecorder.ondataavailable = (event) => {
             if (event.data && event.data.size > 0) recordedChunks.push(event.data);
@@ -747,7 +736,6 @@
       stopRecording(); 
     }
   
-    // Show download overlay using a hidden form and emailjs.sendForm to send email with download links
     function showDownloadOverlay() {
       const overlay = document.createElement("div");
       overlay.id = "downloadOverlay";
@@ -812,7 +800,6 @@
           return;
         }
   
-        // Set the hidden textarea value with selected URLs.
         const downloadMessage = overlay.querySelector("#downloadMessage");
         downloadMessage.value = "Here are your download links:\n\n" + selectedUrls.join("\n");
   
