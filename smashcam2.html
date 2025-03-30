@@ -16,7 +16,7 @@
   <!-- EmailJS SDK -->
   <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
   <script>
-    // Initialize EmailJS with your EmailJS User ID (replace with your actual ID)
+    // Initialize EmailJS with your EmailJS User ID
     emailjs.init('9IH3dz_bfpWORWxZH');
   </script>
   
@@ -49,7 +49,7 @@
       font-size: 16px;
       width: 250px;
     }
-    /* Updated login button style */
+    /* Login button style */
     #loginContainer button {
       padding: 8px 12px;
       font-size: 16px;
@@ -75,14 +75,14 @@
       align-items: center;
       gap: 20px;
     }
-    /* Renamed "Rally Title" to "Game Title" */
+    /* Rename "Rally Title" to "Game Title" */
     #startOverlay label { font-size: 18px; }
     #startOverlay input {
       padding: 10px;
       font-size: 18px;
       width: 300px;
     }
-    /* Updated Let's Play button style */
+    /* Let's Play button style */
     #startOverlay button {
       padding: 10px 20px;
       font-size: 18px;
@@ -107,17 +107,17 @@
       object-fit: cover;
       z-index: 1;
     }
-    /* New Recording Indicator positioned at top-right and 50% smaller */
+    /* Recording indicator positioned at top-right (50% smaller) */
     #recordingIndicator {
       position: absolute;
       top: 10px;
       right: 20px;
-      font-size: 9px; /* 50% of 18px */
+      font-size: 9px;
       color: red;
       display: none;
       z-index: 5;
     }
-    /* Updated Controls container: Stack buttons vertically on the right side */
+    /* Controls container: Stack buttons vertically on the right side */
     .controls {
       position: absolute;
       top: 50%;
@@ -188,7 +188,7 @@
       z-index: 4;
       display: none;
     }
-    /* Updated Review Button style: double size, purple background, white text, 50% opacity */
+    /* Review Button style (unchanged) */
     #reviewButton {
       background: purple;
       color: white;
@@ -339,7 +339,7 @@
     // Global variables for game title, clip counter, and segmented recording
     let rallyTitleGlobal = "";
     let clipCounter = 0;
-    let segmentedMode = true; // Set segmented mode to true by default
+    let segmentedMode = true; // Enable segmented mode by default
     let segmentTimer = null;
   
     // Firebase Configuration
@@ -383,7 +383,8 @@
     let recordedChunks = [];
     let rallyClips = [];
     let recording = false;
-    let currentFacingMode = "environment";
+    // Set default to front camera
+    let currentFacingMode = "user";
     const videoElement = document.getElementById("liveVideo");
     const timeline = document.getElementById("timeline");
     const muteToggleButton = document.getElementById("muteToggleButton");
@@ -446,60 +447,71 @@
         rallyTitleGlobal = titleInput && titleInput.value ? titleInput.value.replace(/[^a-zA-Z0-9-_]/g, "") : "";
         startOverlay.remove();
       }
-      
       if (videoElement.srcObject) return;
       await startLivePreview();
       if (typeof MediaRecorder === "undefined") {
         alert("MediaRecorder not supported. Please use Safari on iOS.");
         return;
       }
+      // Create a new MediaRecorder instance
+      createMediaRecorder();
+      // Ensure segmented mode is enabled by default
+      segmentedMode = true;
+      startVoiceRecognition();
+      // Start recording automatically once game starts
+      startRecording();
+    }
+  
+    // Helper to create a new MediaRecorder instance from the current stream
+    function createMediaRecorder() {
       try {
         mediaRecorder = new MediaRecorder(videoElement.srcObject, {
           mimeType: "video/mp4",
           videoBitsPerSecond: 2500000,
           audioBitsPerSecond: 128000
         });
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data && event.data.size > 0) recordedChunks.push(event.data);
+        };
+        mediaRecorder.onstop = async () => {
+          if (recordedChunks.length > 0) {
+            const blob = new Blob(recordedChunks, { type: "video/mp4" });
+            const result = await uploadToFirebase(blob);
+            const clip = { url: result.url, timestamp: new Date().toLocaleTimeString(), filename: result.filename };
+            rallyClips.push(clip);
+            updateTimeline();
+            recordedChunks = [];
+            if (segmentedMode) {
+              // Reinitialize MediaRecorder for the next segment and restart recording after 500ms
+              createMediaRecorder();
+              setTimeout(() => { startRecording(); }, 500);
+            }
+            if (rallyClips.length > 5) {
+              const oldestClip = rallyClips.shift();
+              storage.ref('rallies/' + oldestClip.filename).delete()
+                .then(() => console.log("Old clip deleted from Firebase Storage."))
+                .catch(error => console.error("Error deleting old clip:", error));
+            }
+          }
+        };
       } catch (e) {
-        console.error("MediaRecorder init error:", e);
+        console.error("Error creating MediaRecorder:", e);
         alert("Failed to initialize recording. Your device may not support this feature.");
-        return;
       }
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data && event.data.size > 0) recordedChunks.push(event.data);
-      };
-      mediaRecorder.onstop = async () => {
-        if (recordedChunks.length > 0) {
-          const blob = new Blob(recordedChunks, { type: "video/mp4" });
-          const result = await uploadToFirebase(blob);
-          const clip = { url: result.url, timestamp: new Date().toLocaleTimeString(), filename: result.filename };
-          rallyClips.push(clip);
-          updateTimeline();
-          recordedChunks = [];
-          if(segmentedMode) {
-            setTimeout(() => { startRecording(); }, 500);
-          }
-          if(rallyClips.length > 5) {
-            const oldestClip = rallyClips.shift();
-            storage.ref('rallies/' + oldestClip.filename).delete()
-              .then(() => console.log("Old clip deleted from Firebase Storage."))
-              .catch(error => console.error("Error deleting old clip:", error));
-          }
-        }
-      };
-      segmentedMode = true; // Enable segmented mode by default
-      startVoiceRecognition();
-      // Start recording automatically once game starts
-      startRecording();
     }
   
+    // When user clicks Start Rec manually
     function manualStart() { 
       segmentedMode = true;
+      // Create a new MediaRecorder instance before starting recording
+      createMediaRecorder();
       startRecording(); 
     }
   
+    // When user clicks Stop Rec manually
     function manualStop() { 
       segmentedMode = false;
-      if(segmentTimer) clearTimeout(segmentTimer);
+      if (segmentTimer) clearTimeout(segmentTimer);
       stopRecording(); 
     }
   
@@ -510,8 +522,8 @@
         recording = true;
         recordingIndicator.style.display = "block";
         reviewButtonContainer.style.display = "block";
-        if(segmentedMode) {
-          // For mobiles, using 1 minute segments (60000ms) as per provided code
+        if (segmentedMode) {
+          // Set timer for 1-minute segments
           segmentTimer = setTimeout(() => {
             stopRecording();
           }, 60000);
@@ -525,7 +537,7 @@
         recording = false;
         recordingIndicator.style.display = "none";
         reviewButtonContainer.style.display = "none";
-        if(segmentTimer) clearTimeout(segmentTimer);
+        if (segmentTimer) clearTimeout(segmentTimer);
       }
     }
   
@@ -660,7 +672,7 @@
         alert("Stop recording before toggling camera.");
         return;
       }
-      currentFacingMode = (currentFacingMode === "environment") ? "user" : "environment";
+      currentFacingMode = (currentFacingMode === "user") ? "environment" : "user";
       if (videoElement.srcObject) {
         videoElement.srcObject.getTracks().forEach(track => track.stop());
       }
@@ -676,28 +688,7 @@
           audio: true
         });
         videoElement.srcObject = stream;
-        if (mediaRecorder) {
-          mediaRecorder = new MediaRecorder(stream, {
-            mimeType: "video/mp4",
-            videoBitsPerSecond: 2500000,
-            audioBitsPerSecond: 128000
-          });
-          mediaRecorder.ondataavailable = (event) => {
-            if (event.data && event.data.size > 0) recordedChunks.push(event.data);
-          };
-          mediaRecorder.onstop = () => {
-            if (recordedChunks.length > 0) {
-              const blob = new Blob(recordedChunks, { type: "video/mp4" });
-              uploadToFirebase(blob, rallyTitleGlobal)
-                .then(result => {
-                  const clip = { url: result.url, timestamp: new Date().toLocaleTimeString(), filename: result.filename };
-                  rallyClips.push(clip);
-                  updateTimeline();
-                  recordedChunks = [];
-                });
-            }
-          };
-        }
+        createMediaRecorder();
       } catch (error) {
         alert("Unable to switch camera.");
       }
@@ -728,11 +719,12 @@
   
     function manualStart() { 
       segmentedMode = true;
+      createMediaRecorder();
       startRecording(); 
     }
     function manualStop() { 
       segmentedMode = false;
-      if(segmentTimer) clearTimeout(segmentTimer);
+      if (segmentTimer) clearTimeout(segmentTimer);
       stopRecording(); 
     }
   
