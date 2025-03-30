@@ -2,6 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <!-- For cross-origin isolation, add these meta tags if needed -->
+  <meta http-equiv="Cross-Origin-Embedder-Policy" content="require-corp">
+  <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Pickleball Instant Replay - Login Required</title>
   
@@ -14,7 +17,7 @@
   <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
   <script>
     // Initialize EmailJS with your EmailJS User ID (replace with your actual ID)
-    emailjs.init('YOUR_EMAILJS_USER_ID');
+    emailjs.init('9IH3dz_bfpWORWxZH');
   </script>
   
   <style>
@@ -23,7 +26,8 @@
     html, body {
       width: 100%; height: 100%;
       font-family: Arial, sans-serif;
-      background: black; color: white;
+      background: black; 
+      color: white;
     }
     /* Centered login container with logo */
     #loginContainer {
@@ -100,18 +104,17 @@
       object-fit: cover;
       z-index: 1;
     }
-    /* Controls container */
+    /* Updated Controls container: Stack buttons vertically on the right side */
     .controls {
       position: absolute;
-      bottom: 20%;
-      left: 50%;
-      transform: translateX(-50%);
+      top: 50%;
+      right: 20px;
+      transform: translateY(-50%);
       z-index: 2;
       display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      width: 80%;
-      justify-content: center;
+      flex-direction: column;
+      gap: 12px;
+      /* Optionally, you can set a max-width or padding */
     }
     .controls button {
       padding: 8px 12px;
@@ -171,7 +174,7 @@
       color: white;
       margin-top: 4px;
     }
-    /* Review Button Container (shown only when recording) */
+    /* Review Button Container (shown only when recording) remains centered */
     #reviewButtonContainer {
       position: absolute;
       top: 50%;
@@ -386,10 +389,14 @@
   
     async function startLivePreview() {
       try {
-        // Request a 16:9 stream (resolution will be determined by device/browser)
+        // Request a 16:9 stream; resolution is determined by the device/browser
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { 
-            aspectRatio: { ideal: 16/9 } 
+            aspectRatio: { ideal: 16/9 },
+            width: { ideal: 816 },
+            height: { ideal: 480 },
+            frameRate: { ideal: 120 },
+            facingMode: currentFacingMode 
           },
           audio: true
         });
@@ -446,7 +453,7 @@
         return;
       }
       try {
-        // Original MediaRecorder configuration (videoBitsPerSecond: 2500000)
+        // MediaRecorder configuration with videoBitsPerSecond: 2500000
         mediaRecorder = new MediaRecorder(videoElement.srcObject, {
           mimeType: "video/mp4",
           videoBitsPerSecond: 2500000,
@@ -496,7 +503,7 @@
       stopRecording(); 
     }
   
-    // Start recording; if in segmented mode, set a 3-minute timer and show the Review button.
+    // Start recording; if in segmented mode, set a 1-minute timer and show the Review button.
     function startRecording() {
       if (!recording && mediaRecorder) {
         recordedChunks = [];
@@ -507,7 +514,7 @@
         if(segmentedMode) {
           segmentTimer = setTimeout(() => {
             stopRecording();
-          }, 180000);
+          }, 60000); // 1 minutes = 60,000 ms
         }
       }
     }
@@ -732,7 +739,7 @@
       stopRecording(); 
     }
   
-    // Show download overlay using a hidden form and EmailJS sendForm
+    // Show download overlay using a hidden form and EmailJS sendForm to send email with download links
     function showDownloadOverlay() {
       const overlay = document.createElement("div");
       overlay.id = "downloadOverlay";
@@ -801,7 +808,7 @@
         downloadMessage.value = "Here are your download links:\n\n" + selectedUrls.join("\n");
   
         try {
-          const response = await emailjs.sendForm('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', downloadForm);
+          const response = await emailjs.sendForm('service_5an1el5', 'template_gph38u7', downloadForm);
           console.log("EmailJS response:", response);
           alert("Download link sent to your email.");
         } catch (error) {
