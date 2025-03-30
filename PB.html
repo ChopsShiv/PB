@@ -76,7 +76,7 @@
       gap: 20px;
     }
     /* Renamed "Rally Title" to "Game Title" */
-    #startOverlay label { font-size: 18px; } 
+    #startOverlay label { font-size: 18px; }
     #startOverlay input {
       padding: 10px;
       font-size: 18px;
@@ -117,7 +117,7 @@
       display: none;
       z-index: 5;
     }
-    /* Controls container: Stacked vertically on the right side */
+    /* Updated Controls container: Stack buttons vertically on the right side */
     .controls {
       position: absolute;
       top: 50%;
@@ -324,7 +324,7 @@
       <div id="reviewButtonContainer">
         <button id="reviewButton" onclick="reviewLastClip()">Review</button>
       </div>
-      <!-- Controls Container: Stacked vertically on the right side -->
+      <!-- Updated Controls Container: Stacked vertically on the right side -->
       <div class="controls">
         <button onclick="manualStart()">Start Rec</button>
         <button onclick="manualStop()">Stop Rec</button>
@@ -449,7 +449,6 @@
       const startOverlay = document.getElementById("startOverlay");
       if (startOverlay) {
         const titleInput = document.getElementById("rallyTitle");
-        // Rename Rally Title to Game Title
         rallyTitleGlobal = titleInput && titleInput.value ? titleInput.value.replace(/[^a-zA-Z0-9-_]/g, "") : "";
         startOverlay.remove();
       }
@@ -461,11 +460,11 @@
         return;
       }
       try {
-        // Using original configuration (videoBitsPerSecond: 1500000)
+        // Using original configuration (videoBitsPerSecond: 2500000)
         mediaRecorder = new MediaRecorder(videoElement.srcObject, {
           mimeType: "video/mp4",
-          videoBitsPerSecond: 1500000,
-          audioBitsPerSecond: 48000
+          videoBitsPerSecond: 2500000,
+          audioBitsPerSecond: 128000
         });
       } catch (e) {
         console.error("MediaRecorder init error:", e);
@@ -484,7 +483,7 @@
           updateTimeline();
           recordedChunks = [];
           if(segmentedMode) {
-            startRecording();
+            setTimeout(() => { startRecording(); }, 500);
           }
           if(rallyClips.length > 5) {
             const oldestClip = rallyClips.shift();
