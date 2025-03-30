@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <!-- For cross-origin isolation, add these meta tags if needed -->
+  <!-- For cross‑origin isolation (best set via server headers in production) -->
   <meta http-equiv="Cross-Origin-Embedder-Policy" content="require-corp">
   <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -26,7 +26,7 @@
     html, body {
       width: 100%; height: 100%;
       font-family: Arial, sans-serif;
-      background: black; 
+      background: black;
       color: white;
     }
     /* Centered login container with logo */
@@ -104,6 +104,16 @@
       object-fit: cover;
       z-index: 1;
     }
+    /* New Recording Indicator: Positioned at top right, 50% smaller than before */
+    #recordingIndicator {
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      font-size: 9px; /* 50% of previous 18px */
+      color: red;
+      display: none;
+      z-index: 5;
+    }
     /* Updated Controls container: Stack buttons vertically on the right side */
     .controls {
       position: absolute;
@@ -114,7 +124,6 @@
       display: flex;
       flex-direction: column;
       gap: 12px;
-      /* Optionally, you can set a max-width or padding */
     }
     .controls button {
       padding: 8px 12px;
@@ -129,13 +138,6 @@
       min-width: 80px;
     }
     .controls button:hover { background: white; color: black; }
-    /* Recording indicator */
-    #recordingIndicator {
-      display: none;
-      font-size: 18px;
-      color: red;
-      margin-left: 10px;
-    }
     /* Mute toggle button style */
     #muteToggleButton {
       background: rgba(0,0,0,0.7);
@@ -174,7 +176,7 @@
       color: white;
       margin-top: 4px;
     }
-    /* Review Button Container (shown only when recording) remains centered */
+    /* Review Button Container (shown only when recording, remains centered) */
     #reviewButtonContainer {
       position: absolute;
       top: 50%;
@@ -313,17 +315,19 @@
     </div>
     <div class="video-container">
       <video id="liveVideo" autoplay playsinline muted webkit-playsinline></video>
+      <!-- Recording Indicator (now positioned at top-right) -->
+      <div id="recordingIndicator">🔴 Recording</div>
       <!-- Review Button Container (shown only when recording) -->
       <div id="reviewButtonContainer">
         <button id="reviewButton" onclick="reviewLastClip()">Review</button>
       </div>
+      <!-- Updated Controls Container (stacked vertically on right side) -->
       <div class="controls">
         <button onclick="manualStart()">Start Rec</button>
         <button onclick="manualStop()">Stop Rec</button>
         <button onclick="stopGame()">End Session</button>
         <button id="toggleCameraButton" onclick="toggleCamera()">Toggle Camera</button>
         <button id="muteToggleButton" onclick="toggleMute()">🔇</button>
-        <div id="recordingIndicator">🔴 Recording</div>
       </div>
       <div class="timeline" id="timeline"></div>
     </div>
@@ -389,7 +393,7 @@
   
     async function startLivePreview() {
       try {
-        // Request a 16:9 stream; resolution is determined by the device/browser
+        // Request a 16:9 stream at an ideal resolution of 816x480
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { 
             aspectRatio: { ideal: 16/9 },
@@ -453,11 +457,11 @@
         return;
       }
       try {
-        // MediaRecorder configuration with videoBitsPerSecond: 2500000
+        // Use original MediaRecorder configuration here (2000000 bps)
         mediaRecorder = new MediaRecorder(videoElement.srcObject, {
           mimeType: "video/mp4",
-          videoBitsPerSecond: 2500000,
-          audioBitsPerSecond: 128000
+          videoBitsPerSecond: 2000000,
+          audioBitsPerSecond: 48000
         });
       } catch (e) {
         console.error("MediaRecorder init error:", e);
@@ -509,12 +513,12 @@
         recordedChunks = [];
         mediaRecorder.start();
         recording = true;
-        recordingIndicator.style.display = "inline-block";
+        recordingIndicator.style.display = "block";  // now positioned at top-right
         reviewButtonContainer.style.display = "block";
         if(segmentedMode) {
           segmentTimer = setTimeout(() => {
             stopRecording();
-          }, 60000); // 1 minutes = 60,000 ms
+          }, 60000);
         }
       }
     }
