@@ -16,282 +16,109 @@
   <!-- EmailJS SDK -->
   <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
   <script>
-    // Initialize EmailJS with your EmailJS User ID (replace with your actual ID)
+    // Initialize EmailJS with your EmailJS User ID
     emailjs.init('9IH3dz_bfpWORWxZH');
   </script>
   
   <style>
     /* Reset and full-screen layout */
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body {
-      width: 100%; height: 100%;
-      font-family: Arial, sans-serif;
-      background: black; 
-      color: white;
-    }
+    html, body { width: 100%; height: 100%; font-family: Arial, sans-serif; background: black; color: white; }
     /* Centered login container with logo */
     #loginContainer {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      background: black;
+      display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; background: black;
     }
-    /* Logo style */
-    #loginLogo {
-      max-width: 200px;
-      margin-bottom: 20px;
-    }
-    #loginContainer input {
-      padding: 8px;
-      margin: 5px;
-      font-size: 16px;
-      width: 250px;
-    }
-    /* Updated login button style */
+    #loginContainer input { padding: 8px; margin: 5px; font-size: 16px; width: 250px; }
     #loginContainer button {
-      padding: 8px 12px;
-      font-size: 16px;
-      margin: 10px;
-      background: #3a739d;
-      border: none;
-      border-radius: 4px;
-      color: white;
-      cursor: pointer;
+      padding: 8px 12px; font-size: 16px; margin: 10px; background: #3a739d; border: none; border-radius: 4px; color: white; cursor: pointer;
     }
     /* Main App Container hidden until login */
     #appContainer { display: none; position: relative; }
     /* Start Overlay: Only Game Title input and Let's Play button (centered) */
     #startOverlay {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100vw; height: 100vh;
-      background: rgba(0,0,0,0.9);
-      z-index: 999;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      gap: 20px;
+      position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.9); z-index: 999;
+      display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px;
     }
-    /* Renamed "Rally Title" to "Game Title" */
     #startOverlay label { font-size: 18px; }
-    #startOverlay input {
-      padding: 10px;
-      font-size: 18px;
-      width: 300px;
-    }
-    /* Updated Let's Play button style */
+    #startOverlay input { padding: 10px; font-size: 18px; width: 300px; }
     #startOverlay button {
-      padding: 10px 20px;
-      font-size: 18px;
-      background: #3a739d;
-      border: none;
-      border-radius: 4px;
-      color: white;
-      cursor: pointer;
+      padding: 10px 20px; font-size: 18px; background: #3a739d; border: none; border-radius: 4px; color: white; cursor: pointer;
     }
     /* Video container fills entire viewport */
-    .video-container {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100vw; height: 100vh;
-      background: black;
-    }
+    .video-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: black; }
     /* Live video covers the container */
-    #liveVideo {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100vw; height: 100vh;
-      object-fit: cover;
-      z-index: 1;
-    }
-    /* New Recording Indicator positioned at top-right and 50% smaller */
+    #liveVideo { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: 1; }
+    /* Recording indicator positioned at top-right (50% smaller) */
     #recordingIndicator {
-      position: absolute;
-      top: 10px;
-      right: 20px;
-      font-size: 9px;
-      color: red;
-      display: none;
-      z-index: 5;
+      position: absolute; top: 10px; right: 20px; font-size: 9px; color: red; display: none; z-index: 5;
     }
-    /* Updated Controls container: Stack buttons vertically on the right side */
+    /* Controls container: Stacked vertically on the right side */
     .controls {
-      position: absolute;
-      top: 50%;
-      right: 20px;
-      transform: translateY(-50%);
-      z-index: 2;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
+      position: absolute; top: 50%; right: 20px; transform: translateY(-50%); z-index: 2;
+      display: flex; flex-direction: column; gap: 12px;
     }
     .controls button {
-      padding: 8px 12px;
-      font-size: 14px;
-      font-weight: bold;
-      color: white;
-      background: rgba(0,0,0,0.7);
-      border: 1px solid white;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: background 0.3s;
-      min-width: 80px;
+      padding: 8px 12px; font-size: 14px; font-weight: bold; color: white;
+      background: rgba(0,0,0,0.7); border: 1px solid white; border-radius: 6px; cursor: pointer;
+      transition: background 0.3s; min-width: 80px;
     }
     .controls button:hover { background: white; color: black; }
     /* Mute toggle button style */
-    #muteToggleButton {
-      background: rgba(0,0,0,0.7);
-      border: 1px solid white;
-      border-radius: 6px;
-    }
+    #muteToggleButton { background: rgba(0,0,0,0.7); border: 1px solid white; border-radius: 6px; }
     /* Timeline container */
     .timeline {
-      position: absolute;
-      bottom: 5%;
-      left: 0;
-      width: 100%;
-      background: rgba(0,0,0,0.5);
-      z-index: 3;
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      padding: 5px;
+      position: absolute; bottom: 5%; left: 0; width: 100%; background: rgba(0,0,0,0.5); z-index: 3;
+      display: flex; flex-wrap: wrap; justify-content: center; padding: 5px;
     }
-    .timeline-item {
-      margin: 5px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
+    .timeline-item { margin: 5px; display: flex; flex-direction: column; align-items: center; }
     .timeline-item video {
-      width: 100px;
-      height: 60px;
-      object-fit: cover;
-      border: 1px solid white;
-      border-radius: 4px;
-      cursor: pointer;
+      width: 100px; height: 60px; object-fit: cover; border: 1px solid white; border-radius: 4px; cursor: pointer;
     }
-    .timeline-item span {
-      font-size: 10px;
-      color: white;
-      margin-top: 4px;
-    }
+    .timeline-item span { font-size: 10px; color: white; margin-top: 4px; }
     /* Review Button Container remains centered */
     #reviewButtonContainer {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 4;
-      display: none;
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 4; display: none;
     }
-    /* Updated Review Button style: double size, purple background, white text, 50% opacity */
     #reviewButton {
-      background: purple;
-      color: white;
-      padding: 24px 40px;
-      border: none;
-      border-radius: 4px;
-      font-size: 36px;
-      cursor: pointer;
-      opacity: 0.5;
+      background: purple; color: white; padding: 24px 40px; border: none; border-radius: 4px;
+      font-size: 36px; cursor: pointer; opacity: 0.5;
     }
     #reviewButton:hover { opacity: 0.8; }
     /* Download Overlay for session highlights */
     #downloadOverlay {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100vw; height: 100vh;
-      background: rgba(0,0,0,0.9);
-      z-index: 1000;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      overflow-y: auto;
-      padding: 20px;
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.9); z-index: 1000;
+      display: flex; flex-direction: column; justify-content: center; align-items: center; overflow-y: auto; padding: 20px;
     }
     #downloadOverlay h2 { margin-bottom: 20px; }
     #downloadOverlay .clipItem {
-      border: 1px solid white;
-      padding: 5px;
-      margin: 5px;
-      text-align: center;
+      border: 1px solid white; padding: 5px; margin: 5px; text-align: center;
     }
     #downloadOverlay .clipItem video {
-      width: 120px;
-      height: 80px;
-      object-fit: cover;
-      display: block;
-      margin: 0 auto;
+      width: 120px; height: 80px; object-fit: cover; display: block; margin: 0 auto;
     }
     #downloadOverlay input[type="email"] {
-      padding: 8px;
-      font-size: 16px;
-      width: 300px;
-      margin-top: 20px;
+      padding: 8px; font-size: 16px; width: 300px; margin-top: 20px;
     }
     #downloadOverlay button {
-      padding: 10px 20px;
-      font-size: 18px;
-      background: green;
-      border: none;
-      border-radius: 4px;
-      color: white;
-      cursor: pointer;
-      margin-top: 20px;
+      padding: 10px 20px; font-size: 18px; background: green; border: none; border-radius: 4px; color: white; cursor: pointer; margin-top: 20px;
     }
     /* Replay overlay styles */
     #replayOverlay {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100vw; height: 100vh;
-      background: black;
-      z-index: 10;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: black; z-index: 10;
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
     }
-    #replayOverlay video {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-    }
+    #replayOverlay video { width: 100%; height: 100%; object-fit: contain; }
     .replay-controls {
-      position: absolute;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 10px;
-      z-index: 11;
+      position: absolute; top: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 11;
     }
     .replay-controls button {
-      padding: 8px 12px;
-      font-size: 14px;
-      background: rgba(0,0,0,0.7);
-      color: white;
-      border: 1px solid white;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: background 0.3s;
+      padding: 8px 12px; font-size: 14px; background: rgba(0,0,0,0.7); color: white; border: 1px solid white;
+      border-radius: 4px; cursor: pointer; transition: background 0.3s;
     }
     .replay-controls button:hover { background: white; color: black; }
     #backButton, #shareButton {
-      position: absolute;
-      top: 20px;
-      padding: 10px 15px;
-      font-size: 16px;
-      background: rgba(0,0,0,0.7);
-      color: white;
-      border: 1px solid white;
-      border-radius: 5px;
-      cursor: pointer;
-      z-index: 11;
+      position: absolute; top: 20px; padding: 10px 15px; font-size: 16px; background: rgba(0,0,0,0.7);
+      color: white; border: 1px solid white; border-radius: 5px; cursor: pointer; z-index: 11;
     }
     #backButton { left: 20px; }
     #shareButton { right: 20px; }
@@ -300,7 +127,6 @@
 <body>
   <!-- Login Container with Logo -->
   <div id="loginContainer">
-    <!-- App Logo (update src with your logo URL or local path) -->
     <img id="loginLogo" src="https://i.postimg.cc/1tsKBkMk/SC-logo.png" alt="App Logo">
     <h2>Login to Access the App</h2>
     <input type="email" id="email" placeholder="Email" required>
@@ -320,11 +146,11 @@
       <video id="liveVideo" autoplay playsinline muted webkit-playsinline></video>
       <!-- Recording Indicator positioned at top-right -->
       <div id="recordingIndicator">🔴 Recording</div>
-      <!-- Review Button Container (shown only when recording) -->
+      <!-- Review Button Container -->
       <div id="reviewButtonContainer">
         <button id="reviewButton" onclick="reviewLastClip()">Review</button>
       </div>
-      <!-- Updated Controls Container: Stacked vertically on the right side -->
+      <!-- Controls Container: Stacked vertically on the right side -->
       <div class="controls">
         <button onclick="manualStart()">Start Rec</button>
         <button onclick="manualStop()">Stop Rec</button>
@@ -340,8 +166,8 @@
     // Global variables for game title, clip counter, and segmented recording
     let rallyTitleGlobal = "";
     let clipCounter = 0;
-    let segmentedMode = false;    // segmented recording mode flag
-    let segmentTimer = null;      // timer for 3-minute segments
+    let segmentedMode = true; // Segmented mode enabled by default
+    let segmentTimer = null;
   
     // Firebase Configuration
     const firebaseConfig = {
@@ -353,13 +179,10 @@
       appId: "1:451766893674:web:4526c5aba2c5ff86955e13",
       measurementId: "G-Y22H853R18"
     };
-  
-    // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     const storage = firebase.storage();
     const auth = firebase.auth();
   
-    // Set auth persistence
     auth.setPersistence(firebase.auth.Auth.Persistence.SESSION)
       .catch(error => console.error("Error setting auth persistence:", error));
   
@@ -387,7 +210,8 @@
     let recordedChunks = [];
     let rallyClips = [];
     let recording = false;
-    let currentFacingMode = "environment";
+    // Set default to front camera
+    let currentFacingMode = "user";
     const videoElement = document.getElementById("liveVideo");
     const timeline = document.getElementById("timeline");
     const muteToggleButton = document.getElementById("muteToggleButton");
@@ -396,7 +220,6 @@
   
     async function startLivePreview() {
       try {
-        // Request a 16:9 stream with an ideal resolution of 816x480
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { 
             aspectRatio: { ideal: 16/9 },
@@ -416,7 +239,6 @@
       }
     }
   
-    // Generate file name in format: NNN_HHMM_MMDDYYYY.mp4
     function getFormattedFileName() {
       clipCounter++;
       const clipNumber = clipCounter.toString().padStart(3, '0');
@@ -452,65 +274,77 @@
         rallyTitleGlobal = titleInput && titleInput.value ? titleInput.value.replace(/[^a-zA-Z0-9-_]/g, "") : "";
         startOverlay.remove();
       }
-      
       if (videoElement.srcObject) return;
       await startLivePreview();
       if (typeof MediaRecorder === "undefined") {
         alert("MediaRecorder not supported. Please use Safari on iOS.");
         return;
       }
-      try {
-        // Using original configuration (videoBitsPerSecond: 2000000)
-        mediaRecorder = new MediaRecorder(videoElement.srcObject, {
-          mimeType: "video/mp4",
-          videoBitsPerSecond: 2000000,
-          audioBitsPerSecond: 48000
-        });
-      } catch (e) {
-        console.error("MediaRecorder init error:", e);
-        alert("Failed to initialize recording. Your device may not support this feature.");
-        return;
-      }
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data && event.data.size > 0) recordedChunks.push(event.data);
-      };
-      mediaRecorder.onstop = async () => {
-        if (recordedChunks.length > 0) {
-          const blob = new Blob(recordedChunks, { type: "video/mp4" });
-          const result = await uploadToFirebase(blob);
-          const clip = { url: result.url, timestamp: new Date().toLocaleTimeString(), filename: result.filename };
-          rallyClips.push(clip);
-          updateTimeline();
-          recordedChunks = [];
-          if(segmentedMode) {
-            setTimeout(() => { startRecording(); }, 500);
-          }
-          if(rallyClips.length > 5) {
-            const oldestClip = rallyClips.shift();
-            storage.ref('rallies/' + oldestClip.filename).delete()
-              .then(() => console.log("Old clip deleted from Firebase Storage."))
-              .catch(error => console.error("Error deleting old clip:", error));
-          }
-        }
-      };
-      segmentedMode = false;
+      createMediaRecorder();
+      // Enable segmented mode by default
+      segmentedMode = true;
       startVoiceRecognition();
+      // Automatically start recording on game start
+      startRecording();
     }
   
-    // When user clicks Start Rec, enable segmented mode and start recording.
+    // Helper: create a new MediaRecorder from the current stream
+    function createMediaRecorder() {
+      try {
+        mediaRecorder = new MediaRecorder(videoElement.srcObject, {
+          mimeType: "video/mp4",
+          videoBitsPerSecond: 2500000,
+          audioBitsPerSecond: 128000
+        });
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data && event.data.size > 0) recordedChunks.push(event.data);
+        };
+        mediaRecorder.onstop = async () => {
+          if (recordedChunks.length > 0) {
+            const blob = new Blob(recordedChunks, { type: "video/mp4" });
+            // By default, mark clip as auto (manual flag false)
+            const result = await uploadToFirebase(blob);
+            const clip = { url: result.url, timestamp: new Date().toLocaleTimeString(), filename: result.filename, manual: false };
+            rallyClips.push(clip);
+            updateTimeline();
+            recordedChunks = [];
+            if (segmentedMode) {
+              // Delete auto clips if there are more than 5 (only auto ones)
+              let autoClips = rallyClips.filter(c => !c.manual);
+              while(autoClips.length > 5) {
+                const indexToDelete = rallyClips.findIndex(c => !c.manual);
+                if(indexToDelete !== -1) {
+                  const clipToDelete = rallyClips.splice(indexToDelete, 1)[0];
+                  storage.ref('rallies/' + clipToDelete.filename).delete()
+                    .then(() => console.log("Old auto clip deleted from Firebase Storage."))
+                    .catch(error => console.error("Error deleting auto clip:", error));
+                }
+                autoClips = rallyClips.filter(c => !c.manual);
+              }
+              // Reinitialize and restart recording after 500ms delay
+              createMediaRecorder();
+              setTimeout(() => { startRecording(); }, 500);
+            }
+          }
+        };
+      } catch (e) {
+        console.error("Error creating MediaRecorder:", e);
+        alert("Failed to initialize recording. Your device may not support this feature.");
+      }
+    }
+  
     function manualStart() { 
       segmentedMode = true;
+      createMediaRecorder();
       startRecording(); 
     }
   
-    // When user clicks Stop Rec, disable segmented mode and stop recording.
     function manualStop() { 
       segmentedMode = false;
-      if(segmentTimer) clearTimeout(segmentTimer);
+      if (segmentTimer) clearTimeout(segmentTimer);
       stopRecording(); 
     }
   
-    // Start recording; if in segmented mode, set a 1-minute timer and show the Review button.
     function startRecording() {
       if (!recording && mediaRecorder) {
         recordedChunks = [];
@@ -518,22 +352,19 @@
         recording = true;
         recordingIndicator.style.display = "block";
         reviewButtonContainer.style.display = "block";
-        if(segmentedMode) {
-          segmentTimer = setTimeout(() => {
-            stopRecording();
-          }, 60000);
+        if (segmentedMode) {
+          segmentTimer = setTimeout(() => { stopRecording(); }, 60000);
         }
       }
     }
   
-    // Stop recording and hide the Review button.
     function stopRecording() {
       if (recording && mediaRecorder) {
         mediaRecorder.stop();
         recording = false;
         recordingIndicator.style.display = "none";
         reviewButtonContainer.style.display = "none";
-        if(segmentTimer) clearTimeout(segmentTimer);
+        if (segmentTimer) clearTimeout(segmentTimer);
       }
     }
   
@@ -568,19 +399,19 @@
       });
     }
   
-    // Review function: When clicked, if recording is active, stop recording and save the clip.
-    // Then, after a short delay, play back the most recent clip.
     async function reviewLastClip() {
-      segmentedMode = false;
-      if (recording) {
-        stopRecording();
-        await new Promise(resolve => setTimeout(resolve, 1500));
-      }
+      // When review is clicked, mark the last clip as manual so it isn't auto-deleted
       if (rallyClips.length === 0) {
         alert("No rally recording available for review.");
         return;
       }
       const lastClip = rallyClips[rallyClips.length - 1];
+      lastClip.manual = true;
+      segmentedMode = false;
+      if (recording) {
+        stopRecording();
+        await new Promise(resolve => setTimeout(resolve, 1500));
+      }
       replayRally(lastClip.url);
     }
   
@@ -670,7 +501,7 @@
         alert("Stop recording before toggling camera.");
         return;
       }
-      currentFacingMode = (currentFacingMode === "environment") ? "user" : "environment";
+      currentFacingMode = (currentFacingMode === "user") ? "environment" : "user";
       if (videoElement.srcObject) {
         videoElement.srcObject.getTracks().forEach(track => track.stop());
       }
@@ -686,28 +517,7 @@
           audio: true
         });
         videoElement.srcObject = stream;
-        if (mediaRecorder) {
-          mediaRecorder = new MediaRecorder(stream, {
-            mimeType: "video/mp4",
-            videoBitsPerSecond: 2500000,
-            audioBitsPerSecond: 128000
-          });
-          mediaRecorder.ondataavailable = (event) => {
-            if (event.data && event.data.size > 0) recordedChunks.push(event.data);
-          };
-          mediaRecorder.onstop = () => {
-            if (recordedChunks.length > 0) {
-              const blob = new Blob(recordedChunks, { type: "video/mp4" });
-              uploadToFirebase(blob, rallyTitleGlobal)
-                .then(result => {
-                  const clip = { url: result.url, timestamp: new Date().toLocaleTimeString(), filename: result.filename };
-                  rallyClips.push(clip);
-                  updateTimeline();
-                  recordedChunks = [];
-                });
-            }
-          };
-        }
+        createMediaRecorder();
       } catch (error) {
         alert("Unable to switch camera.");
       }
@@ -738,15 +548,15 @@
   
     function manualStart() { 
       segmentedMode = true;
+      createMediaRecorder();
       startRecording(); 
     }
     function manualStop() { 
       segmentedMode = false;
-      if(segmentTimer) clearTimeout(segmentTimer);
+      if (segmentTimer) clearTimeout(segmentTimer);
       stopRecording(); 
     }
   
-    // Show download overlay using a hidden form and EmailJS sendForm to send email with download links
     function showDownloadOverlay() {
       const overlay = document.createElement("div");
       overlay.id = "downloadOverlay";
