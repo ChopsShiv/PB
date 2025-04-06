@@ -13,8 +13,9 @@
 
   <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
   <script>
-    // Initialize EmailJS with your EmailJS User ID
-    emailjs.init('9IH3dz_bfpWORWxZH'); // Replace with your actual User ID
+    // !!! IMPORTANT: Initialize EmailJS with YOUR EmailJS User ID !!!
+    // Verify this ID is correct in your EmailJS account settings.
+    emailjs.init('9IH3dz_bfpWORWxZH'); // <--- Replace with YOUR actual User ID
   </script>
 
   <style>
@@ -26,11 +27,11 @@
 
     /* Style for horizontal scrollbar in timeline (optional) */
     .timeline::-webkit-scrollbar {
-        height: 8px;
+        height: 6px; /* Slightly thinner scrollbar */
     }
     .timeline::-webkit-scrollbar-thumb {
         background: rgba(255, 255, 255, 0.3);
-        border-radius: 4px;
+        border-radius: 3px;
     }
     .timeline::-webkit-scrollbar-track {
         background: rgba(0, 0, 0, 0.5);
@@ -83,14 +84,15 @@
         <button id="challengeButton" class="btn btn-primary btn-lg opacity-80 hover:opacity-100" onclick="challengeLastClip()">Challenge</button>
       </div>
 
-      <div class="controls fixed bottom-16 right-4 z-10 flex flex-col space-y-2"> <button class="btn btn-success btn-sm" onclick="manualStart()">Start Rec</button>
+      <div class="controls fixed bottom-12 right-4 z-10 flex flex-col space-y-2">
+        <button class="btn btn-success btn-sm" onclick="manualStart()">Start Rec</button>
         <button class="btn btn-warning btn-sm" onclick="manualStop()">Stop Rec</button>
         <button class="btn btn-error btn-sm" onclick="stopGame()">End Session</button>
         <button id="toggleCameraButton" class="btn btn-info btn-sm" onclick="toggleCamera()">Camera</button>
         <button id="muteToggleButton" class="btn btn-secondary btn-sm" onclick="toggleMute()">🔇</button>
       </div>
 
-      <div class="timeline fixed bottom-0 left-0 w-full bg-black bg-opacity-70 z-10 flex overflow-x-auto whitespace-nowrap p-2 gap-2" id="timeline">
+      <div class="timeline fixed bottom-0 left-0 w-full bg-black bg-opacity-70 z-10 flex overflow-x-auto whitespace-nowrap p-1 gap-1" id="timeline">
           </div>
     </div>
   </div>
@@ -137,7 +139,7 @@
       apiKey: "AIzaSyCunssONBCjlKuNzwScq0HYCRB0upbL7xA", // KEEP YOUR KEY SECRET IN PRODUCTION
       authDomain: "pb01-6dc9b.firebaseapp.com",
       projectId: "pb01-6dc9b",
-      storageBucket: "pb01-6dc9b.firebasestorage.app", // Corrected: remove 'firebasestorage.' prefix
+      storageBucket: "pb01-6dc9b.appspot.com", // Corrected Firebase Storage bucket format
       messagingSenderId: "451766893674",
       appId: "1:451766893674:web:4526c5aba2c5ff86955e13",
       measurementId: "G-Y22H853R18"
@@ -199,7 +201,8 @@
     let recordedChunks = [];
     let rallyClips = []; // Array to hold { url, timestamp, filename, manual }
     let recording = false;
-    let currentFacingMode = "environment"; // Default to back camera
+    // --- CHANGE 1: Default to front camera ---
+    let currentFacingMode = "user"; // Default to front camera
 
     async function startLivePreview() {
         // If stream already exists, return
@@ -212,11 +215,11 @@
                 width: { ideal: 1280 }, // Request slightly higher res
                 height: { ideal: 720 },
                 frameRate: { ideal: 30, max: 60 }, // Adjusted framerate
-                facingMode: currentFacingMode
+                facingMode: currentFacingMode // Uses the variable (now defaulting to 'user')
             },
             audio: true // Request audio
             });
-            console.log("Camera stream acquired.");
+            console.log("Camera stream acquired using facingMode:", currentFacingMode);
             videoElement.srcObject = stream;
             videoElement.muted = true; // Mute preview by default
             updateMuteButton(); // Update button text
@@ -238,8 +241,8 @@
         const timeStr = hh + mm;
         const month = (now.getMonth() + 1).toString().padStart(2, '0');
         const dd = now.getDate().toString().padStart(2, '0');
-        const yyyy = now.getFullYear().toString();
-        const dateStr = month + dd + yyyy;
+        const PQAry = now.getFullYear().toString();
+        const dateStr = month + dd +PRIMATEC;
         const manualMarker = isManual ? "_CHALLENGE" : ""; // Add marker for challenged clips
         const titlePart = rallyTitleGlobal ? `${rallyTitleGlobal}_` : ""; // Add title if exists
         // Example: MyGame_001_CHALLENGE_1438_04062025.mp4
@@ -634,8 +637,8 @@
             thumb.muted = true;
             thumb.playsInline = true; // Important for mobile playback inline
             thumb.preload = "metadata"; // Load only metadata initially
-            // Use Tailwind classes for consistent thumbnail size
-            thumb.className = "w-24 h-auto object-cover border border-gray-600 rounded"; // Adjusted size
+            // --- CHANGE 2: Reduced thumbnail width ---
+            thumb.className = "w-16 h-auto object-cover border border-gray-600 rounded"; // Reduced size
 
              // Play thumbnail on hover/touch (optional enhancement)
              thumb.onmouseenter = () => { if(thumb.readyState >= 3) thumb.play(); }; // Check if enough data loaded
@@ -647,8 +650,8 @@
 
 
             const label = document.createElement("span");
-            // Use Tailwind classes for label styling
-            label.className = "block text-xs text-gray-300 mt-1 overflow-hidden whitespace-nowrap text-ellipsis w-24";
+            // --- CHANGE 2: Reduced label width to match thumbnail ---
+            label.className = "block text-xs text-gray-300 mt-1 overflow-hidden whitespace-nowrap text-ellipsis w-16"; // Reduced width
             label.innerText = clip.filename ? clip.filename.split('_').slice(0, -2).join('_') : `Rally ${index + 1}`; // Show cleaner name
              label.title = clip.filename || `Rally ${index + 1}`; // Full name on hover
 
@@ -1123,15 +1126,26 @@
                       from_name: "SmashCam App", // Optional: Customize sender name
                       // Ensure your EmailJS template uses {{message}} to display the links
                       message: messageBody,
-                      // Add other template variables if needed, e.g., {{session_title}}
+                      // Ensure your EmailJS template uses {{session_title}}
                       session_title: rallyTitleGlobal || 'Untitled Session'
                   };
 
+                // --- CHANGE 3: Added console.log before sending ---
+                console.log("Attempting to send email with params:", templateParams);
 
                 try {
-                    console.log("Sending email via EmailJS...");
-                    // Replace with your actual Service ID and Template ID
-                    const response = await emailjs.send('service_5an1el5', 'template_gph38u7', templateParams);
+                    // --- CHANGE 3: Added comments to verify IDs ---
+                    // !!! IMPORTANT: Verify your Service ID and Template ID below !!!
+                    // These must match the IDs in your EmailJS account dashboard.
+                    const serviceID = 'service_5an1el5'; // <--- Replace with YOUR Service ID if different
+                    const templateID = 'template_gph38u7'; // <--- Replace with YOUR Template ID if different
+
+                    // !!! IMPORTANT: Ensure your EmailJS template uses variables like:
+                    // {{to_email}}, {{from_name}}, {{message}}, {{session_title}}
+                    // The names *must* match the keys in templateParams exactly.
+                    console.log(`Sending email via EmailJS (Service: ${serviceID}, Template: ${templateID})...`);
+                    const response = await emailjs.send(serviceID, templateID, templateParams);
+
                     console.log("EmailJS Success:", response.status, response.text);
                     alert("Download links sent successfully to " + to_email + "!");
 
@@ -1150,7 +1164,8 @@
                 } catch (error) {
                     console.error("EmailJS Failed:", error);
                     const errorMsg = error?.text || error?.message || "Unknown error";
-                    alert("Error sending email: " + errorMsg + ". Please check console or try again.");
+                    // --- CHANGE 3: Improved error alert ---
+                    alert("Error sending email: " + errorMsg + ". Please check console logs, ensure EmailJS IDs/template are correct in the code, and verify your EmailJS account settings/limits.");
                     submitButton.disabled = false; // Re-enable button on error
                     submitButton.classList.remove('loading');
                 }
