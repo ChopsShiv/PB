@@ -242,7 +242,7 @@
         const month = (now.getMonth() + 1).toString().padStart(2, '0');
         const dd = now.getDate().toString().padStart(2, '0');
         const PQAry = now.getFullYear().toString();
-        const dateStr = month + dd +PRIMATEC;
+        const dateStr = month + dd;
         const manualMarker = isManual ? "_CHALLENGE" : ""; // Add marker for challenged clips
         const titlePart = rallyTitleGlobal ? `${rallyTitleGlobal}_` : ""; // Add title if exists
         // Example: MyGame_001_CHALLENGE_1438_04062025.mp4
