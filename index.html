@@ -1,145 +1,194 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark"> <head>
+<html lang="en">
+<head>
   <meta charset="UTF-8" />
+  <!-- For cross‑origin isolation (best set via server headers in production) -->
   <meta http-equiv="Cross-Origin-Embedder-Policy" content="require-corp">
   <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Pickleball Instant Replay - Login Required</title>
-
+  
+  <!-- Tailwind CSS (required for DaisyUI) -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.10.1/dist/full.min.css" rel="stylesheet" type="text/css" /> <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+  <!-- DaisyUI CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@3.0.10/dist/full.css" rel="stylesheet">
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-storage-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
-
+  
+  <!-- EmailJS SDK -->
   <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
   <script>
-    // !!! IMPORTANT: Initialize EmailJS with YOUR EmailJS User ID !!!
-    // Verify this ID is correct in your EmailJS account settings.
-    emailjs.init('9IH3dz_bfpWORWxZH'); // <--- Replace with YOUR actual User ID
+    // Initialize EmailJS with your EmailJS User ID
+    emailjs.init('9IH3dz_bfpWORWxZH');
   </script>
-
+  
   <style>
-    /* Minimal custom styles - Prefer Tailwind/DaisyUI */
-    html, body { width: 100%; height: 100%; font-family: Arial, sans-serif; /* Base font */ }
-    /* Keep video container fixed to cover screen */
+    /* Global reset and iOS-inspired base styles */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: #f2f2f7;
+      color: #000;
+    }
+    /* Login container styled as a clean iOS card */
+    #loginContainer {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: #f2f2f7;
+      padding: 20px;
+    }
+    #loginContainer img {
+      margin-bottom: 20px;
+    }
+    #loginContainer input {
+      width: 80%;
+      max-width: 300px;
+      margin: 10px 0;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+    #loginContainer button {
+      width: 80%;
+      max-width: 300px;
+      padding: 12px;
+      margin-top: 10px;
+      border-radius: 8px;
+    }
+    /* Main App Container hidden until login */
+    #appContainer { display: none; position: relative; }
+    /* Start Overlay with a light translucent background */
+    #startOverlay {
+      position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(255,255,255,0.95);
+      z-index: 999;
+      display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px;
+    }
+    /* Video container remains full screen */
     .video-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: black; }
-    #liveVideo { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
-
-    /* Style for horizontal scrollbar in timeline (optional) */
-    .timeline::-webkit-scrollbar {
-        height: 6px; /* Slightly thinner scrollbar */
+    #liveVideo { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: 1; }
+    #recordingIndicator { position: absolute; top: 10px; right: 20px; font-size: 9px; color: red; display: none; z-index: 5; }
+    .controls { position: absolute; top: 50%; right: 20px; transform: translateY(-50%); z-index: 2; display: flex; flex-direction: column; gap: 12px; }
+    .timeline { position: absolute; bottom: 5%; left: 0; width: 100%; background: rgba(0,0,0,0.5); z-index: 3; display: flex; flex-wrap: wrap; justify-content: center; padding: 5px; }
+    .timeline-item { margin: 5px; display: flex; flex-direction: column; align-items: center; }
+    .timeline-item video { width: 100px; height: 60px; object-fit: cover; border: 1px solid white; border-radius: 4px; cursor: pointer; }
+    .timeline-item span { font-size: 10px; color: white; margin-top: 4px; }
+    /* Challenge Button Container (renamed from Review Button) */
+    #reviewButtonContainer { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 4; display: none; }
+    #reviewButton {
+      background: purple;
+      color: white;
+      padding: 24px 40px;
+      border: none;
+      border-radius: 8px;
+      font-size: 36px;
+      cursor: pointer;
+      opacity: 0.5;
     }
-    .timeline::-webkit-scrollbar-thumb {
-        background: rgba(255, 255, 255, 0.3);
-        border-radius: 3px;
+    #reviewButton:hover { opacity: 0.8; }
+    /* Download Overlay with a light background */
+    #downloadOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(255,255,255,0.95);
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      overflow-y: auto;
+      padding: 20px;
+      color: #000;
     }
-    .timeline::-webkit-scrollbar-track {
-        background: rgba(0, 0, 0, 0.5);
+    #downloadOverlay h2 { margin-bottom: 20px; }
+    #downloadOverlay .clipItem { border: 1px solid #ccc; padding: 5px; margin: 5px; text-align: center; border-radius: 6px; }
+    #downloadOverlay .clipItem video { width: 120px; height: 80px; object-fit: cover; display: block; margin: 0 auto; }
+    #downloadOverlay input[type="email"] { padding: 8px; font-size: 16px; width: 300px; margin-top: 20px; border: 1px solid #ccc; border-radius: 6px; }
+    #downloadOverlay button { padding: 10px 20px; font-size: 18px; background: green; border: none; border-radius: 6px; color: white; cursor: pointer; margin-top: 20px; }
+    /* Replay Overlay remains largely unchanged */
+    #replayOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: black;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
     }
-     /* Ensure overlays are scrollable if content overflows */
-    #downloadOverlay, #replayOverlay { overflow-y: auto; }
-
+    #replayOverlay video { width: 100%; height: 100%; object-fit: contain; }
+    .replay-controls { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 11; }
+    .replay-controls button { padding: 8px 12px; font-size: 14px; background: rgba(0,0,0,0.7); color: white; border: 1px solid white; border-radius: 4px; cursor: pointer; transition: background 0.3s; }
+    .replay-controls button:hover { background: white; color: black; }
+    #backButton, #shareButton { position: absolute; top: 20px; padding: 10px 15px; font-size: 16px; background: rgba(0,0,0,0.7); color: white; border: 1px solid white; border-radius: 5px; cursor: pointer; z-index: 11; }
+    #backButton { left: 20px; }
+    #shareButton { right: 20px; }
   </style>
 </head>
 <body>
-  <div id="loginContainer" class="min-h-screen flex flex-col justify-center items-center p-4 bg-base-200">
-    <img id="loginLogo" src="https://i.postimg.cc/1tsKBkMk/SC-logo.png" alt="App Logo" class="mb-8 w-32 h-32"> <div class="card w-full max-w-sm shadow-2xl bg-base-100">
-      <div class="card-body">
-        <h2 class="card-title text-center text-2xl font-bold mb-4">Login to SmashCam</h2>
-        <div class="form-control">
-          <label class="label">
-            <span class="label-text">Email</span>
-          </label>
-          <input type="email" id="email" placeholder="email" class="input input-bordered" required />
-        </div>
-        <div class="form-control">
-          <label class="label">
-            <span class="label-text">Password</span>
-          </label>
-          <input type="password" id="password" placeholder="password" class="input input-bordered" required />
-        </div>
-        <div class="form-control mt-6">
-          <button class="btn btn-primary" onclick="login()">Login</button>
-        </div>
-      </div>
-    </div>
+  <!-- Login Container with Logo -->
+  <div id="loginContainer">
+    <img id="loginLogo" src="https://i.postimg.cc/1tsKBkMk/SC-logo.png" alt="App Logo">
+    <h2 class="text-2xl font-bold">Login to Access the App</h2>
+    <input class="input input-bordered" type="email" id="email" placeholder="Email" required>
+    <input class="input input-bordered" type="password" id="password" placeholder="Password" required>
+    <button class="btn btn-primary" onclick="login()">Login</button>
   </div>
-
-  <div id="appContainer" style="display: none;">
-    <div id="startOverlay" class="fixed inset-0 z-50 flex flex-col justify-center items-center gap-4 bg-black bg-opacity-90 p-4">
-        <label class="text-lg text-white" for="rallyTitle">Game Title (Optional):</label>
-        <input class="input input-bordered w-full max-w-xs" type="text" id="rallyTitle" placeholder="e.g., Afternoon Match">
-        <button class="btn btn-primary btn-lg" onclick="startGame()">Let’s Play</button>
+  
+  <!-- Main App Container (hidden until login) -->
+  <div id="appContainer">
+    <!-- Start Overlay: Only Game Title input and Let's Play button (centered) -->
+    <div id="startOverlay">
+      <label class="text-lg" for="rallyTitle">Game Title:</label>
+      <input class="input input-bordered" type="text" id="rallyTitle" placeholder="Enter Game Title">
+      <button class="btn btn-primary" onclick="startGame()">Let’s Play</button>
     </div>
-
     <div class="video-container">
       <video id="liveVideo" autoplay playsinline muted webkit-playsinline></video>
-
-      <div id="recordingIndicator" class="fixed top-4 right-4 z-10 badge badge-error gap-1 text-white" style="display: none;">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6.75 6.75 0 0 0 0-13.5v13.5Z" /></svg>
-        Recording
+      <!-- Recording Indicator positioned at top-right -->
+      <div id="recordingIndicator">🔴 Recording</div>
+      <!-- Challenge Button Container (renamed from Review Button) -->
+      <div id="reviewButtonContainer">
+        <button id="reviewButton" onclick="reviewLastClip()">Challenge</button>
       </div>
-
-      <div id="challengeButtonContainer" class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20" style="display: none;">
-        <button id="challengeButton" class="btn btn-primary btn-lg opacity-80 hover:opacity-100" onclick="challengeLastClip()">Challenge</button>
+      <!-- Controls Container: Stacked vertically on the right side -->
+      <div class="controls">
+        <button onclick="manualStart()">Start Rec</button>
+        <button onclick="manualStop()">Stop Rec</button>
+        <button onclick="stopGame()">End Session</button>
+        <button id="toggleCameraButton" onclick="toggleCamera()">Toggle Camera</button>
+        <button id="muteToggleButton" onclick="toggleMute()">🔇</button>
       </div>
-
-      <div class="controls fixed bottom-12 right-4 z-10 flex flex-col space-y-2">
-        <button class="btn btn-success btn-sm" onclick="manualStart()">Start Rec</button>
-        <button class="btn btn-warning btn-sm" onclick="manualStop()">Stop Rec</button>
-        <button class="btn btn-error btn-sm" onclick="stopGame()">End Session</button>
-        <button id="toggleCameraButton" class="btn btn-info btn-sm" onclick="toggleCamera()">Camera</button>
-        <button id="muteToggleButton" class="btn btn-secondary btn-sm" onclick="toggleMute()">🔇</button>
-      </div>
-
-      <div class="timeline fixed bottom-0 left-0 w-full bg-black bg-opacity-70 z-10 flex overflow-x-auto whitespace-nowrap p-1 gap-1" id="timeline">
-          </div>
+      <div class="timeline" id="timeline"></div>
     </div>
   </div>
-
-  <div id="downloadOverlayContainer" class="fixed inset-0 z-50 items-center justify-center bg-black bg-opacity-80 p-4" style="display: none;"> <div id="downloadOverlay" class="bg-base-100 rounded-lg shadow-xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-          <h2 class="text-xl font-bold mb-4 text-center">Download Session Highlights</h2>
-          <p class="text-sm text-center mb-4">Select the clips you want to download.</p>
-          <div id="clipsSelection" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-6">
-              </div>
-          <form id="downloadForm" class="space-y-4">
-              <div class="form-control">
-                  <label class="label" for="downloadEmail">
-                      <span class="label-text">Enter your email to receive download links:</span>
-                  </label>
-                  <input type="email" name="to_email" id="downloadEmail" placeholder="your.email@example.com" class="input input-bordered w-full" required>
-              </div>
-              <textarea name="message" id="downloadMessage" class="hidden"></textarea> <button type="submit" class="btn btn-success w-full">Get Download Links</button>
-              <button type="button" class="btn btn-ghost w-full" onclick="closeDownloadOverlay()">Cancel</button> </form>
-      </div>
-  </div>
-
-
-  <div id="replayOverlayContainer" class="fixed inset-0 z-40 items-center justify-center bg-black" style="display: none;"> <div id="replayOverlay" class="relative w-full h-full flex flex-col justify-center items-center">
-         <video id="replayVideoElement" controls class="max-w-full max-h-full object-contain"></video> <div class="replay-controls absolute top-4 left-1/2 transform -translate-x-1/2 z-50 flex items-center gap-2 join">
-            <button class="btn btn-sm join-item" data-speed="0.25">0.25x</button>
-            <button class="btn btn-sm join-item" data-speed="0.5">0.5x</button>
-            <button class="btn btn-sm join-item active" data-speed="1.0">1.0x</button> </div>
-
-         <button id="replayMuteBtn" class="btn btn-sm absolute top-4 left-1/2 transform -translate-x-1/2 translate-y-12 z-50">🔇</button> <button id="backButton" class="btn btn-sm absolute top-4 left-4 z-50" onclick="closeReplay()">Back</button>
-
-         <button id="shareButton" class="btn btn-sm absolute top-4 right-4 z-50" onclick="shareCurrentClip()">Share</button>
-     </div>
-  </div>
-
-
+  
   <script>
     let rallyTitleGlobal = "";
     let clipCounter = 0;
     let segmentedMode = true;
     let segmentTimer = null;
-
-    // Firebase Configuration (Keep your actual config)
+  
+    // Firebase Configuration
     const firebaseConfig = {
-      apiKey: "AIzaSyCunssONBCjlKuNzwScq0HYCRB0upbL7xA", // KEEP YOUR KEY SECRET IN PRODUCTION
+      apiKey: "AIzaSyCunssONBCjlKuNzwScq0HYCRB0upbL7xA",
       authDomain: "pb01-6dc9b.firebaseapp.com",
       projectId: "pb01-6dc9b",
-      storageBucket: "pb01-6dc9b.appspot.com", // Corrected Firebase Storage bucket format
+      storageBucket: "pb01-6dc9b.firebasestorage.app",
       messagingSenderId: "451766893674",
       appId: "1:451766893674:web:4526c5aba2c5ff86955e13",
       measurementId: "G-Y22H853R18"
@@ -147,1036 +196,463 @@
     firebase.initializeApp(firebaseConfig);
     const storage = firebase.storage();
     const auth = firebase.auth();
-
+  
     auth.setPersistence(firebase.auth.Auth.Persistence.SESSION)
       .catch(error => console.error("Error setting auth persistence:", error));
-
-    // DOM Elements
-    const loginContainer = document.getElementById("loginContainer");
-    const appContainer = document.getElementById("appContainer");
-    const videoElement = document.getElementById("liveVideo");
-    const timeline = document.getElementById("timeline");
-    const muteToggleButton = document.getElementById("muteToggleButton");
-    const recordingIndicator = document.getElementById("recordingIndicator");
-    const challengeButtonContainer = document.getElementById("challengeButtonContainer");
-    const downloadOverlayContainer = document.getElementById("downloadOverlayContainer");
-    const replayOverlayContainer = document.getElementById("replayOverlayContainer");
-    const replayVideoElement = document.getElementById("replayVideoElement"); // Get replay video element
-    let currentReplayUrl = null; // To store the URL of the clip being replayed for sharing
-
+  
     auth.onAuthStateChanged((user) => {
       if (user) {
-        loginContainer.style.display = "none";
-        appContainer.style.display = "block";
-        // Don't automatically start preview, wait for "Let's Play"
+        document.getElementById("loginContainer").style.display = "none";
+        document.getElementById("appContainer").style.display = "block";
       } else {
-        loginContainer.style.display = "flex";
-        appContainer.style.display = "none";
-         // Ensure overlays are hidden on logout
-         closeDownloadOverlay();
-         closeReplay();
-         // Stop video streams if any
-         if (videoElement.srcObject) {
-            videoElement.srcObject.getTracks().forEach(track => track.stop());
-            videoElement.srcObject = null;
-         }
-         if (mediaRecorder && mediaRecorder.state === "recording") {
-            manualStop(); // Use manualStop to ensure proper cleanup
-         }
+        document.getElementById("loginContainer").style.display = "flex";
+        document.getElementById("appContainer").style.display = "none";
       }
     });
-
+  
     async function login() {
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
       try {
         await auth.signInWithEmailAndPassword(email, password);
-        // Auth state change will handle UI update
       } catch (error) {
         alert("Login error: " + error.message);
       }
     }
-
+  
     let mediaRecorder;
     let recordedChunks = [];
-    let rallyClips = []; // Array to hold { url, timestamp, filename, manual }
+    let rallyClips = [];
     let recording = false;
-    // --- CHANGE 1: Default to front camera ---
-    let currentFacingMode = "user"; // Default to front camera
-
+    // Default to front camera
+    let currentFacingMode = "user";
+    const videoElement = document.getElementById("liveVideo");
+    const timeline = document.getElementById("timeline");
+    const muteToggleButton = document.getElementById("muteToggleButton");
+    const recordingIndicator = document.getElementById("recordingIndicator");
+    const reviewButtonContainer = document.getElementById("reviewButtonContainer");
+  
     async function startLivePreview() {
-        // If stream already exists, return
-        if (videoElement.srcObject) return;
-
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-            video: {
-                aspectRatio: { ideal: 16/9 },
-                width: { ideal: 1280 }, // Request slightly higher res
-                height: { ideal: 720 },
-                frameRate: { ideal: 30, max: 60 }, // Adjusted framerate
-                facingMode: currentFacingMode // Uses the variable (now defaulting to 'user')
-            },
-            audio: true // Request audio
-            });
-            console.log("Camera stream acquired using facingMode:", currentFacingMode);
-            videoElement.srcObject = stream;
-            videoElement.muted = true; // Mute preview by default
-            updateMuteButton(); // Update button text
-            return stream; // Return stream for MediaRecorder
-        } catch (error) {
-            console.error("getUserMedia error:", error);
-            alert("Error accessing camera/microphone: " + error.name + ". Check browser permissions and device settings. Ensure HTTPS is used.");
-            return null; // Indicate failure
-        }
-    }
-
-
-    function getFormattedFileName(isManual = false) {
-        clipCounter++;
-        const clipNumber = clipCounter.toString().padStart(3, '0');
-        const now = new Date();
-        const hh = now.getHours().toString().padStart(2, '0');
-        const mm = now.getMinutes().toString().padStart(2, '0');
-        const timeStr = hh + mm;
-        const month = (now.getMonth() + 1).toString().padStart(2, '0');
-        const dd = now.getDate().toString().padStart(2, '0');
-        const PQAry = now.getFullYear().toString();
-        const dateStr = month + dd;
-        const manualMarker = isManual ? "_CHALLENGE" : ""; // Add marker for challenged clips
-        const titlePart = rallyTitleGlobal ? `${rallyTitleGlobal}_` : ""; // Add title if exists
-        // Example: MyGame_001_CHALLENGE_1438_04062025.mp4
-        return `${titlePart}${clipNumber}${manualMarker}_${timeStr}_${dateStr}.mp4`;
-    }
-
-    async function uploadToFirebase(blob, isManual = false) {
-        // Check if user is logged in (Firebase requires auth for storage rules typically)
-        if (!auth.currentUser) {
-            console.error("Upload error: User not authenticated.");
-            alert("Authentication error. Cannot upload clip.");
-            return null;
-        }
-        try {
-            const storageRef = storage.ref();
-            const fileName = getFormattedFileName(isManual); // Pass manual status
-            // Include user ID in path for security rules (optional but recommended)
-            // const userPath = `users/${auth.currentUser.uid}/rallies/${fileName}`;
-            const filePath = `rallies/${fileName}`; // Simpler path for now
-            const fileRef = storageRef.child(filePath);
-            const metadata = { contentType: 'video/mp4' };
-
-            console.log(`Uploading ${fileName} to Firebase Storage...`);
-            const snapshot = await fileRef.put(blob, metadata);
-            const downloadURL = await snapshot.ref.getDownloadURL();
-            console.log(`Upload successful: ${fileName}`, downloadURL);
-            return { url: downloadURL, filename: fileName };
-        } catch (error) {
-            console.error("Firebase upload error:", error);
-            alert("Error uploading clip: " + error.message + ". Check Firebase Storage rules and network connection.");
-            return null; // Indicate failure
-        }
-    }
-
-
-    async function startGame() {
-        const startOverlay = document.getElementById("startOverlay");
-        if (startOverlay) {
-            const titleInput = document.getElementById("rallyTitle");
-            // Sanitize title - allow spaces, letters, numbers, hyphens, underscores
-            rallyTitleGlobal = titleInput?.value ? titleInput.value.replace(/[^a-zA-Z0-9\s-_]/g, "").trim() : "Session";
-            startOverlay.style.display = 'none'; // Hide overlay
-        }
-
-        const stream = await startLivePreview(); // Start preview and get stream
-        if (!stream) return; // Exit if camera failed
-
-        if (typeof MediaRecorder === "undefined") {
-            alert("MediaRecorder API not supported on this browser/device. Recording is unavailable.");
-            return;
-        }
-
-        // Reset state for new game
-        rallyClips = [];
-        clipCounter = 0;
-        updateTimeline(); // Clear timeline visually
-
-        createMediaRecorder(stream); // Create recorder with the new stream
-        segmentedMode = true; // Start in segmented mode
-        // Consider if voice recognition should start here or manually
-        // startVoiceRecognition(); // Optional: uncomment to enable voice commands
-        manualStart(); // Start recording the first segment immediately
-    }
-
-
-    function createMediaRecorder(stream) {
-        if (!stream) {
-            console.error("Cannot create MediaRecorder: No stream provided.");
-            alert("Failed to initialize recording: Camera stream not available.");
-            return;
-        }
-         if (mediaRecorder && (mediaRecorder.state === "recording" || mediaRecorder.state === "paused")) {
-            console.warn("Attempted to create MediaRecorder while already recording or paused. Stopping existing recorder.");
-            mediaRecorder.stop(); // Stop existing recorder first
-        }
-
-        try {
-            // Define supported mime types in order of preference
-            const mimeTypes = [
-                 'video/mp4;codecs=avc1', // H.264 MP4 (often hardware accelerated)
-                 'video/webm;codecs=vp9', // VP9 WebM
-                 'video/webm;codecs=vp8', // VP8 WebM
-                 'video/mp4',             // Generic MP4
-                 'video/webm'             // Generic WebM
-             ];
-
-             let selectedMimeType = '';
-             for (const mimeType of mimeTypes) {
-                 if (MediaRecorder.isTypeSupported(mimeType)) {
-                     selectedMimeType = mimeType;
-                     break;
-                 }
-             }
-
-             if (!selectedMimeType) {
-                 console.error("No supported MIME type found for MediaRecorder.");
-                 alert("Your browser doesn't support common video recording formats (MP4/WebM).");
-                 return;
-             }
-             console.log("Using MIME type:", selectedMimeType);
-
-
-            const options = {
-                mimeType: selectedMimeType,
-                videoBitsPerSecond: 3000000, // Increased bitrate for better quality (3 Mbps)
-                audioBitsPerSecond: 128000
-            };
-            mediaRecorder = new MediaRecorder(stream, options); // Use the passed stream
-
-            mediaRecorder.ondataavailable = (event) => {
-                if (event.data && event.data.size > 0) {
-                    recordedChunks.push(event.data);
-                    // console.log("Data available, chunk size:", event.data.size);
-                }
-            };
-
-            mediaRecorder.onstop = async () => {
-                console.log("Recorder stopped. Chunks collected:", recordedChunks.length);
-                recording = false; // Mark as not recording *before* async upload
-                recordingIndicator.style.display = "none";
-                challengeButtonContainer.style.display = "none"; // Hide challenge button when not recording
-
-                if (recordedChunks.length > 0) {
-                    const blob = new Blob(recordedChunks, { type: selectedMimeType });
-                    console.log("Blob created, size:", blob.size);
-                    recordedChunks = []; // Clear chunks immediately after creating blob
-
-                     // Determine if this clip was manually stopped (challenged)
-                     // We check if `segmentedMode` is false, which happens in `challengeLastClip` and `manualStop`
-                     const isManualClip = !segmentedMode;
-
-                    const result = await uploadToFirebase(blob, isManualClip); // Upload and check if manual
-                    if (result) { // Only add if upload was successful
-                        const clip = {
-                            url: result.url,
-                            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                            filename: result.filename,
-                            manual: isManualClip // Store manual status
-                        };
-                        rallyClips.push(clip);
-                        updateTimeline();
-
-                        // --- Auto-deletion logic ---
-                        // Only run auto-delete if the stopped clip was *not* manual
-                        // and we are still supposed to be in segmented mode.
-                        if (!isManualClip && segmentedMode) {
-                           let autoClips = rallyClips.filter(c => !c.manual);
-                           const maxAutoClips = 5; // Keep last 5 non-manual clips
-                           // console.log("Checking auto-deletion. Auto clips:", autoClips.length);
-
-                           while (autoClips.length > maxAutoClips) {
-                               // Find the index of the *oldest* non-manual clip in the main rallyClips array
-                               const indexToDelete = rallyClips.findIndex(c => !c.manual);
-
-                               if (indexToDelete !== -1) {
-                                   const clipToDelete = rallyClips.splice(indexToDelete, 1)[0]; // Remove from array
-                                   console.log("Auto-deleting old clip:", clipToDelete.filename);
-                                   // Update timeline immediately after removing from array
-                                   updateTimeline();
-                                   // Asynchronously delete from Firebase Storage
-                                   storage.ref('rallies/' + clipToDelete.filename).delete()
-                                       .then(() => console.log("Old auto clip deleted from Firebase Storage:", clipToDelete.filename))
-                                       .catch(error => console.error("Error deleting auto clip from Firebase:", error));
-
-                                   // Update the filtered list for the loop condition
-                                   autoClips = rallyClips.filter(c => !c.manual);
-                               } else {
-                                   // Should not happen if autoClips.length > maxAutoClips, but break defensively
-                                   break;
-                               }
-                           }
-                        } // End auto-deletion logic
-                    } else {
-                        console.warn("Upload failed, clip not added to timeline.");
-                    }
-
-
-                    // If we were in segmented mode and the stop wasn't manual, restart recording
-                     if (segmentedMode && !isManualClip) {
-                         console.log("Segment ended, restarting recording...");
-                         // Ensure the stream is still active before creating a new recorder
-                         if (stream && stream.active) {
-                             createMediaRecorder(stream); // Recreate recorder for the next segment
-                             // Short delay before starting next segment allows UI to update
-                             setTimeout(() => {
-                                 startRecording();
-                             }, 500); // 500ms delay
-                         } else {
-                             console.error("Stream is inactive, cannot restart recording.");
-                              segmentedMode = false; // Stop trying to restart
-                              alert("Camera stream lost. Recording stopped.");
-                         }
-                     } else if (!segmentedMode){
-                        // If mode was switched to non-segmented (manual stop or challenge), ensure it stays stopped.
-                        console.log("Recording stopped manually or for challenge review.");
-                     }
-
-                } else {
-                    console.log("Recorder stopped, but no recorded chunks found.");
-                    // If segmentedMode is true, but recording stopped unexpectedly (e.g., error), try restarting
-                    if(segmentedMode) {
-                         console.warn("Unexpected stop in segmented mode with no data. Attempting restart.");
-                         if (stream && stream.active) {
-                              createMediaRecorder(stream);
-                              setTimeout(() => { startRecording(); }, 500);
-                         } else {
-                             console.error("Stream is inactive, cannot restart recording.");
-                             segmentedMode = false;
-                         }
-                    }
-                }
-            }; // end of onstop
-
-            mediaRecorder.onerror = (event) => {
-                console.error("MediaRecorder error:", event.error);
-                alert("Recording error: " + event.error.name + ". Recording may stop.");
-                recording = false;
-                recordingIndicator.style.display = "none";
-                challengeButtonContainer.style.display = "none";
-                if (segmentTimer) clearTimeout(segmentTimer);
-                 segmentedMode = false; // Stop trying to auto-restart on error
-            };
-
-        } catch (e) {
-            console.error("Error creating MediaRecorder:", e);
-            alert("Failed to initialize recording. Your browser might not support the required features or codecs.");
-             mediaRecorder = null; // Ensure recorder is null if creation failed
-        }
-    }
-
-    function manualStart() {
-        console.log("Manual Start requested.");
-        if (!videoElement.srcObject || !videoElement.srcObject.active) {
-             console.warn("No active stream, attempting to start live preview first.");
-             startLivePreview().then(stream => {
-                 if (stream) {
-                     segmentedMode = true; // Set mode
-                     if (!mediaRecorder || mediaRecorder.state === "inactive") {
-                        createMediaRecorder(stream); // Create if needed
-                     }
-                     startRecording(); // Now start
-                 } else {
-                     alert("Failed to start camera. Cannot start recording.");
-                 }
-             });
-        } else {
-             segmentedMode = true;
-              if (!mediaRecorder || mediaRecorder.state === "inactive") {
-                    console.log("Creating new MediaRecorder for manual start.");
-                    createMediaRecorder(videoElement.srcObject);
-                }
-             startRecording();
-        }
-    }
-
-    function manualStop() {
-         console.log("Manual Stop requested.");
-         segmentedMode = false; // Explicitly stop segmented mode
-         if (segmentTimer) {
-             clearTimeout(segmentTimer);
-             segmentTimer = null;
-             console.log("Segment timer cleared.");
-         }
-         stopRecording(); // Stop the current recording (will trigger onstop)
-    }
-
-    function startRecording() {
-        if (recording) {
-            console.warn("Already recording.");
-            return;
-        }
-         if (!mediaRecorder) {
-            console.error("Cannot start recording: MediaRecorder is not initialized.");
-            // Attempt to create it if stream exists
-             if (videoElement.srcObject && videoElement.srcObject.active) {
-                 console.log("MediaRecorder not found, creating one now.");
-                 createMediaRecorder(videoElement.srcObject);
-                 if (!mediaRecorder) { // Check if creation failed
-                      alert("Failed to create recorder. Cannot start recording.");
-                      return;
-                 }
-             } else {
-                 alert("Camera not ready. Cannot start recording.");
-                 return;
-             }
-        }
-
-        if (mediaRecorder.state === "inactive") {
-            try {
-                recordedChunks = []; // Clear any old chunks
-                mediaRecorder.start();
-                recording = true;
-                console.log("Recording started.");
-                recordingIndicator.style.display = "flex"; // Show indicator
-                challengeButtonContainer.style.display = "block"; // Show challenge button
-
-                // If in segmented mode, set the timer for the next stop
-                if (segmentedMode) {
-                    if (segmentTimer) clearTimeout(segmentTimer); // Clear previous timer just in case
-                    const segmentDuration = 60000; // 60 seconds
-                    console.log(`Segmented mode: Recording for ${segmentDuration / 1000}s`);
-                    segmentTimer = setTimeout(() => {
-                        console.log("Segment timer elapsed.");
-                        // Check if still recording before stopping (could have been stopped manually)
-                        if (recording && segmentedMode) {
-                            stopRecording();
-                        }
-                    }, segmentDuration);
-                }
-            } catch (e) {
-                 console.error("Error starting mediaRecorder:", e);
-                 alert("Could not start recording: " + e.message);
-                 recording = false;
-                 recordingIndicator.style.display = "none";
-                 challengeButtonContainer.style.display = "none";
-            }
-        } else {
-            console.warn("Cannot start recording, recorder state is:", mediaRecorder.state);
-        }
-    }
-
-    function stopRecording() {
-        if (!recording) {
-            // console.log("Not recording, stop request ignored.");
-            return;
-        }
-        if (mediaRecorder && (mediaRecorder.state === "recording" || mediaRecorder.state === "paused")) {
-            console.log("Stopping recording...");
-            mediaRecorder.stop(); // This will trigger the 'onstop' event handler
-             // State updates (recording=false, indicator hide) happen in 'onstop'
-        } else {
-            console.warn("Stop recording called, but recorder state is:", mediaRecorder?.state);
-            // Force state update if recorder seems stuck or already inactive
-            recording = false;
-            recordingIndicator.style.display = "none";
-             challengeButtonContainer.style.display = "none";
-            if (segmentTimer) clearTimeout(segmentTimer);
-        }
-    }
-
-    async function stopGame() {
-      console.log("End Session requested.");
-      segmentedMode = false; // Ensure no more segments start
-
-      // Stop recording if active
-      if (mediaRecorder && mediaRecorder.state === "recording") {
-        console.log("Stopping active recording for End Session...");
-         // IMPORTANT: Wait for the final blob to be processed and uploaded
-         // before showing the download overlay. We add a flag or check state.
-         // Let's rely on the onstop handler finishing. We might need a small delay
-         // or a promise mechanism if uploads are slow.
-         stopRecording();
-         // Wait a short period to allow the final onstop to process
-         await new Promise(resolve => setTimeout(resolve, 1500)); // Wait 1.5s (adjust if needed)
-      }
-
-       // Stop camera/mic tracks
-      if (videoElement.srcObject) {
-        console.log("Stopping camera tracks.");
-        videoElement.srcObject.getTracks().forEach(track => track.stop());
-        videoElement.srcObject = null; // Release the stream object
-      }
-
-      // Stop voice recognition if it's running
-      // stopVoiceRecognition(); // Add this function if needed
-
-      // Show download overlay only if there are clips
-      if (rallyClips.length > 0) {
-          console.log("Showing download overlay.");
-          showDownloadOverlay();
-      } else {
-          console.log("No clips recorded, signing out.");
-          // No clips, just sign out and go back to login
-          try {
-              await auth.signOut();
-              // Auth state change will handle UI
-          } catch (error) {
-              console.error("Error signing out:", error);
-          }
-      }
-    }
-
-    function updateTimeline() {
-        timeline.innerHTML = ""; // Clear existing timeline items
-        rallyClips.forEach((clip, index) => {
-            const div = document.createElement("div");
-            // Use Tailwind classes for timeline item styling
-            div.className = "timeline-item flex-shrink-0 inline-block text-center mx-1 cursor-pointer";
-
-            const thumb = document.createElement("video");
-            thumb.src = clip.url;
-            thumb.muted = true;
-            thumb.playsInline = true; // Important for mobile playback inline
-            thumb.preload = "metadata"; // Load only metadata initially
-            // --- CHANGE 2: Reduced thumbnail width ---
-            thumb.className = "w-16 h-auto object-cover border border-gray-600 rounded"; // Reduced size
-
-             // Play thumbnail on hover/touch (optional enhancement)
-             thumb.onmouseenter = () => { if(thumb.readyState >= 3) thumb.play(); }; // Check if enough data loaded
-             thumb.onmouseleave = () => thumb.pause();
-             thumb.onclick = (e) => {
-                e.stopPropagation(); // Prevent potential parent clicks
-                replayRally(clip.url);
-             };
-
-
-            const label = document.createElement("span");
-            // --- CHANGE 2: Reduced label width to match thumbnail ---
-            label.className = "block text-xs text-gray-300 mt-1 overflow-hidden whitespace-nowrap text-ellipsis w-16"; // Reduced width
-            label.innerText = clip.filename ? clip.filename.split('_').slice(0, -2).join('_') : `Rally ${index + 1}`; // Show cleaner name
-             label.title = clip.filename || `Rally ${index + 1}`; // Full name on hover
-
-
-            div.appendChild(thumb);
-            div.appendChild(label);
-            timeline.appendChild(div);
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { 
+            aspectRatio: { ideal: 16/9 },
+            width: { ideal: 816 },
+            height: { ideal: 480 },
+            frameRate: { ideal: 120 },
+            facingMode: currentFacingMode 
+          },
+          audio: true
         });
-         // Scroll to the newest clip (optional)
-         // timeline.scrollLeft = timeline.scrollWidth;
+        console.log("Camera stream acquired.");
+        videoElement.srcObject = stream;
+        videoElement.muted = true;
+      } catch (error) {
+        console.error("getUserMedia error:", error);
+        alert("Unable to access camera/microphone. Check your device settings.");
+      }
     }
-
-    // Renamed function
-    async function challengeLastClip() {
-        console.log("Challenge button clicked.");
-        if (rallyClips.length === 0 && !recording) {
-             alert("No recording available to challenge.");
-             return;
-        }
-
-         segmentedMode = false; // Stop automatic segmenting/deletion
-         if (segmentTimer) clearTimeout(segmentTimer); // Clear timer
-
-         let clipToReview = null;
-
-         if (recording) {
-             console.log("Challenge during recording: Stopping current segment...");
-             // Stop the current recording. The 'onstop' handler will save it.
-             // We need to wait for it to be saved and added to rallyClips.
-             stopRecording();
-             // Wait for the onstop handler to finish processing and uploading
-             await new Promise(resolve => setTimeout(resolve, 1500)); // Adjust delay as needed based on upload time
-
-              if (rallyClips.length > 0) {
-                 clipToReview = rallyClips[rallyClips.length - 1]; // Get the most recently added clip
-                 clipToReview.manual = true; // Mark it as manual (challenged)
-                  console.log("Marked clip as challenged:", clipToReview.filename);
-                  // Update timeline to reflect potential style change for challenged clips (optional)
-                  updateTimeline();
-             } else {
-                  console.warn("Recording stopped for challenge, but no clip was added to the list.");
-                  alert("Failed to save the last segment for challenge review.");
-                  return; // Exit if no clip found
-             }
-
-         } else if (rallyClips.length > 0) {
-             // If not currently recording, challenge the absolute last clip in the list
-             clipToReview = rallyClips[rallyClips.length - 1];
-             if (!clipToReview.manual) {
-                  clipToReview.manual = true; // Mark as manual if not already
-                  console.log("Marked existing last clip as challenged:", clipToReview.filename);
-                   // Update timeline (optional)
-                   updateTimeline();
-             } else {
-                 console.log("Last clip was already marked as challenged.");
-             }
-         }
-
-         if (clipToReview) {
-             console.log("Replaying challenged clip:", clipToReview.url);
-             replayRally(clipToReview.url); // Replay the determined clip
-         } else {
-              console.error("Could not determine which clip to challenge review.");
-              alert("Unable to initiate challenge review.");
-         }
-         // Do NOT restart recording automatically after challenge
+  
+    function getFormattedFileName() {
+      clipCounter++;
+      const clipNumber = clipCounter.toString().padStart(3, '0');
+      const now = new Date();
+      const hh = now.getHours().toString().padStart(2, '0');
+      const mm = now.getMinutes().toString().padStart(2, '0');
+      const timeStr = hh + mm;
+      const month = (now.getMonth() + 1).toString().padStart(2, '0');
+      const dd = now.getDate().toString().padStart(2, '0');
+      const yyyy = now.getFullYear().toString();
+      return `${clipNumber}_${timeStr}_${dateStr}.mp4`;
     }
-
-     function replayRally(url) {
-        console.log("Replaying rally:", url);
-        currentReplayUrl = url; // Store URL for sharing
-        replayVideoElement.src = url; // Set source on the dedicated replay video element
-        replayVideoElement.muted = false; // Unmute for replay by default
-        replayVideoElement.playbackRate = 1.0; // Reset speed
-        replayVideoElement.currentTime = 0; // Start from beginning
-
-        // Update mute button appearance
-         const replayMuteBtn = document.getElementById("replayMuteBtn");
-         replayMuteBtn.innerText = replayVideoElement.muted ? "🔇" : "🔊";
-
-         // Set active state for speed buttons
-         document.querySelectorAll('.replay-controls button').forEach(btn => {
-             if (parseFloat(btn.dataset.speed) === 1.0) {
-                 btn.classList.add('btn-active'); // DaisyUI active class
-             } else {
-                 btn.classList.remove('btn-active');
-             }
-         });
-
-
-        replayOverlayContainer.style.display = "flex"; // Show the overlay
-        replayVideoElement.play(); // Start playing automatically
-     }
-
-     function closeReplay() {
-         replayVideoElement.pause(); // Stop playback
-         replayVideoElement.src = ""; // Clear source
-         replayOverlayContainer.style.display = "none"; // Hide overlay
-         currentReplayUrl = null; // Clear current URL
-
-          // Decide whether to resume live preview or recording
-          // If segmentedMode was turned off by challenge/manual stop, it stays off.
-          // If user just reviewed a timeline clip, maybe resume preview?
-          // For simplicity, let's just ensure the preview is running if the stream exists.
-          if (videoElement.srcObject && videoElement.paused) {
-             videoElement.play().catch(e => console.error("Error resuming live preview:", e));
-          }
-           // Optionally, automatically restart recording if it was manually paused before review?
-           // if (!recording && segmentedMode) { manualStart(); } // Be careful with this logic.
-           console.log("Replay closed. Segmented mode is currently:", segmentedMode);
-     }
-
-    // Event listeners for replay controls (added dynamically or use event delegation)
-     document.addEventListener('DOMContentLoaded', () => {
-         // Speed Controls
-         const speedControls = document.querySelector('.replay-controls');
-         if(speedControls) {
-             speedControls.addEventListener('click', (e) => {
-                 if (e.target.tagName === 'BUTTON' && e.target.dataset.speed) {
-                     const speed = parseFloat(e.target.dataset.speed);
-                     replayVideoElement.playbackRate = speed;
-                      // Update active button style
-                      speedControls.querySelectorAll('button').forEach(btn => btn.classList.remove('btn-active'));
-                      e.target.classList.add('btn-active');
-                 }
-             });
-         }
-
-          // Replay Mute Button
-         const replayMuteBtn = document.getElementById('replayMuteBtn');
-         if(replayMuteBtn) {
-             replayMuteBtn.onclick = () => {
-                 replayVideoElement.muted = !replayVideoElement.muted;
-                 replayMuteBtn.innerText = replayVideoElement.muted ? "🔇" : "🔊";
-             };
-         }
-         // Back and Share buttons have onclick attributes in HTML for simplicity here
-     });
-
-
-     async function shareCurrentClip() {
-        if (!currentReplayUrl) {
-            alert("No clip is currently loaded for sharing.");
-            return;
-        }
-        shareClip(currentReplayUrl); // Call the generic share function
-     }
-
-
-    async function shareClip(url) {
-        console.log("Attempting to share clip:", url);
-        const clipFilename = url.substring(url.lastIndexOf('/') + 1).split('?')[0]; // Basic filename extraction
-
-        // Try Web Share API first (for files)
-        if (navigator.share && navigator.canShare) {
-            try {
-                console.log("Fetching blob for sharing...");
-                // Fetch the video blob - Add CORS headers on Firebase Storage if needed
-                 const response = await fetch(url);
-                 if (!response.ok) {
-                     throw new Error(`Failed to fetch video: ${response.statusText}`);
-                 }
-                 const blob = await response.blob();
-                 const file = new File([blob], decodeURIComponent(clipFilename) || "smashcam_clip.mp4", { type: blob.type || "video/mp4" });
-
-                if (navigator.canShare({ files: [file] })) {
-                    console.log("Sharing file via Web Share API...");
-                    await navigator.share({
-                        title: rallyTitleGlobal ? `Clip from ${rallyTitleGlobal}` : "SmashCam Rally Clip",
-                        text: "Check out this pickleball clip!",
-                        files: [file]
-                    });
-                    console.log("Shared successfully via File Share.");
-                    return; // Exit function after successful share
-                } else {
-                     console.log("File sharing not supported, trying URL sharing...");
-                      // Fallback to sharing URL if file sharing specifically isn't supported
-                     if (navigator.canShare({ url: url })) {
-                         await navigator.share({
-                             title: rallyTitleGlobal ? `Clip from ${rallyTitleGlobal}` : "SmashCam Rally Clip",
-                             text: "Check out this pickleball clip!",
-                             url: url
-                         });
-                         console.log("Shared successfully via URL Share.");
-                         return;
-                     } else {
-                         console.log("URL sharing also not supported by Web Share API.");
-                         throw new Error("Web Share API cannot share files or URLs here."); // Force fallback
-                     }
-                }
-            } catch (error) {
-                console.warn("Web Share API error (file or URL):", error.message, "Falling back to clipboard.");
-                // Fallback to clipboard if Web Share fails or isn't fully supported
-                try {
-                    await navigator.clipboard.writeText(url);
-                    alert("Clip URL copied to clipboard. You can paste it to share.");
-                } catch (copyError) {
-                    console.error("Failed to copy URL to clipboard:", copyError);
-                    alert("Sharing failed. Could not share via app or copy URL.");
-                }
-            }
-        } else {
-            // Fallback for browsers without Web Share API
-            console.log("Web Share API not supported, falling back to clipboard.");
-            try {
-                await navigator.clipboard.writeText(url);
-                alert("Clip URL copied to clipboard. You can paste it to share.");
-            } catch (error) {
-                console.error("Failed to copy URL to clipboard:", error);
-                alert("Sharing not supported. Could not copy URL.");
-            }
-        }
+  
+    async function uploadToFirebase(blob) {
+      try {
+        const storageRef = storage.ref();
+        const fileName = getFormattedFileName();
+        const fileRef = storageRef.child('rallies/' + fileName);
+        const metadata = { contentType: 'video/mp4' };
+        const snapshot = await fileRef.put(blob, metadata);
+        const downloadURL = await snapshot.ref.getDownloadURL();
+        return { url: downloadURL, filename: fileName };
+      } catch (error) {
+        alert("Error uploading clip: " + error.message);
+      }
     }
-
-
-    function toggleMute() {
-        if (videoElement) {
-            videoElement.muted = !videoElement.muted;
-             updateMuteButton();
-        }
-    }
-     function updateMuteButton(){
-         muteToggleButton.innerText = videoElement.muted ? "🔇" : "🔊";
-     }
-
-    async function toggleCamera() {
-      if (recording) {
-        alert("Stop recording before toggling the camera.");
+  
+    async function startGame() {
+      const startOverlay = document.getElementById("startOverlay");
+      if (startOverlay) {
+        const titleInput = document.getElementById("rallyTitle");
+        rallyTitleGlobal = titleInput && titleInput.value ? titleInput.value.replace(/[^a-zA-Z0-9-_]/g, "") : "";
+        startOverlay.remove();
+      }
+      if (videoElement.srcObject) return;
+      await startLivePreview();
+      if (typeof MediaRecorder === "undefined") {
+        alert("MediaRecorder not supported. Please use Safari on iOS.");
         return;
       }
-
-      currentFacingMode = (currentFacingMode === "user") ? "environment" : "user"; // Toggle
-      console.log("Toggling camera to:", currentFacingMode);
-
-      // Stop existing tracks
+      createMediaRecorder();
+      segmentedMode = true;
+      startVoiceRecognition();
+      startRecording();
+    }
+  
+    function createMediaRecorder() {
+      try {
+        mediaRecorder = new MediaRecorder(videoElement.srcObject, {
+          mimeType: "video/mp4",
+          videoBitsPerSecond: 2500000,
+          audioBitsPerSecond: 128000
+        });
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data && event.data.size > 0) recordedChunks.push(event.data);
+        };
+        mediaRecorder.onstop = async () => {
+          if (recordedChunks.length > 0) {
+            const blob = new Blob(recordedChunks, { type: "video/mp4" });
+            const result = await uploadToFirebase(blob);
+            const clip = { url: result.url, timestamp: new Date().toLocaleTimeString(), filename: result.filename, manual: false };
+            rallyClips.push(clip);
+            updateTimeline();
+            recordedChunks = [];
+            if (segmentedMode) {
+              let autoClips = rallyClips.filter(c => !c.manual);
+              while(autoClips.length > 5) {
+                const indexToDelete = rallyClips.findIndex(c => !c.manual);
+                if(indexToDelete !== -1) {
+                  const clipToDelete = rallyClips.splice(indexToDelete, 1)[0];
+                  storage.ref('rallies/' + clipToDelete.filename).delete()
+                    .then(() => console.log("Old auto clip deleted from Firebase Storage."))
+                    .catch(error => console.error("Error deleting auto clip:", error));
+                }
+                autoClips = rallyClips.filter(c => !c.manual);
+              }
+              createMediaRecorder();
+              setTimeout(() => { startRecording(); }, 500);
+            }
+          }
+        };
+      } catch (e) {
+        console.error("Error creating MediaRecorder:", e);
+        alert("Failed to initialize recording. Your device may not support this feature.");
+      }
+    }
+  
+    function manualStart() { 
+      segmentedMode = true;
+      createMediaRecorder();
+      startRecording(); 
+    }
+    function manualStop() { 
+      segmentedMode = false;
+      if (segmentTimer) clearTimeout(segmentTimer);
+      stopRecording(); 
+    }
+  
+    function startRecording() {
+      if (!recording && mediaRecorder) {
+        recordedChunks = [];
+        mediaRecorder.start();
+        recording = true;
+        recordingIndicator.style.display = "block";
+        reviewButtonContainer.style.display = "block";
+        if (segmentedMode) {
+          segmentTimer = setTimeout(() => { stopRecording(); }, 60000);
+        }
+      }
+    }
+  
+    function stopRecording() {
+      if (recording && mediaRecorder) {
+        mediaRecorder.stop();
+        recording = false;
+        recordingIndicator.style.display = "none";
+        reviewButtonContainer.style.display = "none";
+        if (segmentTimer) clearTimeout(segmentTimer);
+      }
+    }
+  
+    async function stopGame() {
+      segmentedMode = false;
+      if (mediaRecorder && mediaRecorder.state === "recording") {
+        stopRecording();
+      }
       if (videoElement.srcObject) {
         videoElement.srcObject.getTracks().forEach(track => track.stop());
-        videoElement.srcObject = null; // Release stream
-        console.log("Stopped existing camera tracks.");
       }
-        // Clear MediaRecorder instance as it's tied to the old stream
-        mediaRecorder = null;
-
-      // Get new stream (which automatically updates the preview)
-       const newStream = await startLivePreview(); // This function now handles the getUserMedia call
-
-        if (newStream) {
-            console.log("Camera switched successfully. Recreating MediaRecorder.");
-            // Recreate MediaRecorder with the new stream, but don't start recording
-            createMediaRecorder(newStream);
-        } else {
-             alert("Failed to switch camera. The selected camera might not be available or accessible.");
-              // Attempt to revert to the previous mode if possible? Or leave as is.
-              currentFacingMode = (currentFacingMode === "user") ? "environment" : "user"; // Revert toggle logic
-        }
+      showDownloadOverlay();
     }
-
-    // --- Voice Recognition (Optional - currently disabled by default) ---
-    let speechRecognition;
-    function startVoiceRecognition() {
-        // Check for browser support (prefixed included)
-        const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!Recognition) {
-            console.warn("Speech Recognition API not supported in this browser.");
-            // Optionally inform the user through UI instead of alert
-            // alert("Voice commands are not supported in this browser.");
-            return;
-        }
-
-        // Prevent multiple instances
-        if (speechRecognition && (speechRecognition.recognizing || speechRecognition.started)) {
-            console.log("Speech recognition already running.");
-            return;
-        }
-
-
-        speechRecognition = new Recognition();
-        speechRecognition.continuous = true; // Keep listening
-        speechRecognition.interimResults = false; // Only get final results
-        speechRecognition.lang = "en-US";
-
-        speechRecognition.recognizing = false; // Custom flag
-        speechRecognition.started = false; // Custom flag
-
-
-        speechRecognition.onstart = () => {
-            console.log("Voice recognition started.");
-            speechRecognition.recognizing = true;
-            speechRecognition.started = true;
-        };
-
-        speechRecognition.onresult = (event) => {
-            const last = event.results.length - 1;
-            const command = event.results[last][0].transcript.trim().toLowerCase();
-            console.log("Voice command received:", command);
-
-            if (command.includes("start recording") || command.includes("start record")) {
-                 if(!recording) manualStart();
-            } else if (command.includes("stop recording") || command.includes("stop record")) {
-                 if(recording) manualStop();
-            } else if (command.includes("challenge") || command.includes("review clip")) {
-                 // Check if challenge button is visible/active state?
-                 if (challengeButtonContainer.style.display !== 'none' || rallyClips.length > 0) {
-                    challengeLastClip();
-                 }
-            }
-        };
-
-        speechRecognition.onerror = (event) => {
-            console.error("Speech recognition error:", event.error);
-            speechRecognition.recognizing = false;
-             // Handle common errors like 'no-speech' or 'network'
-             if (event.error === 'no-speech' || event.error === 'audio-capture') {
-                 // Ignore or maybe restart? Be cautious of infinite loops.
-                 console.warn("Speech recognition error - ", event.error);
-             } else if (event.error === 'not-allowed') {
-                 alert("Microphone access denied for voice commands. Please enable it in browser settings.");
-                 speechRecognition.started = false; // Ensure it doesn't try to restart
-             } else {
-                 // Restart automatically on other errors? Risky.
-                 // Consider stopping instead.
-                 // stopVoiceRecognition();
-             }
-
-        };
-
-        speechRecognition.onend = () => {
-            console.log("Voice recognition ended.");
-            speechRecognition.recognizing = false;
-             // Auto-restart if it ended naturally and wasn't manually stopped
-             if (speechRecognition.started) {
-                 console.log("Restarting voice recognition...");
-                 setTimeout(() => {
-                    try { speechRecognition.start(); } catch(e){ console.error("Error restarting speech recognition:", e);}
-                 }, 500); // Short delay before restart
-             }
-        };
-
-         try {
-             speechRecognition.start();
-         } catch (e) {
-             console.error("Could not start speech recognition:", e);
-             speechRecognition.started = false;
-         }
+  
+    function updateTimeline() {
+      timeline.innerHTML = "";
+      rallyClips.forEach((clip, index) => {
+        const div = document.createElement("div");
+        div.className = "timeline-item";
+        const thumb = document.createElement("video");
+        thumb.src = clip.url;
+        thumb.muted = true;
+        thumb.playsInline = true;
+        thumb.autoplay = true;
+        thumb.loop = true;
+        thumb.onclick = () => replayRally(clip.url);
+        const label = document.createElement("span");
+        label.innerText = clip.filename || ("Rally " + (index + 1));
+        div.appendChild(thumb);
+        div.appendChild(label);
+        timeline.appendChild(div);
+      });
     }
-
-    function stopVoiceRecognition() {
-         if (speechRecognition && speechRecognition.started) {
-             console.log("Stopping voice recognition.");
-             speechRecognition.started = false; // Prevent auto-restart on 'onend'
-             speechRecognition.stop();
-         }
+  
+    async function reviewLastClip() {
+      if (rallyClips.length === 0) {
+        alert("No rally recording available for review.");
+        return;
+      }
+      const lastClip = rallyClips[rallyClips.length - 1];
+      lastClip.manual = true;
+      segmentedMode = false;
+      if (recording) {
+        stopRecording();
+        await new Promise(resolve => setTimeout(resolve, 1500));
+      }
+      replayRally(lastClip.url);
     }
-    // --- End Voice Recognition ---
-
-
-    // --- Download Overlay Functions ---
-    function showDownloadOverlay() {
-        const clipsSelection = downloadOverlayContainer.querySelector("#clipsSelection");
-        clipsSelection.innerHTML = ''; // Clear previous clips
-
-        rallyClips.forEach((clip, index) => {
-            const clipDiv = document.createElement("div");
-            clipDiv.className = "clipItem border border-base-300 rounded-md p-2 text-center bg-base-200 shadow"; // Added background and shadow
-
-            const checkboxContainer = document.createElement("div")
-            checkboxContainer.className = "flex items-center justify-center mb-1";
-
-            const checkbox = document.createElement("input");
-            checkbox.type = "checkbox";
-            checkbox.id = "clipCheckbox" + index;
-            checkbox.value = clip.url; // Store URL in value
-             checkbox.setAttribute('data-filename', clip.filename); // Store filename too
-            checkbox.className = "checkbox checkbox-primary checkbox-sm mr-2"; // DaisyUI checkbox
-
-            const checkboxLabel = document.createElement("label");
-            checkboxLabel.htmlFor = "clipCheckbox" + index;
-            checkboxLabel.className = "text-xs cursor-pointer";
-            checkboxLabel.innerText = "Select";
-
-            checkboxContainer.appendChild(checkbox);
-            checkboxContainer.appendChild(checkboxLabel);
-
-
-            const thumb = document.createElement("video");
-            thumb.src = clip.url;
-            thumb.muted = true;
-            thumb.playsInline = true;
-            thumb.preload = "metadata";
-            thumb.className = "w-full h-auto object-cover rounded mb-1"; // Full width within grid item
-            // Add click to toggle checkbox
-            thumb.onclick = () => { checkbox.checked = !checkbox.checked; };
-
-
-            const label = document.createElement("div");
-            label.className = "text-xs text-gray-400 overflow-hidden whitespace-nowrap text-ellipsis";
-            label.innerText = clip.filename ? clip.filename.split('_').slice(0, -2).join('_') : `Rally ${index + 1}`;
-            label.title = clip.filename || `Rally ${index + 1}`;
-
-            clipDiv.appendChild(checkboxContainer); // Add checkbox group
-            clipDiv.appendChild(thumb);
-            clipDiv.appendChild(label);
-            clipsSelection.appendChild(clipDiv);
+  
+    function replayRally(url) {
+      const overlay = document.createElement("div");
+      overlay.id = "replayOverlay";
+      const backButton = document.createElement("button");
+      backButton.id = "backButton";
+      backButton.innerText = "Back";
+      backButton.onclick = () => {
+        document.body.removeChild(overlay);
+        videoElement.play();
+      };
+      const shareButton = document.createElement("button");
+      shareButton.id = "shareButton";
+      shareButton.innerText = "Share";
+      shareButton.onclick = () => shareClip(url);
+      const replayVideo = document.createElement("video");
+      replayVideo.src = url;
+      replayVideo.controls = true;
+      replayVideo.autoplay = true;
+      replayVideo.style.width = "100%";
+      replayVideo.style.height = "100%";
+      replayVideo.style.objectFit = "contain";
+      replayVideo.muted = true;
+      const replayControls = document.createElement("div");
+      replayControls.className = "replay-controls";
+      const speeds = [
+        { label: "0.25x", value: 0.25 },
+        { label: "0.5x", value: 0.5 },
+        { label: "1.0x", value: 1.0 }
+      ];
+      speeds.forEach(speedOption => {
+        const btn = document.createElement("button");
+        btn.innerText = speedOption.label;
+        btn.onclick = () => { replayVideo.playbackRate = speedOption.value; };
+        replayControls.appendChild(btn);
+      });
+      const replayMuteBtn = document.createElement("button");
+      replayMuteBtn.innerText = "🔇";
+      replayMuteBtn.onclick = () => {
+        replayVideo.muted = !replayVideo.muted;
+        replayMuteBtn.innerText = replayVideo.muted ? "🔇" : "🔊";
+      };
+      overlay.appendChild(replayVideo);
+      overlay.appendChild(replayControls);
+      overlay.appendChild(replayMuteBtn);
+      overlay.appendChild(backButton);
+      overlay.appendChild(shareButton);
+      document.body.appendChild(overlay);
+    }
+  
+    async function shareClip(url) {
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [] })) {
+        try {
+          const response = await fetch(url);
+          const blob = await response.blob();
+          const file = new File([blob], "rally.mp4", { type: "video/mp4" });
+          if (!navigator.canShare({ files: [file] })) {
+            throw new Error("Sharing files is not supported on this device.");
+          }
+          await navigator.share({
+            title: "Pickleball Rally",
+            text: "Check out this rally clip!",
+            files: [file]
+          });
+        } catch (error) {
+          alert("Error sharing the clip: " + error.message);
+        }
+      } else {
+        try {
+          await navigator.clipboard.writeText(url);
+          alert("Clip URL copied to clipboard. You can now share it manually.");
+        } catch (error) {
+          alert("Sharing not supported on this device.");
+        }
+      }
+    }
+  
+    function toggleMute() {
+      videoElement.muted = !videoElement.muted;
+      muteToggleButton.innerText = videoElement.muted ? "🔇" : "🔊";
+    }
+  
+    async function toggleCamera() {
+      if (recording) {
+        alert("Stop recording before toggling camera.");
+        return;
+      }
+      currentFacingMode = (currentFacingMode === "user") ? "environment" : "user";
+      if (videoElement.srcObject) {
+        videoElement.srcObject.getTracks().forEach(track => track.stop());
+      }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { 
+            aspectRatio: { ideal: 16/9 },
+            width: { ideal: 816 },
+            height: { ideal: 480 },
+            frameRate: { ideal: 120 },
+            facingMode: currentFacingMode 
+          },
+          audio: true
         });
-
-         // Clear email field
-         const emailInput = downloadOverlayContainer.querySelector("#downloadEmail");
-         if(emailInput) emailInput.value = auth.currentUser?.email || ""; // Pre-fill if possible
-
-        // Reset form state (e.g., remove success/error messages if any)
-
-        downloadOverlayContainer.style.display = "flex"; // Show the overlay using flex for centering
+        videoElement.srcObject = stream;
+        createMediaRecorder();
+      } catch (error) {
+        alert("Unable to switch camera.");
+      }
     }
-
-     function closeDownloadOverlay() {
-        downloadOverlayContainer.style.display = "none"; // Hide the overlay
-     }
-
-    // Add event listener for download form submission
-    document.addEventListener('DOMContentLoaded', () => {
-        const downloadForm = document.getElementById("downloadForm");
-        if (downloadForm) {
-            downloadForm.addEventListener("submit", async (e) => {
-                e.preventDefault();
-                const submitButton = downloadForm.querySelector('button[type="submit"]');
-                submitButton.disabled = true; // Prevent double submission
-                submitButton.classList.add('loading'); // Show loading indicator (DaisyUI)
-
-
-                const selectedUrls = [];
-                 const selectedFilenames = []; // Keep track of filenames too
-                 const checkboxes = downloadOverlayContainer.querySelectorAll("#clipsSelection input[type='checkbox']:checked");
-
-                checkboxes.forEach(checkbox => {
-                     selectedUrls.push(checkbox.value);
-                     selectedFilenames.push(checkbox.getAttribute('data-filename') || 'clip.mp4');
-                });
-
-
-                if (selectedUrls.length === 0) {
-                    alert("Please select at least one rally clip.");
-                     submitButton.disabled = false;
-                     submitButton.classList.remove('loading');
-                    return;
-                }
-
-                const emailInput = downloadOverlayContainer.querySelector("#downloadEmail");
-                const to_email = emailInput?.value.trim();
-
-                if (!to_email || !/^\S+@\S+\.\S+$/.test(to_email)) { // Basic email validation
-                    alert("Please enter a valid email address.");
-                     submitButton.disabled = false;
-                     submitButton.classList.remove('loading');
-                    return;
-                }
-
-                // Prepare email message (e.g., list of links)
-                 let messageBody = `Hi!\n\nHere are the download links for your selected SmashCam clips from session "${rallyTitleGlobal || 'Untitled'}":\n\n`;
-                 selectedUrls.forEach((url, index) => {
-                     // Decode filename for readability if needed, ensure it's safe
-                     const readableFilename = decodeURIComponent(selectedFilenames[index] || `Clip_${index + 1}`);
-                     messageBody += `${index + 1}. ${readableFilename}:\n${url}\n\n`;
-                 });
-                 messageBody += "Thanks for using SmashCam!";
-
-                const downloadMessage = downloadOverlayContainer.querySelector("#downloadMessage");
-                downloadMessage.value = messageBody; // Set the formatted message
-
-                 // Prepare EmailJS parameters
-                  const templateParams = {
-                      to_email: to_email,
-                      from_name: "SmashCam App", // Optional: Customize sender name
-                      // Ensure your EmailJS template uses {{message}} to display the links
-                      message: messageBody,
-                      // Ensure your EmailJS template uses {{session_title}}
-                      session_title: rallyTitleGlobal || 'Untitled Session'
-                  };
-
-                // --- CHANGE 3: Added console.log before sending ---
-                console.log("Attempting to send email with params:", templateParams);
-
-                try {
-                    // --- CHANGE 3: Added comments to verify IDs ---
-                    // !!! IMPORTANT: Verify your Service ID and Template ID below !!!
-                    // These must match the IDs in your EmailJS account dashboard.
-                    const serviceID = 'service_5an1el5'; // <--- Replace with YOUR Service ID if different
-                    const templateID = 'template_gph38u7'; // <--- Replace with YOUR Template ID if different
-
-                    // !!! IMPORTANT: Ensure your EmailJS template uses variables like:
-                    // {{to_email}}, {{from_name}}, {{message}}, {{session_title}}
-                    // The names *must* match the keys in templateParams exactly.
-                    console.log(`Sending email via EmailJS (Service: ${serviceID}, Template: ${templateID})...`);
-                    const response = await emailjs.send(serviceID, templateID, templateParams);
-
-                    console.log("EmailJS Success:", response.status, response.text);
-                    alert("Download links sent successfully to " + to_email + "!");
-
-                    // Close overlay and sign out after a short delay
-                     setTimeout(async () => {
-                         closeDownloadOverlay();
-                         try {
-                             await auth.signOut();
-                             console.log("User signed out after sending email.");
-                             // UI will update via onAuthStateChanged
-                         } catch (error) {
-                             console.error("Error signing out automatically:", error);
-                         }
-                     }, 3000); // 3 second delay
-
-                } catch (error) {
-                    console.error("EmailJS Failed:", error);
-                    const errorMsg = error?.text || error?.message || "Unknown error";
-                    // --- CHANGE 3: Improved error alert ---
-                    alert("Error sending email: " + errorMsg + ". Please check console logs, ensure EmailJS IDs/template are correct in the code, and verify your EmailJS account settings/limits.");
-                    submitButton.disabled = false; // Re-enable button on error
-                    submitButton.classList.remove('loading');
-                }
-            });
-        } else {
-            console.error("Download form not found.");
+  
+    function startVoiceRecognition() {
+      if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
+        alert("Voice commands are not supported in Chrome on iPad. Use manual buttons.");
+        return;
+      }
+      const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const speechRecognition = new Recognition();
+      speechRecognition.continuous = true;
+      speechRecognition.lang = "en-US";
+      speechRecognition.onresult = (event) => {
+        const lastTranscript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
+        if (lastTranscript === "start") {
+          startRecording();
+        } else if (lastTranscript === "stop") {
+          stopRecording();
         }
-    });
-    // --- End Download Overlay ---
-
-
+      };
+      speechRecognition.onerror = (event) => {
+        console.log("Speech recognition error:", event.error);
+      };
+      speechRecognition.start();
+    }
+  
+    function manualStart() { 
+      segmentedMode = true;
+      createMediaRecorder();
+      startRecording(); 
+    }
+    function manualStop() { 
+      segmentedMode = false;
+      if (segmentTimer) clearTimeout(segmentTimer);
+      stopRecording(); 
+    }
+  
+    function showDownloadOverlay() {
+      const overlay = document.createElement("div");
+      overlay.id = "downloadOverlay";
+      overlay.innerHTML = `
+        <h2>Download Session Highlights</h2>
+        <div id="clipsSelection" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; width: 80%;"></div>
+        <form id="downloadForm">
+          <label style="margin-top: 20px; font-size: 16px;">Enter your email:</label>
+          <input type="email" name="to_email" id="downloadEmail" placeholder="your.email@example.com" style="padding: 8px; font-size: 16px; width: 300px; margin-top: 10px;" required>
+          <textarea name="message" id="downloadMessage" style="display:none;"></textarea>
+          <button type="submit" style="padding: 10px 20px; font-size: 18px; margin-top: 20px; background: green; border: none; border-radius: 4px; color: white; cursor: pointer;">Get Download Link</button>
+        </form>
+      `;
+      
+      const clipsSelection = overlay.querySelector("#clipsSelection");
+      rallyClips.forEach((clip, index) => {
+        const clipDiv = document.createElement("div");
+        clipDiv.className = "clipItem";
+        clipDiv.style.border = "1px solid white";
+        clipDiv.style.padding = "5px";
+        clipDiv.style.textAlign = "center";
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.id = "clipCheckbox" + index;
+        checkbox.value = clip.url;
+        const thumb = document.createElement("video");
+        thumb.src = clip.url;
+        thumb.muted = true;
+        thumb.playsInline = true;
+        thumb.autoplay = true;
+        thumb.loop = true;
+        thumb.style.width = "120px";
+        thumb.style.height = "80px";
+        const label = document.createElement("div");
+        label.innerText = clip.filename || ("Rally " + (index + 1));
+        label.style.fontSize = "12px";
+        label.style.marginTop = "5px";
+        clipDiv.appendChild(checkbox);
+        clipDiv.appendChild(thumb);
+        clipDiv.appendChild(label);
+        clipsSelection.appendChild(clipDiv);
+      });
+      
+      const downloadForm = overlay.querySelector("#downloadForm");
+      downloadForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const selectedUrls = [];
+        rallyClips.forEach((clip, index) => {
+          const checkbox = overlay.querySelector("#clipCheckbox" + index);
+          if (checkbox && checkbox.checked) {
+            selectedUrls.push(clip.url);
+          }
+        });
+        if (selectedUrls.length === 0) {
+          alert("Please select at least one rally clip.");
+          return;
+        }
+        const emailInput = overlay.querySelector("#downloadEmail");
+        const to_email = emailInput ? emailInput.value.trim() : "";
+        if (!to_email) {
+          alert("Please enter your email.");
+          return;
+        }
+  
+        const downloadMessage = overlay.querySelector("#downloadMessage");
+        downloadMessage.value = "Here are your download links:\n\n" + selectedUrls.join("\n");
+  
+        try {
+          const response = await emailjs.sendForm('service_5an1el5', 'template_gph38u7', downloadForm);
+          console.log("EmailJS response:", response);
+          alert("Download link sent to your email.");
+        } catch (error) {
+          console.error("Email send error:", error);
+          const errorMsg = error && error.text ? error.text : (error.message || "Unknown error");
+          alert("Error sending email: " + errorMsg);
+        }
+  
+        setTimeout(async () => {
+          document.body.removeChild(overlay);
+          try {
+            await auth.signOut();
+            console.log("User signed out, returning to login screen.");
+          } catch (error) {
+            console.error("Error signing out:", error);
+          }
+        }, 5000);
+      });
+      
+      document.body.appendChild(overlay);
+    }
   </script>
 </body>
 </html>
+
