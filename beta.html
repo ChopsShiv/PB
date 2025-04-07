@@ -179,7 +179,7 @@
     /* Timeline */
     .timeline { 
       position: absolute; 
-      bottom: 5%; 
+      bottom: 10%;  /* Slightly raised to avoid overlap with controls */
       left: 0; 
       width: 100%; 
       background: rgba(28,28,30,0.8); 
@@ -196,8 +196,8 @@
       align-items: center; 
     }
     .timeline-item video { 
-      width: 100px; 
-      height: 60px; 
+      width: 80px;  /* Reduced size for a cleaner layout */
+      height: 50px;
       object-fit: cover; 
       border: 1px solid #3a3a3c; 
       border-radius: 8px; 
@@ -844,7 +844,7 @@
             await auth.signOut();
             console.log("User signed out, returning to login screen.");
           } catch (error) {
-            console.error("Error signing out:", error);
+            // Silently handle sign out errors.
           }
         }, 5000);
       });
@@ -852,7 +852,7 @@
       document.body.appendChild(overlay);
     }
   
-    // New: Sign Out function for the live preview.
+    // New: Sign Out function for the live preview. Errors are handled silently.
     async function signOutUser() {
       if (recording) {
         stopRecording();
@@ -864,9 +864,10 @@
         await auth.signOut();
         console.log("User signed out successfully.");
       } catch (error) {
-        console.error("Error signing out:", error);
+        // Silently handle errors.
       }
     }
   </script>
 </body>
 </html>
+
