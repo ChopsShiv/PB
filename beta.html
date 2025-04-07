@@ -34,7 +34,8 @@
     html, body { 
       width: 100%; height: 100%; 
       font-family: Helvetica, sans-serif; 
-      background: #1c1c1e; color: #ffffff;
+      background: #1c1c1e; 
+      color: #ffffff;
     }
     button {
       transition: background-color 0.3s ease, opacity 0.3s ease;
@@ -64,24 +65,14 @@
     /* Main App Container */
     #appContainer { display: none; position: relative; }
     
-    /* Start Overlay with Greeting */
+    /* Start Overlay (only shown at initial login) */
     #startOverlay {
       position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
       background: rgba(28,28,30,0.95); z-index: 999;
       display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px;
       text-align: center;
     }
-    /* Greeting text is 48px */
-    #greeting {
-      font-size: 48px;
-      font-weight: 500;
-      word-wrap: break-word;
-      max-width: 90%;
-    }
-    /* Greeting split: "Hello, " in white and username in solid #C7FE2E */
-    .helloText { color: #ffffff; }
-    .usernameText { color: #C7FE2E; text-decoration: none; }
-    
+    /* We removed the greeting element here so that it won't be removed from DOM */
     /* Updated label and input for game title */
     #startOverlay label { font-size: 16px; }
     #startOverlay input {
@@ -97,6 +88,21 @@
       color: #383836;
     }
     #startOverlay button:hover { opacity: 0.9; }
+    
+    /* Greeting Container on Live Preview (always visible) */
+    #greetingContainer {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 6;
+      font-size: 48px;
+      font-weight: 500;
+      word-wrap: break-word;
+      max-width: 90%;
+    }
+    /* Greeting split: "Hello, " in white and username in solid #C7FE2E */
+    .helloText { color: #ffffff; }
+    .usernameText { color: #C7FE2E; text-decoration: none; }
     
     /* Countdown Overlay */
     #countdownOverlay {
@@ -308,16 +314,17 @@
   
   <!-- Main App Container -->
   <div id="appContainer">
-    <!-- Start Overlay with Greeting and Updated Text -->
+    <!-- Start Overlay with Updated Text -->
     <div id="startOverlay">
-      <div id="greeting" class="text-lg font-semibold"></div>
       <label class="text-lg" for="rallyTitle">Add a name for today's game</label>
       <input class="input input-bordered" type="text" id="rallyTitle" placeholder="Enter Game Title">
       <button class="btn btn-primary" onclick="startGame()" style="background: #C7FE2E; color: #383836;">
         Lets pickle!
       </button>
     </div>
+    <!-- Video Container with Greeting Container added -->
     <div class="video-container">
+      <div id="greetingContainer"></div>
       <video id="liveVideo" autoplay playsinline muted webkit-playsinline></video>
       <!-- Recording Indicator -->
       <div id="recordingIndicator">🔴 Recording</div>
@@ -389,8 +396,9 @@
       if (user) {
         document.getElementById("loginContainer").style.display = "none";
         document.getElementById("appContainer").style.display = "block";
-        // Update greeting: "Hello, " in white and username in solid #C7FE2E.
-        document.getElementById("greeting").innerHTML = '<span class="helloText">Hello, </span><span class="usernameText">' + (user.displayName || user.email) + '</span>';
+        // Update greeting in the always-visible greetingContainer.
+        document.getElementById("greetingContainer").innerHTML =
+          '<span class="helloText">Hello, </span><span class="usernameText">' + (user.displayName || user.email) + '</span>';
       } else {
         document.getElementById("loginContainer").style.display = "flex";
         document.getElementById("appContainer").style.display = "none";
@@ -919,7 +927,8 @@
       const name = document.getElementById("profileName").value.trim();
       try {
         await auth.currentUser.updateProfile({ displayName: name });
-        document.getElementById("greeting").innerHTML = 
+        // Update greeting in greetingContainer
+        document.getElementById("greetingContainer").innerHTML =
           '<span class="helloText">Hello, </span><span class="usernameText">' +
           (auth.currentUser.displayName || auth.currentUser.email) + '</span>';
         document.getElementById("profilePage").style.display = "none";
