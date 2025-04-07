@@ -12,7 +12,10 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- DaisyUI CSS -->
   <link href="https://cdn.jsdelivr.net/npm/daisyui@3.0.10/dist/full.css" rel="stylesheet">
-
+  
+  <!-- Font Awesome CDN for the camera icon -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-storage-compat.js"></script>
@@ -26,14 +29,12 @@
   </script>
   
   <style>
-    /* Global reset and iOS dark mode style */
+    /* Global reset and force Helvetica font */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { 
-      width: 100%; 
-      height: 100%; 
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif; 
-      background: #1c1c1e; /* iOS dark background */
-      color: #ffffff;
+      width: 100%; height: 100%; 
+      font-family: Helvetica, sans-serif; 
+      background: #1c1c1e; color: #ffffff;
     }
     button {
       transition: background-color 0.3s ease, opacity 0.3s ease;
@@ -42,291 +43,182 @@
     
     /* Login Container */
     #loginContainer {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      background: #1c1c1e;
-      padding: 20px;
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      height: 100vh; background: #1c1c1e; padding: 20px;
     }
-    #loginContainer h2 {
-      margin-bottom: 20px;
-    }
+    #loginContainer h2 { margin-bottom: 20px; }
     #loginContainer input {
-      width: 80%;
-      max-width: 300px;
-      margin: 10px 0;
-      padding: 12px;
-      border: 1px solid #3a3a3c;
-      border-radius: 10px;
-      background: #2c2c2e;
-      color: #ffffff;
+      width: 80%; max-width: 300px; margin: 10px 0; padding: 12px;
+      border: 1px solid #3a3a3c; border-radius: 10px;
+      background: #2c2c2e; color: #ffffff;
     }
     #loginContainer button {
-      width: 80%;
-      max-width: 300px;
-      padding: 14px;
-      margin-top: 10px;
-      border-radius: 10px;
-      border: none;
-      color: #ffffff;
-      font-size: 16px;
-      cursor: pointer;
+      width: 80%; max-width: 300px; padding: 14px; margin-top: 10px;
+      border-radius: 10px; border: none; color: #ffffff; font-size: 16px; cursor: pointer;
     }
-    /* Different button styles */
     #emailSignInBtn { background: #0a84ff; }
     #emailSignInBtn:hover { opacity: 0.9; }
     #googleSignInBtn { background: #34a853; }
     #googleSignInBtn:hover { opacity: 0.9; }
     
-    /* Main App Container hidden until login */
+    /* Main App Container */
     #appContainer { display: none; position: relative; }
     
-    /* Start Overlay */
+    /* Start Overlay with Greeting */
     #startOverlay {
-      position: absolute; 
-      top: 0; left: 0; 
-      width: 100vw; height: 100vh;
-      background: rgba(28,28,30,0.95);
-      z-index: 999;
-      display: flex; 
-      flex-direction: column; 
-      justify-content: center; 
-      align-items: center; 
-      gap: 20px;
+      position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(28,28,30,0.95); z-index: 999;
+      display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px;
+      text-align: center;
     }
+    /* Greeting text is now 20% smaller than before (approx 58px) */
+    #greeting {
+      font-size: 58px;
+      font-weight: 500;
+      word-wrap: break-word;
+      max-width: 90%;
+    }
+    /* Split greeting: "Hello, " in white and username in solid #C7FE2E */
+    .helloText { color: #ffffff; }
+    .usernameText { color: #C7FE2E; text-decoration: none; }
+    
+    /* Updated label text */
+    #startOverlay label { font-size: 16px; }
     #startOverlay input {
-      width: 80%;
-      max-width: 300px;
-      padding: 12px;
-      border: 1px solid #3a3a3c;
-      border-radius: 10px;
-      background: #2c2c2e;
-      color: #ffffff;
+      width: 80%; max-width: 300px; padding: 12px;
+      border: 1px solid #3a3a3c; border-radius: 10px;
+      background: #2c2c2e; color: #ffffff;
     }
+    /* "Lets pickle!" button with solid background and text in hex #383836 */
     #startOverlay button {
-      width: 80%;
-      max-width: 300px;
-      padding: 14px;
-      border-radius: 10px;
-      background: #32d74b;
-      border: none;
-      color: #ffffff;
-      font-size: 16px;
-      cursor: pointer;
+      width: 80%; max-width: 300px; padding: 14px; border-radius: 10px;
+      border: none; font-size: 16px; cursor: pointer;
+      background: #C7FE2E;
+      color: #383836;
     }
-    #startOverlay button:hover {
-      opacity: 0.9;
-    }
+    #startOverlay button:hover { opacity: 0.9; }
     
     /* Video Container */
-    .video-container { 
-      position: fixed; 
-      top: 0; left: 0; 
-      width: 100vw; height: 100vh; 
-      background: #1c1c1e; 
-    }
-    #liveVideo { 
-      position: absolute; 
-      top: 0; left: 0; 
-      width: 100vw; 
-      height: 100vh; 
-      object-fit: cover; 
-      z-index: 1; 
-    }
-    #recordingIndicator { 
-      position: absolute; 
-      top: 10px; 
-      right: 20px; 
-      font-size: 10px; 
-      color: #ff453a;
-      display: none; 
-      z-index: 5; 
-    }
+    .video-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #1c1c1e; }
+    #liveVideo { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: 1; }
+    #recordingIndicator { position: absolute; top: 10px; right: 20px; font-size: 10px; color: #ff453a; display: none; z-index: 5; }
     
-    /* Controls */
-    .controls { 
-      position: absolute; 
-      top: 50%; 
-      right: 20px; 
-      transform: translateY(-50%); 
-      z-index: 2; 
-      display: flex; 
-      flex-direction: column; 
-      gap: 12px; 
+    /* Controls (10% smaller) */
+    .controls {
+      position: absolute; top: 50%; right: 20px;
+      transform: translateY(-50%);
+      z-index: 2; display: flex; flex-direction: column; gap: 10px;
     }
     .controls button {
-      padding: 10px;
-      border-radius: 10px;
-      background: #3a3a3c;
-      border: none;
-      color: #ffffff;
-      font-size: 14px;
-      cursor: pointer;
+      padding: 9px; border-radius: 10px; background: #3a3a3c;
+      border: none; font-size: 12px; cursor: pointer;
     }
-    .controls button:hover {
-      background: #48484a;
+    .controls button:hover { background: #48484a; }
+    .controls button.signout { background: #ff3b30; }
+    .controls button.signout:hover { background: #ff453a; }
+    .controls button.startRec {
+      background: #C7FE2E;
+      color: #383836;
     }
+    .controls button.stopRec {
+      background: #C7FE2E;
+      color: #383836;
+    }
+    .muteButton {
+      width: 30px; height: 30px; border-radius: 50%;
+      padding: 0; font-size: 12px; background: #3a3a3c;
+      border: none; color: #ffffff; cursor: pointer;
+    }
+    .muteButton:hover { background: #48484a; }
     
-    /* Timeline */
-    .timeline { 
-      position: absolute; 
-      bottom: 5%; 
-      left: 0; 
-      width: 100%; 
-      background: rgba(28,28,30,0.8); 
-      z-index: 3; 
-      display: flex; 
-      flex-wrap: wrap; 
-      justify-content: center; 
-      padding: 5px; 
+    /* Timeline: left side, vertical, scrollable */
+    .timeline {
+      position: absolute; top: 10%; left: 5px; width: auto;
+      background: transparent; z-index: 3;
+      display: flex; flex-direction: column; align-items: center; padding: 5px;
+      max-height: 80vh; overflow-y: auto;
     }
-    .timeline-item { 
-      margin: 5px; 
-      display: flex; 
-      flex-direction: column; 
-      align-items: center; 
+    .timeline-item { margin: 5px; display: flex; flex-direction: column; align-items: center; }
+    .timeline-item video {
+      width: 56px; height: 35px; object-fit: cover;
+      border: 1px solid #3a3a3c; border-radius: 8px; cursor: pointer;
     }
-    .timeline-item video { 
-      width: 100px; 
-      height: 60px; 
-      object-fit: cover; 
-      border: 1px solid #3a3a3c; 
-      border-radius: 8px; 
-      cursor: pointer; 
-    }
-    .timeline-item span { 
-      font-size: 10px; 
-      color: #ffffff; 
-      margin-top: 4px; 
-    }
+    .timeline-item span { font-size: 10px; color: #ffffff; margin-top: 4px; }
     
     /* Review Button Container */
-    #reviewButtonContainer { 
-      position: absolute; 
-      top: 50%; 
-      left: 50%; 
-      transform: translate(-50%, -50%); 
-      z-index: 4; 
-      display: none; 
+    #reviewButtonContainer {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 4; display: none;
     }
-    #reviewButton { 
-      background: #bf5af2; 
-      color: #ffffff; 
-      padding: 24px 40px; 
-      border: none; 
-      border-radius: 10px; 
-      font-size: 36px; 
-      cursor: pointer; 
-      opacity: 0.8; 
+    #reviewButton {
+      background: #bf5af2; color: #ffffff;
+      padding: 24px 40px; border: none;
+      border-radius: 10px; font-size: 36px; cursor: pointer;
+      opacity: 0.8;
     }
     #reviewButton:hover { opacity: 1; }
     
     /* Download Overlay */
-    #downloadOverlay { 
-      position: fixed; 
-      top: 0; left: 0; 
-      width: 100vw; 
-      height: 100vh; 
-      background: rgba(28,28,30,0.95); 
-      z-index: 1000; 
-      display: flex; 
-      flex-direction: column; 
-      justify-content: center; 
-      align-items: center; 
-      overflow-y: auto; 
-      padding: 20px; 
+    #downloadOverlay {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(28,28,30,0.95); z-index: 1000;
+      display: flex; flex-direction: column; justify-content: center;
+      align-items: center; overflow-y: auto; padding: 20px;
     }
     #downloadOverlay h2 { margin-bottom: 20px; }
-    #downloadOverlay .clipItem { 
-      border: 1px solid #3a3a3c; 
-      padding: 5px; 
-      margin: 5px; 
-      text-align: center; 
-      border-radius: 8px;
+    #downloadOverlay .clipItem {
+      border: 1px solid #3a3a3c; padding: 5px; margin: 5px;
+      text-align: center; border-radius: 8px;
     }
-    #downloadOverlay .clipItem video { 
-      width: 120px; 
-      height: 80px; 
-      object-fit: cover; 
-      display: block; 
-      margin: 0 auto; 
-      border-radius: 8px;
+    #downloadOverlay .clipItem video {
+      width: 120px; height: 80px; object-fit: cover;
+      display: block; margin: 0 auto; border-radius: 8px;
     }
-    #downloadOverlay input[type="email"] { 
-      padding: 10px; 
-      font-size: 16px; 
-      width: 300px; 
-      margin-top: 20px; 
-      border: 1px solid #3a3a3c; 
-      border-radius: 10px;
-      background: #2c2c2e;
-      color: #ffffff;
+    #downloadOverlay input[type="email"] {
+      padding: 10px; font-size: 16px; width: 300px; margin-top: 20px;
+      border: 1px solid #3a3a3c; border-radius: 10px;
+      background: #2c2c2e; color: #ffffff;
     }
-    #downloadOverlay button { 
-      padding: 12px 24px; 
-      font-size: 18px; 
-      background: #32d74b; 
-      border: none; 
-      border-radius: 10px; 
-      color: #ffffff; 
-      cursor: pointer; 
-      margin-top: 20px; 
+    #downloadOverlay button {
+      padding: 12px 24px; font-size: 18px; background: #32d74b;
+      border: none; border-radius: 10px; color: #ffffff;
+      cursor: pointer; margin-top: 20px;
     }
     #downloadOverlay button:hover { opacity: 0.9; }
     
     /* Replay Overlay */
-    #replayOverlay { 
-      position: fixed; 
-      top: 0; left: 0; 
-      width: 100vw; 
-      height: 100vh; 
-      background: #1c1c1e; 
-      z-index: 10; 
-      display: flex; 
-      flex-direction: column; 
-      justify-content: center; 
-      align-items: center; 
+    #replayOverlay {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: #1c1c1e; z-index: 10; display: flex;
+      flex-direction: column; justify-content: center; align-items: center;
     }
-    #replayOverlay video { 
-      width: 100%; 
-      height: 100%; 
-      object-fit: contain; 
+    #replayOverlay video { width: 100%; height: 100%; object-fit: contain; }
+    .replay-controls {
+      position: absolute; top: 20px; left: 50%;
+      transform: translateX(-50%); display: flex; gap: 10px; z-index: 11;
     }
-    .replay-controls { 
-      position: absolute; 
-      top: 20px; 
-      left: 50%; 
-      transform: translateX(-50%); 
-      display: flex; 
-      gap: 10px; 
-      z-index: 11; 
-    }
-    .replay-controls button { 
-      padding: 8px 12px; 
-      font-size: 14px; 
-      background: rgba(28,28,30,0.8); 
-      color: #ffffff; 
-      border: 1px solid #3a3a3c; 
-      border-radius: 8px; 
-      cursor: pointer; 
+    .replay-controls button {
+      padding: 8px 12px; font-size: 14px; background: rgba(28,28,30,0.8);
+      color: #ffffff; border: 1px solid #3a3a3c; border-radius: 8px; cursor: pointer;
     }
     .replay-controls button:hover { background: #2c2c2e; }
-    #backButton, #shareButton { 
-      position: absolute; 
-      top: 20px; 
-      padding: 10px 15px; 
-      font-size: 16px; 
-      background: rgba(28,28,30,0.8); 
-      color: #ffffff; 
-      border: 1px solid #3a3a3c; 
-      border-radius: 10px; 
-      cursor: pointer; 
-      z-index: 11; 
+    #backButton, #shareButton {
+      position: absolute; top: 20px; padding: 10px 15px; font-size: 16px;
+      background: rgba(28,28,30,0.8); color: #ffffff; border: 1px solid #3a3a3c;
+      border-radius: 10px; cursor: pointer; z-index: 11;
     }
     #backButton { left: 20px; }
     #shareButton { right: 20px; }
+    
+    /* Toggle Camera Button: Replace text with icon */
+    #toggleCameraButton {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 20px;
+      color: #C7FE2E;
+    }
   </style>
 </head>
 <body>
@@ -342,11 +234,14 @@
   
   <!-- Main App Container (hidden until login) -->
   <div id="appContainer">
-    <!-- Start Overlay: Game Title input and Let's Play button (centered) -->
+    <!-- Start Overlay with Greeting and Updated Text -->
     <div id="startOverlay">
-      <label class="text-lg" for="rallyTitle">Game Title:</label>
+      <div id="greeting" class="text-lg font-semibold"></div>
+      <label class="text-lg" for="rallyTitle">Add a name for today's game</label>
       <input class="input input-bordered" type="text" id="rallyTitle" placeholder="Enter Game Title">
-      <button class="btn btn-primary" onclick="startGame()">Let’s Play</button>
+      <button class="btn btn-primary" onclick="startGame()" style="background: #C7FE2E; color: #383836;">
+        Lets pickle!
+      </button>
     </div>
     <div class="video-container">
       <video id="liveVideo" autoplay playsinline muted webkit-playsinline></video>
@@ -358,11 +253,12 @@
       </div>
       <!-- Controls Container -->
       <div class="controls">
-        <button onclick="manualStart()">Start Rec</button>
-        <button onclick="manualStop()">Stop Rec</button>
+        <button class="startRec" onclick="manualStart()" style="color: #383836;">Start Rec</button>
+        <button class="stopRec" onclick="manualStop()">Stop Rec</button>
         <button onclick="stopGame()">End Session</button>
-        <button id="toggleCameraButton" onclick="toggleCamera()">Toggle Camera</button>
-        <button id="muteToggleButton" onclick="toggleMute()">🔇</button>
+        <button id="toggleCameraButton" onclick="toggleCamera()"><i class="fa fa-camera"></i></button>
+        <button id="muteToggleButton" class="muteButton" onclick="toggleMute()">🔇</button>
+        <button class="signout" onclick="signOutUser()">Sign Out</button>
       </div>
       <div class="timeline" id="timeline"></div>
     </div>
@@ -396,6 +292,8 @@
       if (user) {
         document.getElementById("loginContainer").style.display = "none";
         document.getElementById("appContainer").style.display = "block";
+        // Update greeting: "Hello, " (white) and username (in solid #C7FE2E, no underline)
+        document.getElementById("greeting").innerHTML = '<span class="helloText">Hello, </span><span class="usernameText">' + (user.displayName || user.email) + '</span>';
       } else {
         document.getElementById("loginContainer").style.display = "flex";
         document.getElementById("appContainer").style.display = "none";
@@ -412,7 +310,7 @@
       }
     }
   
-    // New function to support Google Sign In.
+    // Google Sign In
     async function googleSignIn() {
       const provider = new firebase.auth.GoogleAuthProvider();
       try {
@@ -592,7 +490,8 @@
         thumb.loop = true;
         thumb.onclick = () => replayRally(clip.url);
         const label = document.createElement("span");
-        label.innerText = clip.filename || ("Rally " + (index + 1));
+        // Show only first 3 characters of the filename
+        label.innerText = clip.filename ? clip.filename.substring(0, 3) : ("Rally " + (index + 1));
         div.appendChild(thumb);
         div.appendChild(label);
         timeline.appendChild(div);
@@ -747,7 +646,7 @@
       speechRecognition.start();
     }
   
-    // New: Display overlay for email input and selecting rallies to download.
+    // Display overlay for email input and selecting rallies to download.
     function showDownloadOverlay() {
       const overlay = document.createElement("div");
       overlay.id = "downloadOverlay";
@@ -762,7 +661,6 @@
         </form>
       `;
       
-      // Populate rally clips as selectable items.
       const clipsSelection = overlay.querySelector("#clipsSelection");
       rallyClips.forEach((clip, index) => {
         const clipDiv = document.createElement("div");
@@ -785,7 +683,7 @@
         thumb.style.height = "80px";
         thumb.style.borderRadius = "8px";
         const label = document.createElement("div");
-        label.innerText = clip.filename || ("Rally " + (index + 1));
+        label.innerText = clip.filename ? clip.filename.substring(0, 3) : ("Rally " + (index + 1));
         label.style.fontSize = "12px";
         label.style.marginTop = "5px";
         clipDiv.appendChild(checkbox);
@@ -794,7 +692,6 @@
         clipsSelection.appendChild(clipDiv);
       });
       
-      // Process form submission via EmailJS.
       const downloadForm = overlay.querySelector("#downloadForm");
       downloadForm.addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -829,19 +726,32 @@
           alert("Error sending email: " + errorMsg);
         }
   
-        // After a delay, remove overlay and sign out.
         setTimeout(async () => {
           document.body.removeChild(overlay);
           try {
             await auth.signOut();
             console.log("User signed out, returning to login screen.");
           } catch (error) {
-            console.error("Error signing out:", error);
+            // Silently handle sign out errors.
           }
         }, 5000);
       });
       
       document.body.appendChild(overlay);
+    }
+  
+    // Sign Out function for the live preview. Errors are handled silently.
+    async function signOutUser() {
+      if (recording) { stopRecording(); }
+      if (videoElement.srcObject) {
+        videoElement.srcObject.getTracks().forEach(track => track.stop());
+      }
+      try {
+        await auth.signOut();
+        console.log("User signed out successfully.");
+      } catch (error) {
+        // Silently handle errors.
+      }
     }
   </script>
 </body>
