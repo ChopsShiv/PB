@@ -26,41 +26,210 @@
   </script>
   
   <style>
-    /* Retain custom styles for layout and positioning with a clean, user-friendly black background */
+    /* Global reset and iOS dark mode style */
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; font-family: Arial, sans-serif; background: black; color: white; }
-    button { transition: background-color 0.3s ease, opacity 0.3s ease; }
+    html, body { 
+      width: 100%; 
+      height: 100%; 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif; 
+      background: #1c1c1e; /* iOS dark background */
+      color: #ffffff;
+    }
+    button {
+      transition: background-color 0.3s ease, opacity 0.3s ease;
+      font-weight: 600;
+    }
+    
     /* Login Container */
-    #loginContainer { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; background: black; }
+    #loginContainer {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: #1c1c1e;
+      padding: 20px;
+    }
+    #loginContainer h2 {
+      margin-bottom: 20px;
+    }
+    #loginContainer input {
+      width: 80%;
+      max-width: 300px;
+      margin: 10px 0;
+      padding: 12px;
+      border: 1px solid #3a3a3c;
+      border-radius: 10px;
+      background: #2c2c2e;
+      color: #ffffff;
+    }
+    #loginContainer button {
+      width: 80%;
+      max-width: 300px;
+      padding: 14px;
+      margin-top: 10px;
+      border-radius: 10px;
+      border: none;
+      color: #ffffff;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    /* Different button styles */
+    #emailSignInBtn { background: #0a84ff; }
+    #emailSignInBtn:hover { opacity: 0.9; }
+    #googleSignInBtn { background: #34a853; }
+    #googleSignInBtn:hover { opacity: 0.9; }
+    
     /* Main App Container hidden until login */
     #appContainer { display: none; position: relative; }
+    
     /* Start Overlay */
     #startOverlay {
-      position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
-      background: rgba(0,0,0,0.9); z-index: 999;
-      display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px;
+      position: absolute; 
+      top: 0; left: 0; 
+      width: 100vw; height: 100vh;
+      background: rgba(28,28,30,0.95);
+      z-index: 999;
+      display: flex; 
+      flex-direction: column; 
+      justify-content: center; 
+      align-items: center; 
+      gap: 20px;
     }
+    #startOverlay input {
+      width: 80%;
+      max-width: 300px;
+      padding: 12px;
+      border: 1px solid #3a3a3c;
+      border-radius: 10px;
+      background: #2c2c2e;
+      color: #ffffff;
+    }
+    #startOverlay button {
+      width: 80%;
+      max-width: 300px;
+      padding: 14px;
+      border-radius: 10px;
+      background: #32d74b;
+      border: none;
+      color: #ffffff;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    #startOverlay button:hover {
+      opacity: 0.9;
+    }
+    
     /* Video Container */
-    .video-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: black; }
-    #liveVideo { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: 1; }
-    #recordingIndicator { position: absolute; top: 10px; right: 20px; font-size: 9px; color: red; display: none; z-index: 5; }
+    .video-container { 
+      position: fixed; 
+      top: 0; left: 0; 
+      width: 100vw; height: 100vh; 
+      background: #1c1c1e; 
+    }
+    #liveVideo { 
+      position: absolute; 
+      top: 0; left: 0; 
+      width: 100vw; 
+      height: 100vh; 
+      object-fit: cover; 
+      z-index: 1; 
+    }
+    #recordingIndicator { 
+      position: absolute; 
+      top: 10px; 
+      right: 20px; 
+      font-size: 10px; 
+      color: #ff453a;
+      display: none; 
+      z-index: 5; 
+    }
+    
     /* Controls */
-    .controls { position: absolute; top: 50%; right: 20px; transform: translateY(-50%); z-index: 2; display: flex; flex-direction: column; gap: 12px; }
+    .controls { 
+      position: absolute; 
+      top: 50%; 
+      right: 20px; 
+      transform: translateY(-50%); 
+      z-index: 2; 
+      display: flex; 
+      flex-direction: column; 
+      gap: 12px; 
+    }
+    .controls button {
+      padding: 10px;
+      border-radius: 10px;
+      background: #3a3a3c;
+      border: none;
+      color: #ffffff;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .controls button:hover {
+      background: #48484a;
+    }
+    
     /* Timeline */
-    .timeline { position: absolute; bottom: 5%; left: 0; width: 100%; background: rgba(0,0,0,0.5); z-index: 3; display: flex; flex-wrap: wrap; justify-content: center; padding: 5px; }
-    .timeline-item { margin: 5px; display: flex; flex-direction: column; align-items: center; }
-    .timeline-item video { width: 100px; height: 60px; object-fit: cover; border: 1px solid white; border-radius: 4px; cursor: pointer; }
-    .timeline-item span { font-size: 10px; color: white; margin-top: 4px; }
+    .timeline { 
+      position: absolute; 
+      bottom: 5%; 
+      left: 0; 
+      width: 100%; 
+      background: rgba(28,28,30,0.8); 
+      z-index: 3; 
+      display: flex; 
+      flex-wrap: wrap; 
+      justify-content: center; 
+      padding: 5px; 
+    }
+    .timeline-item { 
+      margin: 5px; 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+    }
+    .timeline-item video { 
+      width: 100px; 
+      height: 60px; 
+      object-fit: cover; 
+      border: 1px solid #3a3a3c; 
+      border-radius: 8px; 
+      cursor: pointer; 
+    }
+    .timeline-item span { 
+      font-size: 10px; 
+      color: #ffffff; 
+      margin-top: 4px; 
+    }
+    
     /* Review Button Container */
-    #reviewButtonContainer { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 4; display: none; }
-    #reviewButton { background: purple; color: white; padding: 24px 40px; border: none; border-radius: 4px; font-size: 36px; cursor: pointer; opacity: 0.5; }
-    #reviewButton:hover { opacity: 0.8; }
+    #reviewButtonContainer { 
+      position: absolute; 
+      top: 50%; 
+      left: 50%; 
+      transform: translate(-50%, -50%); 
+      z-index: 4; 
+      display: none; 
+    }
+    #reviewButton { 
+      background: #bf5af2; 
+      color: #ffffff; 
+      padding: 24px 40px; 
+      border: none; 
+      border-radius: 10px; 
+      font-size: 36px; 
+      cursor: pointer; 
+      opacity: 0.8; 
+    }
+    #reviewButton:hover { opacity: 1; }
+    
     /* Download Overlay */
     #downloadOverlay { 
       position: fixed; 
       top: 0; left: 0; 
-      width: 100vw; height: 100vh; 
-      background: rgba(0,0,0,0.9); 
+      width: 100vw; 
+      height: 100vh; 
+      background: rgba(28,28,30,0.95); 
       z-index: 1000; 
       display: flex; 
       flex-direction: column; 
@@ -71,54 +240,90 @@
     }
     #downloadOverlay h2 { margin-bottom: 20px; }
     #downloadOverlay .clipItem { 
-      border: 1px solid white; 
+      border: 1px solid #3a3a3c; 
       padding: 5px; 
       margin: 5px; 
       text-align: center; 
+      border-radius: 8px;
     }
     #downloadOverlay .clipItem video { 
-      width: 120px; height: 80px; 
+      width: 120px; 
+      height: 80px; 
       object-fit: cover; 
       display: block; 
       margin: 0 auto; 
+      border-radius: 8px;
     }
     #downloadOverlay input[type="email"] { 
-      padding: 8px; font-size: 16px; 
-      width: 300px; margin-top: 20px; 
+      padding: 10px; 
+      font-size: 16px; 
+      width: 300px; 
+      margin-top: 20px; 
+      border: 1px solid #3a3a3c; 
+      border-radius: 10px;
+      background: #2c2c2e;
+      color: #ffffff;
     }
     #downloadOverlay button { 
-      padding: 10px 20px; font-size: 18px; 
-      background: green; border: none; 
-      border-radius: 4px; color: white; 
-      cursor: pointer; margin-top: 20px; 
+      padding: 12px 24px; 
+      font-size: 18px; 
+      background: #32d74b; 
+      border: none; 
+      border-radius: 10px; 
+      color: #ffffff; 
+      cursor: pointer; 
+      margin-top: 20px; 
     }
+    #downloadOverlay button:hover { opacity: 0.9; }
+    
     /* Replay Overlay */
     #replayOverlay { 
-      position: fixed; top: 0; left: 0; 
-      width: 100vw; height: 100vh; 
-      background: black; z-index: 10; 
-      display: flex; flex-direction: column; 
-      justify-content: center; align-items: center; 
+      position: fixed; 
+      top: 0; left: 0; 
+      width: 100vw; 
+      height: 100vh; 
+      background: #1c1c1e; 
+      z-index: 10; 
+      display: flex; 
+      flex-direction: column; 
+      justify-content: center; 
+      align-items: center; 
     }
-    #replayOverlay video { width: 100%; height: 100%; object-fit: contain; }
+    #replayOverlay video { 
+      width: 100%; 
+      height: 100%; 
+      object-fit: contain; 
+    }
     .replay-controls { 
-      position: absolute; top: 20px; 
-      left: 50%; transform: translateX(-50%); 
-      display: flex; gap: 10px; z-index: 11; 
+      position: absolute; 
+      top: 20px; 
+      left: 50%; 
+      transform: translateX(-50%); 
+      display: flex; 
+      gap: 10px; 
+      z-index: 11; 
     }
     .replay-controls button { 
-      padding: 8px 12px; font-size: 14px; 
-      background: rgba(0,0,0,0.7); color: white; 
-      border: 1px solid white; border-radius: 4px; 
+      padding: 8px 12px; 
+      font-size: 14px; 
+      background: rgba(28,28,30,0.8); 
+      color: #ffffff; 
+      border: 1px solid #3a3a3c; 
+      border-radius: 8px; 
       cursor: pointer; 
     }
-    .replay-controls button:hover { background: white; color: black; }
+    .replay-controls button:hover { background: #2c2c2e; }
     #backButton, #shareButton { 
-      position: absolute; top: 20px; 
-      padding: 10px 15px; font-size: 16px; 
-      background: rgba(0,0,0,0.7); color: white; 
-      border: 1px solid white; border-radius: 5px; 
-      cursor: pointer; z-index: 11; 
+      position: absolute; 
+      top: 20px; 
+      padding: 10px 15px; 
+      font-size: 16px; 
+      background: rgba(28,28,30,0.8); 
+      color: #ffffff; 
+      border: 1px solid #3a3a3c; 
+      border-radius: 10px; 
+      cursor: pointer; 
+      z-index: 11; 
     }
     #backButton { left: 20px; }
     #shareButton { right: 20px; }
@@ -131,7 +336,8 @@
     <h2 class="text-2xl font-bold">Login to Access the App</h2>
     <input class="input input-bordered" type="email" id="email" placeholder="Email" required>
     <input class="input input-bordered" type="password" id="password" placeholder="Password" required>
-    <button class="btn btn-primary" onclick="login()">Login</button>
+    <button id="emailSignInBtn" onclick="login()">Login</button>
+    <button id="googleSignInBtn" onclick="googleSignIn()">Sign in with Google</button>
   </div>
   
   <!-- Main App Container (hidden until login) -->
@@ -203,6 +409,16 @@
         await auth.signInWithEmailAndPassword(email, password);
       } catch (error) {
         alert("Login error: " + error.message);
+      }
+    }
+  
+    // New function to support Google Sign In.
+    async function googleSignIn() {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      try {
+        await auth.signInWithPopup(provider);
+      } catch (error) {
+        alert("Google sign-in error: " + error.message);
       }
     }
   
@@ -305,7 +521,6 @@
             updateTimeline();
             recordedChunks = [];
             if (pausedForReview) {
-              // Open the preview overlay without auto-restarting recording.
               replayRally(clip.url);
             } else if (segmentedMode) {
               createMediaRecorder();
@@ -384,11 +599,11 @@
       });
     }
   
-    // When review is clicked, pause the current recording, finalize the clip, and open it for playback.
+    // When review is clicked, pause current recording, finalize clip, and open it for playback.
     async function reviewLastClip() {
       if (recording) {
         pausedForReview = true;
-        stopRecording();  // Triggers onstop, uploads current clip, and then opens preview.
+        stopRecording();
       } else {
         if (rallyClips.length > 0) {
           replayRally(rallyClips[rallyClips.length - 1].url);
@@ -532,7 +747,7 @@
       speechRecognition.start();
     }
   
-    // New function: display overlay for downloading selected rally clips via EmailJS.
+    // New: Display overlay for email input and selecting rallies to download.
     function showDownloadOverlay() {
       const overlay = document.createElement("div");
       overlay.id = "downloadOverlay";
@@ -541,20 +756,21 @@
         <div id="clipsSelection" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; width: 80%;"></div>
         <form id="downloadForm">
           <label style="margin-top: 20px; font-size: 16px;">Enter your email:</label>
-          <input type="email" name="to_email" id="downloadEmail" placeholder="your.email@example.com" style="padding: 8px; font-size: 16px; width: 300px; margin-top: 10px;" required>
+          <input type="email" name="to_email" id="downloadEmail" placeholder="your.email@example.com" required>
           <textarea name="message" id="downloadMessage" style="display:none;"></textarea>
-          <button type="submit" style="padding: 10px 20px; font-size: 18px; margin-top: 20px; background: green; border: none; border-radius: 4px; color: white; cursor: pointer;">Get Download Link</button>
+          <button type="submit">Get Download Link</button>
         </form>
       `;
       
-      // Populate the rally clips as selectable items.
+      // Populate rally clips as selectable items.
       const clipsSelection = overlay.querySelector("#clipsSelection");
       rallyClips.forEach((clip, index) => {
         const clipDiv = document.createElement("div");
         clipDiv.className = "clipItem";
-        clipDiv.style.border = "1px solid white";
+        clipDiv.style.border = "1px solid #3a3a3c";
         clipDiv.style.padding = "5px";
         clipDiv.style.textAlign = "center";
+        clipDiv.style.borderRadius = "8px";
         const checkbox = document.createElement("input");
         checkbox.type = "checkbox";
         checkbox.id = "clipCheckbox" + index;
@@ -567,6 +783,7 @@
         thumb.loop = true;
         thumb.style.width = "120px";
         thumb.style.height = "80px";
+        thumb.style.borderRadius = "8px";
         const label = document.createElement("div");
         label.innerText = clip.filename || ("Rally " + (index + 1));
         label.style.fontSize = "12px";
@@ -577,7 +794,7 @@
         clipsSelection.appendChild(clipDiv);
       });
       
-      // Process form submission using EmailJS.
+      // Process form submission via EmailJS.
       const downloadForm = overlay.querySelector("#downloadForm");
       downloadForm.addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -612,7 +829,7 @@
           alert("Error sending email: " + errorMsg);
         }
   
-        // After a delay, remove the overlay and sign out.
+        // After a delay, remove overlay and sign out.
         setTimeout(async () => {
           document.body.removeChild(overlay);
           try {
