@@ -168,6 +168,13 @@
     .controls button:hover {
       background: #48484a;
     }
+    /* New Sign Out Button styling */
+    .controls button.signout {
+      background: #ff3b30;
+    }
+    .controls button.signout:hover {
+      background: #ff453a;
+    }
     
     /* Timeline */
     .timeline { 
@@ -363,6 +370,7 @@
         <button onclick="stopGame()">End Session</button>
         <button id="toggleCameraButton" onclick="toggleCamera()">Toggle Camera</button>
         <button id="muteToggleButton" onclick="toggleMute()">🔇</button>
+        <button class="signout" onclick="signOutUser()">Sign Out</button>
       </div>
       <div class="timeline" id="timeline"></div>
     </div>
@@ -842,6 +850,22 @@
       });
       
       document.body.appendChild(overlay);
+    }
+  
+    // New: Sign Out function for the live preview.
+    async function signOutUser() {
+      if (recording) {
+        stopRecording();
+      }
+      if (videoElement.srcObject) {
+        videoElement.srcObject.getTracks().forEach(track => track.stop());
+      }
+      try {
+        await auth.signOut();
+        console.log("User signed out successfully.");
+      } catch (error) {
+        console.error("Error signing out:", error);
+      }
     }
   </script>
 </body>
