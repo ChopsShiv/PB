@@ -29,13 +29,12 @@
   </script>
   
   <style>
-    /* Global reset and Helvetica font */
+    /* Global reset and force Helvetica font */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { 
       width: 100%; height: 100%; 
       font-family: Helvetica, sans-serif; 
-      background: #1c1c1e; 
-      color: #ffffff;
+      background: #1c1c1e; color: #ffffff;
     }
     button {
       transition: background-color 0.3s ease, opacity 0.3s ease;
@@ -138,7 +137,7 @@
       background: #C7FE2E;
       color: #383836;
     }
-    /* Group Camera, Mute, and Profile buttons horizontally */
+    /* Group extra buttons horizontally: Camera, Mute, and Profile */
     .extraButtonsGroup {
       display: flex;
       flex-direction: row;
@@ -353,15 +352,13 @@
       <h2>User Profile</h2>
       <label for="profileEmail">Email</label>
       <input type="email" id="profileEmail" readonly>
-      <label for="profileFirstName">First Name</label>
-      <input type="text" id="profileFirstName" placeholder="Enter First Name">
-      <label for="profileLastName">Last Name</label>
-      <input type="text" id="profileLastName" placeholder="Enter Last Name">
+      <label for="profileName">Name</label>
+      <input type="text" id="profileName" placeholder="Enter your name">
       <button onclick="saveProfile()">Save</button>
     </div>
   </div>
   
-  <!-- Countdown Overlay (will be added dynamically) -->
+  <!-- Countdown Overlay (added dynamically) -->
   
   <script>
     let firstRecordingStarted = false;
@@ -774,7 +771,7 @@
       speechRecognition.start();
     }
   
-    // Show Download Overlay and prefill email field
+    // Display overlay for email input and selecting rallies to download.
     function showDownloadOverlay() {
       const overlay = document.createElement("div");
       overlay.id = "downloadOverlay";
@@ -906,36 +903,25 @@
     // Profile Page functions
   
     function showProfilePage() {
-      // Stop recording and hide the video container
       if (recording) {
         stopRecording();
       }
-      // Hide the video container (and its controls)
       document.querySelector(".video-container").style.display = "none";
-      // Show the profile page container
       document.getElementById("profilePage").style.display = "block";
-      // Prefill the email field with current user's email
       const currentUser = auth.currentUser;
       if (currentUser) {
         document.getElementById("profileEmail").value = currentUser.email;
-        // If displayName exists, try to split into first and last names.
-        if (currentUser.displayName) {
-          const names = currentUser.displayName.split(" ");
-          document.getElementById("profileFirstName").value = names[0] || "";
-          document.getElementById("profileLastName").value = names.slice(1).join(" ") || "";
-        }
+        document.getElementById("profileName").value = currentUser.displayName || "";
       }
     }
   
     async function saveProfile() {
-      const firstName = document.getElementById("profileFirstName").value.trim();
-      const lastName = document.getElementById("profileLastName").value.trim();
-      const displayName = firstName + (lastName ? " " + lastName : "");
+      const name = document.getElementById("profileName").value.trim();
       try {
-        await auth.currentUser.updateProfile({ displayName });
-        // Update greeting text on live preview
-        document.getElementById("greeting").innerHTML = '<span class="helloText">Hello, </span><span class="usernameText">' + (auth.currentUser.displayName || auth.currentUser.email) + '</span>';
-        // Hide profile page and show video container again
+        await auth.currentUser.updateProfile({ displayName: name });
+        document.getElementById("greeting").innerHTML = 
+          '<span class="helloText">Hello, </span><span class="usernameText">' +
+          (auth.currentUser.displayName || auth.currentUser.email) + '</span>';
         document.getElementById("profilePage").style.display = "none";
         document.querySelector(".video-container").style.display = "block";
       } catch (error) {
@@ -943,7 +929,7 @@
       }
     }
   
-    // Sign Out function for the live preview. Errors are handled silently.
+    // Sign Out function for the live preview.
     async function signOutUser() {
       if (recording) { stopRecording(); }
       if (videoElement.srcObject) {
