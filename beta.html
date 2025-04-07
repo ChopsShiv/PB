@@ -13,8 +13,8 @@
   <!-- DaisyUI CSS -->
   <link href="https://cdn.jsdelivr.net/npm/daisyui@3.0.10/dist/full.css" rel="stylesheet">
   
-  <!-- Font Awesome CDN for the camera icon -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <!-- Font Awesome 5 CDN for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
@@ -29,7 +29,7 @@
   </script>
   
   <style>
-    /* Global reset and force Helvetica font */
+    /* Global reset and Helvetica font */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { 
       width: 100%; height: 100%; 
@@ -71,25 +71,25 @@
       display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px;
       text-align: center;
     }
-    /* Greeting text is now 20% smaller than before (approx 58px) */
+    /* Greeting text now 48px to avoid overlapping in landscape/portrait */
     #greeting {
-      font-size: 58px;
+      font-size: 48px;
       font-weight: 500;
       word-wrap: break-word;
       max-width: 90%;
     }
-    /* Split greeting: "Hello, " in white and username in solid #C7FE2E */
+    /* Greeting split into two spans: "Hello, " in white, username in solid #C7FE2E */
     .helloText { color: #ffffff; }
     .usernameText { color: #C7FE2E; text-decoration: none; }
     
-    /* Updated label text */
+    /* Updated label and input */
     #startOverlay label { font-size: 16px; }
     #startOverlay input {
       width: 80%; max-width: 300px; padding: 12px;
       border: 1px solid #3a3a3c; border-radius: 10px;
       background: #2c2c2e; color: #ffffff;
     }
-    /* "Lets pickle!" button with solid background and text in hex #383836 */
+    /* Button: "Lets pickle!" with solid background (#C7FE2E) and text in color #383836 */
     #startOverlay button {
       width: 80%; max-width: 300px; padding: 14px; border-radius: 10px;
       border: none; font-size: 16px; cursor: pointer;
@@ -124,12 +124,20 @@
       background: #C7FE2E;
       color: #383836;
     }
+    /* New: Group for Camera and Mute buttons */
+    .cameraMuteGroup {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    /* Mute Button: now uses Font Awesome icon fas fa-volume-mute, color #C7FE2E */
     .muteButton {
       width: 30px; height: 30px; border-radius: 50%;
-      padding: 0; font-size: 12px; background: #3a3a3c;
-      border: none; color: #ffffff; cursor: pointer;
+      padding: 0; font-size: 16px; background: none;
+      border: none; color: #C7FE2E; cursor: pointer;
     }
-    .muteButton:hover { background: #48484a; }
+    .muteButton:hover { opacity: 0.8; }
     
     /* Timeline: left side, vertical, scrollable */
     .timeline {
@@ -210,15 +218,6 @@
     }
     #backButton { left: 20px; }
     #shareButton { right: 20px; }
-    
-    /* Toggle Camera Button: Replace text with icon */
-    #toggleCameraButton {
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-size: 20px;
-      color: #C7FE2E;
-    }
   </style>
 </head>
 <body>
@@ -254,10 +253,17 @@
       <!-- Controls Container -->
       <div class="controls">
         <button class="startRec" onclick="manualStart()" style="color: #383836;">Start Rec</button>
-        <button class="stopRec" onclick="manualStop()">Stop Rec</button>
+        <button class="stopRec" onclick="manualStop()" style="color: #383836;">Stop Rec</button>
         <button onclick="stopGame()">End Session</button>
-        <button id="toggleCameraButton" onclick="toggleCamera()"><i class="fa fa-camera"></i></button>
-        <button id="muteToggleButton" class="muteButton" onclick="toggleMute()">🔇</button>
+        <!-- Grouping Camera and Mute buttons vertically -->
+        <div class="cameraMuteGroup">
+          <button id="toggleCameraButton" onclick="toggleCamera()">
+            <i class="fas fa-camera"></i>
+          </button>
+          <button id="muteToggleButton" class="muteButton" onclick="toggleMute()">
+            <i class="fas fa-volume-mute"></i>
+          </button>
+        </div>
         <button class="signout" onclick="signOutUser()">Sign Out</button>
       </div>
       <div class="timeline" id="timeline"></div>
@@ -292,7 +298,7 @@
       if (user) {
         document.getElementById("loginContainer").style.display = "none";
         document.getElementById("appContainer").style.display = "block";
-        // Update greeting: "Hello, " (white) and username (in solid #C7FE2E, no underline)
+        // Update greeting: "Hello, " (white) and username in solid #C7FE2E.
         document.getElementById("greeting").innerHTML = '<span class="helloText">Hello, </span><span class="usernameText">' + (user.displayName || user.email) + '</span>';
       } else {
         document.getElementById("loginContainer").style.display = "flex";
@@ -551,10 +557,10 @@
         replayControls.appendChild(btn);
       });
       const replayMuteBtn = document.createElement("button");
-      replayMuteBtn.innerText = "🔇";
+      replayMuteBtn.innerHTML = '<i class="fas fa-volume-mute"></i>';
       replayMuteBtn.onclick = () => {
         replayVideo.muted = !replayVideo.muted;
-        replayMuteBtn.innerText = replayVideo.muted ? "🔇" : "🔊";
+        replayMuteBtn.innerHTML = replayVideo.muted ? '<i class="fas fa-volume-mute"></i>' : '<i class="fas fa-volume-up"></i>';
       };
       overlay.appendChild(replayVideo);
       overlay.appendChild(replayControls);
@@ -593,7 +599,8 @@
   
     function toggleMute() {
       videoElement.muted = !videoElement.muted;
-      muteToggleButton.innerText = videoElement.muted ? "🔇" : "🔊";
+      // Update the mute button icon accordingly.
+      muteToggleButton.innerHTML = videoElement.muted ? '<i class="fas fa-volume-mute"></i>' : '<i class="fas fa-volume-up"></i>';
     }
   
     async function toggleCamera() {
@@ -756,4 +763,3 @@
   </script>
 </body>
 </html>
-
