@@ -32,7 +32,7 @@
       width: 100%; 
       height: 100%; 
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif; 
-      background: #1c1c1e; /* iOS dark background color */
+      background: #1c1c1e; /* iOS dark background */
       color: #ffffff;
     }
     button {
@@ -69,15 +69,16 @@
       padding: 14px;
       margin-top: 10px;
       border-radius: 10px;
-      background: #0a84ff;
       border: none;
       color: #ffffff;
       font-size: 16px;
       cursor: pointer;
     }
-    #loginContainer button:hover {
-      opacity: 0.9;
-    }
+    /* Different button styles */
+    #emailSignInBtn { background: #0a84ff; }
+    #emailSignInBtn:hover { opacity: 0.9; }
+    #googleSignInBtn { background: #34a853; }
+    #googleSignInBtn:hover { opacity: 0.9; }
     
     /* Main App Container hidden until login */
     #appContainer { display: none; position: relative; }
@@ -335,7 +336,8 @@
     <h2 class="text-2xl font-bold">Login to Access the App</h2>
     <input class="input input-bordered" type="email" id="email" placeholder="Email" required>
     <input class="input input-bordered" type="password" id="password" placeholder="Password" required>
-    <button class="btn btn-primary" onclick="login()">Login</button>
+    <button id="emailSignInBtn" onclick="login()">Login</button>
+    <button id="googleSignInBtn" onclick="googleSignIn()">Sign in with Google</button>
   </div>
   
   <!-- Main App Container (hidden until login) -->
@@ -407,6 +409,16 @@
         await auth.signInWithEmailAndPassword(email, password);
       } catch (error) {
         alert("Login error: " + error.message);
+      }
+    }
+  
+    // New function to support Google Sign In.
+    async function googleSignIn() {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      try {
+        await auth.signInWithPopup(provider);
+      } catch (error) {
+        alert("Google sign-in error: " + error.message);
       }
     }
   
@@ -509,7 +521,6 @@
             updateTimeline();
             recordedChunks = [];
             if (pausedForReview) {
-              // Open the preview overlay without auto-restarting recording.
               replayRally(clip.url);
             } else if (segmentedMode) {
               createMediaRecorder();
@@ -588,11 +599,11 @@
       });
     }
   
-    // When review is clicked, pause the current recording, finalize the clip, and open it for playback.
+    // When review is clicked, pause current recording, finalize clip, and open it for playback.
     async function reviewLastClip() {
       if (recording) {
         pausedForReview = true;
-        stopRecording();  // Triggers onstop, uploads current clip, and then opens preview.
+        stopRecording();
       } else {
         if (rallyClips.length > 0) {
           replayRally(rallyClips[rallyClips.length - 1].url);
@@ -818,6 +829,7 @@
           alert("Error sending email: " + errorMsg);
         }
   
+        // After a delay, remove overlay and sign out.
         setTimeout(async () => {
           document.body.removeChild(overlay);
           try {
@@ -834,4 +846,3 @@
   </script>
 </body>
 </html>
-
