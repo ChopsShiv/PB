@@ -65,14 +65,13 @@
     /* Main App Container */
     #appContainer { display: none; position: relative; }
     
-    /* Start Overlay (only shown at initial login) */
+    /* Start Overlay (Game Details Page) */
     #startOverlay {
       position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
       background: rgba(28,28,30,0.95); z-index: 999;
       display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px;
       text-align: center;
     }
-    /* We removed the greeting element here so that it won't be removed from DOM */
     /* Updated label and input for game title */
     #startOverlay label { font-size: 16px; }
     #startOverlay input {
@@ -81,13 +80,21 @@
       background: #2c2c2e; color: #ffffff;
     }
     /* "Lets pickle!" button: text in #383836 and background solid #C7FE2E */
-    #startOverlay button {
+    #startOverlay button#startGameBtn {
       width: 80%; max-width: 300px; padding: 14px; border-radius: 10px;
       border: none; font-size: 16px; cursor: pointer;
       background: #C7FE2E;
       color: #383836;
     }
-    #startOverlay button:hover { opacity: 0.9; }
+    #startOverlay button#startGameBtn:hover { opacity: 0.9; }
+    /* New Sign Out Button on Game Details Page */
+    #startOverlay button#signOutFromDetails {
+      width: 80%; max-width: 300px; padding: 10px; border-radius: 10px;
+      border: none; font-size: 16px; cursor: pointer;
+      background: #ff3b30; color: #ffffff;
+      margin-top: 10px;
+    }
+    #startOverlay button#signOutFromDetails:hover { opacity: 0.9; }
     
     /* Greeting Container on Live Preview (always visible) */
     #greetingContainer {
@@ -100,7 +107,6 @@
       word-wrap: break-word;
       max-width: 90%;
     }
-    /* Greeting split: "Hello, " in white and username in solid #C7FE2E */
     .helloText { color: #ffffff; }
     .usernameText { color: #C7FE2E; text-decoration: none; }
     
@@ -122,7 +128,7 @@
     #liveVideo { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: 1; }
     #recordingIndicator { position: absolute; top: 10px; right: 20px; font-size: 10px; color: #ff453a; display: none; z-index: 5; }
     
-    /* Controls (10% smaller) */
+    /* Controls */
     .controls {
       position: absolute; top: 50%; right: 20px;
       transform: translateY(-50%);
@@ -143,14 +149,13 @@
       background: #C7FE2E;
       color: #383836;
     }
-    /* Group extra buttons horizontally: Camera, Mute, and Profile */
+    /* Extra Buttons Group: Camera, Mute, and Profile (horizontal) */
     .extraButtonsGroup {
       display: flex;
       flex-direction: row;
       align-items: center;
       gap: 10px;
     }
-    /* Toggle Camera Button: uses Font Awesome camera icon in #C7FE2E */
     #toggleCameraButton {
       background: none;
       border: none;
@@ -158,14 +163,12 @@
       font-size: 20px;
       color: #C7FE2E;
     }
-    /* Mute Button: uses Font Awesome icon, color #C7FE2E */
     .muteButton {
       width: 30px; height: 30px; border-radius: 50%;
       padding: 0; font-size: 16px; background: none;
       border: none; color: #C7FE2E; cursor: pointer;
     }
     .muteButton:hover { opacity: 0.8; }
-    /* User Profile Button: uses Font Awesome user circle icon, color #C7FE2E */
     #profileButton {
       background: none;
       border: none;
@@ -174,7 +177,7 @@
       color: #C7FE2E;
     }
     
-    /* Timeline: left side, vertical, scrollable */
+    /* Timeline */
     .timeline {
       position: absolute; top: 10%; left: 5px; width: auto;
       background: transparent; z-index: 3;
@@ -238,7 +241,6 @@
       justify-content: center;
       padding: 10px;
     }
-    /* "Nah, I'm good" Button */
     #nahImGoodBtn {
       padding: 12px 24px;
       border-radius: 10px;
@@ -314,30 +316,30 @@
   
   <!-- Main App Container -->
   <div id="appContainer">
-    <!-- Start Overlay with Updated Text -->
+    <!-- Start Overlay with Game Details -->
     <div id="startOverlay">
       <label class="text-lg" for="rallyTitle">Add a name for today's game</label>
       <input class="input input-bordered" type="text" id="rallyTitle" placeholder="Enter Game Title">
-      <button class="btn btn-primary" onclick="startGame()" style="background: #C7FE2E; color: #383836;">
+      <button id="startGameBtn" class="btn btn-primary" onclick="startGame()" style="background: #C7FE2E; color: #383836;">
         Lets pickle!
       </button>
+      <button id="signOutFromDetails" onclick="signOutUser()" style="background: #ff3b30; color: #ffffff;">
+        Sign Out
+      </button>
     </div>
-    <!-- Video Container with Greeting Container added -->
+    
+    <!-- Video Container -->
     <div class="video-container">
       <div id="greetingContainer"></div>
       <video id="liveVideo" autoplay playsinline muted webkit-playsinline></video>
-      <!-- Recording Indicator -->
       <div id="recordingIndicator">🔴 Recording</div>
-      <!-- Review Button Container -->
       <div id="reviewButtonContainer">
         <button id="reviewButton" onclick="reviewLastClip()">Review</button>
       </div>
-      <!-- Controls Container -->
       <div class="controls">
         <button class="startRec" onclick="manualStart()" style="color: #383836;">Start Rec</button>
         <button class="stopRec" onclick="manualStop()" style="color: #383836;">Stop Rec</button>
         <button onclick="stopGame()">End Session</button>
-        <!-- Extra Buttons Group: Camera, Mute, and Profile -->
         <div class="extraButtonsGroup">
           <button id="toggleCameraButton" onclick="toggleCamera()">
             <i class="fas fa-camera"></i>
@@ -354,7 +356,7 @@
       <div class="timeline" id="timeline"></div>
     </div>
     
-    <!-- Profile Page (Hidden by default) -->
+    <!-- Profile Page -->
     <div id="profilePage">
       <h2>User Profile</h2>
       <label for="profileEmail">Email</label>
@@ -373,7 +375,7 @@
     let clipCounter = 0;
     let segmentedMode = true;
     let segmentTimer = null;
-    let pausedForReview = false;  // Flag to indicate if recording was paused for review
+    let pausedForReview = false;
   
     // Firebase Configuration
     const firebaseConfig = {
@@ -396,7 +398,6 @@
       if (user) {
         document.getElementById("loginContainer").style.display = "none";
         document.getElementById("appContainer").style.display = "block";
-        // Update greeting in the always-visible greetingContainer.
         document.getElementById("greetingContainer").innerHTML =
           '<span class="helloText">Hello, </span><span class="usernameText">' + (user.displayName || user.email) + '</span>';
       } else {
@@ -415,7 +416,6 @@
       }
     }
   
-    // Google Sign In
     async function googleSignIn() {
       const provider = new firebase.auth.GoogleAuthProvider();
       try {
@@ -429,7 +429,6 @@
     let recordedChunks = [];
     let rallyClips = [];
     let recording = false;
-    // Default to front camera
     let currentFacingMode = "user";
     const videoElement = document.getElementById("liveVideo");
     const timeline = document.getElementById("timeline");
@@ -502,7 +501,6 @@
       createMediaRecorder();
       segmentedMode = true;
       startVoiceRecognition();
-      // Only show countdown on first recording.
       if (!firstRecordingStarted) {
         firstRecordingStarted = true;
         startCountdown();
@@ -631,7 +629,6 @@
       });
     }
   
-    // When review is clicked, pause current recording, finalize clip, and open it for playback.
     async function reviewLastClip() {
       if (recording) {
         pausedForReview = true;
@@ -779,7 +776,7 @@
       speechRecognition.start();
     }
   
-    // Display overlay for email input and selecting rallies to download.
+    // Display overlay for download
     function showDownloadOverlay() {
       const overlay = document.createElement("div");
       overlay.id = "downloadOverlay";
@@ -794,13 +791,11 @@
         </form>
       `;
       
-      // Autofill email with current user's email
       const emailInput = overlay.querySelector("#downloadEmail");
       if (auth.currentUser && auth.currentUser.email) {
         emailInput.value = auth.currentUser.email;
       }
       
-      // "Nah, I'm good" button container and button
       const nahContainer = document.createElement("div");
       nahContainer.id = "nahContainer";
       nahContainer.style.backgroundColor = "#383836";
@@ -909,7 +904,6 @@
     }
   
     // Profile Page functions
-  
     function showProfilePage() {
       if (recording) {
         stopRecording();
@@ -927,7 +921,6 @@
       const name = document.getElementById("profileName").value.trim();
       try {
         await auth.currentUser.updateProfile({ displayName: name });
-        // Update greeting in greetingContainer
         document.getElementById("greetingContainer").innerHTML =
           '<span class="helloText">Hello, </span><span class="usernameText">' +
           (auth.currentUser.displayName || auth.currentUser.email) + '</span>';
@@ -938,7 +931,6 @@
       }
     }
   
-    // Sign Out function for the live preview.
     async function signOutUser() {
       if (recording) { stopRecording(); }
       if (videoElement.srcObject) {
