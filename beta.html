@@ -168,12 +168,14 @@
     }
     .muteButton:hover { background: #48484a; }
     
-    /* Timeline moved to the left side, stacked vertically */
+    /* Timeline moved to the left side, stacked vertically and scrollable */
     .timeline { 
       position: absolute; top: 10%; left: 5px; 
       width: auto; background: transparent; 
-      z-index: 3; display: flex; 
-      flex-direction: column; align-items: center; padding: 5px;
+      z-index: 3; display: flex; flex-direction: column; 
+      align-items: center; padding: 5px;
+      max-height: 80vh; /* Fixed max height */
+      overflow-y: auto; /* Enable vertical scrolling */
     }
     .timeline-item { margin: 5px; display: flex; flex-direction: column; align-items: center; }
     .timeline-item video { 
@@ -184,11 +186,6 @@
     }
     .timeline-item span { 
       font-size: 10px; color: #ffffff; margin-top: 4px; 
-    }
-    
-    /* Only show first 4 characters of the clip filename */
-    .shortName::after {
-      content: attr(data-short);
     }
     
     /* Review Button Container */
@@ -246,8 +243,7 @@
     #replayOverlay video { width: 100%; height: 100%; object-fit: contain; }
     .replay-controls { 
       position: absolute; top: 20px; left: 50%; 
-      transform: translateX(-50%); display: flex; 
-      gap: 10px; z-index: 11; 
+      transform: translateX(-50%); display: flex; gap: 10px; z-index: 11; 
     }
     .replay-controls button { 
       padding: 8px 12px; font-size: 14px; 
@@ -530,8 +526,8 @@
         thumb.loop = true;
         thumb.onclick = () => replayRally(clip.url);
         const label = document.createElement("span");
-        // Only display first 4 characters of the filename (if exists)
-        label.innerText = clip.filename ? clip.filename.substring(0, 4) : ("Rally " + (index + 1));
+        // Show only the first 3 characters of the filename
+        label.innerText = clip.filename ? clip.filename.substring(0, 3) : ("Rally " + (index + 1));
         div.appendChild(thumb);
         div.appendChild(label);
         timeline.appendChild(div);
@@ -701,6 +697,7 @@
         </form>
       `;
       
+      // Populate rally clips as selectable items.
       const clipsSelection = overlay.querySelector("#clipsSelection");
       rallyClips.forEach((clip, index) => {
         const clipDiv = document.createElement("div");
@@ -723,7 +720,8 @@
         thumb.style.height = "80px";
         thumb.style.borderRadius = "8px";
         const label = document.createElement("div");
-        label.innerText = clip.filename ? clip.filename.substring(0, 4) : ("Rally " + (index + 1));
+        // Only show first 3 digits of the clip filename
+        label.innerText = clip.filename ? clip.filename.substring(0, 3) : ("Rally " + (index + 1));
         label.style.fontSize = "12px";
         label.style.marginTop = "5px";
         clipDiv.appendChild(checkbox);
@@ -798,3 +796,4 @@
   </script>
 </body>
 </html>
+
