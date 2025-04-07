@@ -137,10 +137,10 @@
       background: #C7FE2E;
       color: #383836;
     }
-    /* Group Camera and Mute buttons vertically */
+    /* Group Camera and Mute buttons horizontally */
     .cameraMuteGroup {
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
       align-items: center;
       gap: 10px;
     }
@@ -296,7 +296,7 @@
         <button class="startRec" onclick="manualStart()" style="color: #383836;">Start Rec</button>
         <button class="stopRec" onclick="manualStop()" style="color: #383836;">Stop Rec</button>
         <button onclick="stopGame()">End Session</button>
-        <!-- Group Camera and Mute buttons vertically -->
+        <!-- Group Camera and Mute buttons horizontally -->
         <div class="cameraMuteGroup">
           <button id="toggleCameraButton" onclick="toggleCamera()">
             <i class="fas fa-camera"></i>
@@ -763,7 +763,6 @@
             videoElement.srcObject.getTracks().forEach(track => track.stop());
           }
           await auth.signOut();
-          // Remove the download overlay so only the login page is visible.
           overlay.remove();
           console.log("User signed out without download.");
         } catch (e) {
@@ -868,3 +867,4 @@
   </script>
 </body>
 </html>
+
