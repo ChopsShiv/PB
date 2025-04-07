@@ -13,6 +13,9 @@
   <!-- DaisyUI CSS -->
   <link href="https://cdn.jsdelivr.net/npm/daisyui@3.0.10/dist/full.css" rel="stylesheet">
   
+  <!-- Font Awesome CDN for the camera icon -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-storage-compat.js"></script>
@@ -26,14 +29,12 @@
   </script>
   
   <style>
-    /* Global reset and Helvetica font */
+    /* Global reset and force Helvetica font */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { 
-      width: 100%; 
-      height: 100%; 
+      width: 100%; height: 100%; 
       font-family: Helvetica, sans-serif; 
-      background: #1c1c1e; 
-      color: #ffffff;
+      background: #1c1c1e; color: #ffffff;
     }
     button {
       transition: background-color 0.3s ease, opacity 0.3s ease;
@@ -63,21 +64,21 @@
     /* Main App Container */
     #appContainer { display: none; position: relative; }
     
-    /* Start Overlay with Greeting and Updated Text */
+    /* Start Overlay with Greeting */
     #startOverlay {
       position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
       background: rgba(28,28,30,0.95); z-index: 999;
       display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px;
       text-align: center;
     }
-    /* Greeting text is now 20% smaller (approx 58px) and responsive */
+    /* Greeting text is now 20% smaller than before (approx 58px) */
     #greeting {
       font-size: 58px;
       font-weight: 500;
       word-wrap: break-word;
       max-width: 90%;
     }
-    /* Update username styling: no underline, solid color #C7FE2E */
+    /* Split greeting: "Hello, " in white and username in solid #C7FE2E */
     .helloText { color: #ffffff; }
     .usernameText { color: #C7FE2E; text-decoration: none; }
     
@@ -88,11 +89,12 @@
       border: 1px solid #3a3a3c; border-radius: 10px;
       background: #2c2c2e; color: #ffffff;
     }
-    /* Button updated: text changed and background replaced with solid color #C7FE2E */
+    /* "Lets pickle!" button with solid background and text in hex #383836 */
     #startOverlay button {
       width: 80%; max-width: 300px; padding: 14px; border-radius: 10px;
-      border: none; color: #ffffff; font-size: 16px; cursor: pointer;
+      border: none; font-size: 16px; cursor: pointer;
       background: #C7FE2E;
+      color: #383836;
     }
     #startOverlay button:hover { opacity: 0.9; }
     
@@ -109,16 +111,18 @@
     }
     .controls button {
       padding: 9px; border-radius: 10px; background: #3a3a3c;
-      border: none; color: #ffffff; font-size: 12px; cursor: pointer;
+      border: none; font-size: 12px; cursor: pointer;
     }
     .controls button:hover { background: #48484a; }
     .controls button.signout { background: #ff3b30; }
     .controls button.signout:hover { background: #ff453a; }
     .controls button.startRec {
       background: #C7FE2E;
+      color: #383836;
     }
     .controls button.stopRec {
       background: #C7FE2E;
+      color: #383836;
     }
     .muteButton {
       width: 30px; height: 30px; border-radius: 50%;
@@ -206,6 +210,15 @@
     }
     #backButton { left: 20px; }
     #shareButton { right: 20px; }
+    
+    /* Toggle Camera Button: Replace text with icon */
+    #toggleCameraButton {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 20px;
+      color: #C7FE2E;
+    }
   </style>
 </head>
 <body>
@@ -226,8 +239,7 @@
       <div id="greeting" class="text-lg font-semibold"></div>
       <label class="text-lg" for="rallyTitle">Add a name for today's game</label>
       <input class="input input-bordered" type="text" id="rallyTitle" placeholder="Enter Game Title">
-      <button class="btn btn-primary" onclick="startGame()" 
-              style="background: #C7FE2E;">
+      <button class="btn btn-primary" onclick="startGame()" style="background: #C7FE2E; color: #383836;">
         Lets pickle!
       </button>
     </div>
@@ -241,10 +253,10 @@
       </div>
       <!-- Controls Container -->
       <div class="controls">
-        <button class="startRec" onclick="manualStart()">Start Rec</button>
+        <button class="startRec" onclick="manualStart()" style="color: #383836;">Start Rec</button>
         <button class="stopRec" onclick="manualStop()">Stop Rec</button>
         <button onclick="stopGame()">End Session</button>
-        <button id="toggleCameraButton" onclick="toggleCamera()">Toggle Camera</button>
+        <button id="toggleCameraButton" onclick="toggleCamera()"><i class="fa fa-camera"></i></button>
         <button id="muteToggleButton" class="muteButton" onclick="toggleMute()">🔇</button>
         <button class="signout" onclick="signOutUser()">Sign Out</button>
       </div>
@@ -280,7 +292,7 @@
       if (user) {
         document.getElementById("loginContainer").style.display = "none";
         document.getElementById("appContainer").style.display = "block";
-        // Update greeting: "Hello, " (white) and username in solid #C7FE2E without underline.
+        // Update greeting: "Hello, " (white) and username (in solid #C7FE2E, no underline)
         document.getElementById("greeting").innerHTML = '<span class="helloText">Hello, </span><span class="usernameText">' + (user.displayName || user.email) + '</span>';
       } else {
         document.getElementById("loginContainer").style.display = "flex";
@@ -478,7 +490,7 @@
         thumb.loop = true;
         thumb.onclick = () => replayRally(clip.url);
         const label = document.createElement("span");
-        // Only show first 3 characters of the filename
+        // Show only first 3 characters of the filename
         label.innerText = clip.filename ? clip.filename.substring(0, 3) : ("Rally " + (index + 1));
         div.appendChild(thumb);
         div.appendChild(label);
@@ -744,3 +756,4 @@
   </script>
 </body>
 </html>
+
