@@ -263,6 +263,7 @@
       const month = (now.getMonth() + 1).toString().padStart(2, '0');
       const dd = now.getDate().toString().padStart(2, '0');
       const yyyy = now.getFullYear().toString();
+      const dateStr = month + dd + yyyy;
       return `${clipNumber}_${timeStr}_${dateStr}.mp4`;
     }
   
@@ -407,7 +408,7 @@
   
     async function reviewLastClip() {
       if (rallyClips.length === 0) {
-        alert("No rally recording available for review.");
+        alert("No rally recording available for preview.");
         return;
       }
       const lastClip = rallyClips[rallyClips.length - 1];
@@ -550,109 +551,6 @@
       };
       speechRecognition.start();
     }
-  
-    function manualStart() { 
-      segmentedMode = true;
-      createMediaRecorder();
-      startRecording(); 
-    }
-    function manualStop() { 
-      segmentedMode = false;
-      if (segmentTimer) clearTimeout(segmentTimer);
-      stopRecording(); 
-    }
-  
-    function showDownloadOverlay() {
-      const overlay = document.createElement("div");
-      overlay.id = "downloadOverlay";
-      overlay.innerHTML = `
-        <h2>Download Session Highlights</h2>
-        <div id="clipsSelection" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; width: 80%;"></div>
-        <form id="downloadForm">
-          <label style="margin-top: 20px; font-size: 16px;">Enter your email:</label>
-          <input type="email" name="to_email" id="downloadEmail" placeholder="your.email@example.com" style="padding: 8px; font-size: 16px; width: 300px; margin-top: 10px;" required>
-          <textarea name="message" id="downloadMessage" style="display:none;"></textarea>
-          <button type="submit" style="padding: 10px 20px; font-size: 18px; margin-top: 20px; background: green; border: none; border-radius: 4px; color: white; cursor: pointer;">Get Download Link</button>
-        </form>
-      `;
-      
-      const clipsSelection = overlay.querySelector("#clipsSelection");
-      rallyClips.forEach((clip, index) => {
-        const clipDiv = document.createElement("div");
-        clipDiv.className = "clipItem";
-        clipDiv.style.border = "1px solid white";
-        clipDiv.style.padding = "5px";
-        clipDiv.style.textAlign = "center";
-        const checkbox = document.createElement("input");
-        checkbox.type = "checkbox";
-        checkbox.id = "clipCheckbox" + index;
-        checkbox.value = clip.url;
-        const thumb = document.createElement("video");
-        thumb.src = clip.url;
-        thumb.muted = true;
-        thumb.playsInline = true;
-        thumb.autoplay = true;
-        thumb.loop = true;
-        thumb.style.width = "120px";
-        thumb.style.height = "80px";
-        const label = document.createElement("div");
-        label.innerText = clip.filename || ("Rally " + (index + 1));
-        label.style.fontSize = "12px";
-        label.style.marginTop = "5px";
-        clipDiv.appendChild(checkbox);
-        clipDiv.appendChild(thumb);
-        clipDiv.appendChild(label);
-        clipsSelection.appendChild(clipDiv);
-      });
-      
-      const downloadForm = overlay.querySelector("#downloadForm");
-      downloadForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const selectedUrls = [];
-        rallyClips.forEach((clip, index) => {
-          const checkbox = overlay.querySelector("#clipCheckbox" + index);
-          if (checkbox && checkbox.checked) {
-            selectedUrls.push(clip.url);
-          }
-        });
-        if (selectedUrls.length === 0) {
-          alert("Please select at least one rally clip.");
-          return;
-        }
-        const emailInput = overlay.querySelector("#downloadEmail");
-        const to_email = emailInput ? emailInput.value.trim() : "";
-        if (!to_email) {
-          alert("Please enter your email.");
-          return;
-        }
-  
-        const downloadMessage = overlay.querySelector("#downloadMessage");
-        downloadMessage.value = "Here are your download links:\n\n" + selectedUrls.join("\n");
-  
-        try {
-          const response = await emailjs.sendForm('service_5an1el5', 'template_gph38u7', downloadForm);
-          console.log("EmailJS response:", response);
-          alert("Download link sent to your email.");
-        } catch (error) {
-          console.error("Email send error:", error);
-          const errorMsg = error && error.text ? error.text : (error.message || "Unknown error");
-          alert("Error sending email: " + errorMsg);
-        }
-  
-        setTimeout(async () => {
-          document.body.removeChild(overlay);
-          try {
-            await auth.signOut();
-            console.log("User signed out, returning to login screen.");
-          } catch (error) {
-            console.error("Error signing out:", error);
-          }
-        }, 5000);
-      });
-      
-      document.body.appendChild(overlay);
-    }
   </script>
 </body>
 </html>
-
