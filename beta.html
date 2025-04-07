@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <!-- For cross‑origin isolation (best set via server headers in production) -->
+  <!-- For cross‑origin isolation -->
   <meta http-equiv="Cross-Origin-Embedder-Policy" content="require-corp">
   <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -29,12 +29,13 @@
   </script>
   
   <style>
-    /* Global reset and force Helvetica font */
+    /* Global reset and Helvetica font */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { 
       width: 100%; height: 100%; 
       font-family: Helvetica, sans-serif; 
-      background: #1c1c1e; color: #ffffff;
+      background: #1c1c1e; 
+      color: #ffffff;
     }
     button {
       transition: background-color 0.3s ease, opacity 0.3s ease;
@@ -71,7 +72,7 @@
       display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px;
       text-align: center;
     }
-    /* Greeting text is now 48px */
+    /* Greeting text is 48px */
     #greeting {
       font-size: 48px;
       font-weight: 500;
@@ -137,8 +138,8 @@
       background: #C7FE2E;
       color: #383836;
     }
-    /* Group Camera and Mute buttons horizontally */
-    .cameraMuteGroup {
+    /* Group Camera, Mute, and Profile buttons horizontally */
+    .extraButtonsGroup {
       display: flex;
       flex-direction: row;
       align-items: center;
@@ -159,6 +160,14 @@
       border: none; color: #C7FE2E; cursor: pointer;
     }
     .muteButton:hover { opacity: 0.8; }
+    /* User Profile Button: uses Font Awesome user circle icon, color #C7FE2E */
+    #profileButton {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 20px;
+      color: #C7FE2E;
+    }
     
     /* Timeline: left side, vertical, scrollable */
     .timeline {
@@ -236,29 +245,55 @@
     }
     #nahImGoodBtn:hover { opacity: 0.9; }
     
-    /* Replay Overlay */
-    #replayOverlay {
-      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-      background: #1c1c1e; z-index: 10; display: flex;
-      flex-direction: column; justify-content: center; align-items: center;
+    /* Profile Page */
+    #profilePage {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #1c1c1e;
+      z-index: 1000;
+      overflow-y: auto;
+      padding: 20px;
     }
-    #replayOverlay video { width: 100%; height: 100%; object-fit: contain; }
-    .replay-controls {
-      position: absolute; top: 20px; left: 50%;
-      transform: translateX(-50%); display: flex; gap: 10px; z-index: 11;
+    #profilePage h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 24px;
     }
-    .replay-controls button {
-      padding: 8px 12px; font-size: 14px; background: rgba(28,28,30,0.8);
-      color: #ffffff; border: 1px solid #3a3a3c; border-radius: 8px; cursor: pointer;
+    #profilePage label {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 16px;
     }
-    .replay-controls button:hover { background: #2c2c2e; }
-    #backButton, #shareButton {
-      position: absolute; top: 20px; padding: 10px 15px; font-size: 16px;
-      background: rgba(28,28,30,0.8); color: #ffffff; border: 1px solid #3a3a3c;
-      border-radius: 10px; cursor: pointer; z-index: 11;
+    #profilePage input {
+      width: 100%;
+      max-width: 400px;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #3a3a3c;
+      border-radius: 5px;
+      background: #2c2c2e;
+      color: #ffffff;
     }
-    #backButton { left: 20px; }
-    #shareButton { right: 20px; }
+    #profilePage input[readonly] {
+      background: #1c1c1e;
+      border: none;
+    }
+    #profilePage button {
+      display: block;
+      margin: 0 auto;
+      padding: 12px 24px;
+      background: #C7FE2E;
+      color: #383836;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    #profilePage button:hover { opacity: 0.9; }
   </style>
 </head>
 <body>
@@ -272,7 +307,7 @@
     <button id="googleSignInBtn" onclick="googleSignIn()">Sign in with Google</button>
   </div>
   
-  <!-- Main App Container (hidden until login) -->
+  <!-- Main App Container -->
   <div id="appContainer">
     <!-- Start Overlay with Greeting and Updated Text -->
     <div id="startOverlay">
@@ -296,20 +331,37 @@
         <button class="startRec" onclick="manualStart()" style="color: #383836;">Start Rec</button>
         <button class="stopRec" onclick="manualStop()" style="color: #383836;">Stop Rec</button>
         <button onclick="stopGame()">End Session</button>
-        <!-- Group Camera and Mute buttons horizontally -->
-        <div class="cameraMuteGroup">
+        <!-- Extra Buttons Group: Camera, Mute, and Profile -->
+        <div class="extraButtonsGroup">
           <button id="toggleCameraButton" onclick="toggleCamera()">
             <i class="fas fa-camera"></i>
           </button>
           <button id="muteToggleButton" class="muteButton" onclick="toggleMute()">
             <i class="fas fa-volume-mute"></i>
           </button>
+          <button id="profileButton" onclick="showProfilePage()">
+            <i class="fas fa-user-circle"></i>
+          </button>
         </div>
         <button class="signout" onclick="signOutUser()">Sign Out</button>
       </div>
       <div class="timeline" id="timeline"></div>
     </div>
+    
+    <!-- Profile Page (Hidden by default) -->
+    <div id="profilePage">
+      <h2>User Profile</h2>
+      <label for="profileEmail">Email</label>
+      <input type="email" id="profileEmail" readonly>
+      <label for="profileFirstName">First Name</label>
+      <input type="text" id="profileFirstName" placeholder="Enter First Name">
+      <label for="profileLastName">Last Name</label>
+      <input type="text" id="profileLastName" placeholder="Enter Last Name">
+      <button onclick="saveProfile()">Save</button>
+    </div>
   </div>
+  
+  <!-- Countdown Overlay (will be added dynamically) -->
   
   <script>
     let firstRecordingStarted = false;
@@ -722,7 +774,7 @@
       speechRecognition.start();
     }
   
-    // Display overlay for email input and selecting rallies to download.
+    // Show Download Overlay and prefill email field
     function showDownloadOverlay() {
       const overlay = document.createElement("div");
       overlay.id = "downloadOverlay";
@@ -737,13 +789,13 @@
         </form>
       `;
       
-      // Autofill the email field with the current user's email.
+      // Autofill email with current user's email
       const emailInput = overlay.querySelector("#downloadEmail");
       if (auth.currentUser && auth.currentUser.email) {
         emailInput.value = auth.currentUser.email;
       }
       
-      // Create container for "Nah, I'm good" button with background #383836
+      // "Nah, I'm good" button container and button
       const nahContainer = document.createElement("div");
       nahContainer.id = "nahContainer";
       nahContainer.style.backgroundColor = "#383836";
@@ -851,6 +903,46 @@
       document.body.appendChild(overlay);
     }
   
+    // Profile Page functions
+  
+    function showProfilePage() {
+      // Stop recording and hide the video container
+      if (recording) {
+        stopRecording();
+      }
+      // Hide the video container (and its controls)
+      document.querySelector(".video-container").style.display = "none";
+      // Show the profile page container
+      document.getElementById("profilePage").style.display = "block";
+      // Prefill the email field with current user's email
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        document.getElementById("profileEmail").value = currentUser.email;
+        // If displayName exists, try to split into first and last names.
+        if (currentUser.displayName) {
+          const names = currentUser.displayName.split(" ");
+          document.getElementById("profileFirstName").value = names[0] || "";
+          document.getElementById("profileLastName").value = names.slice(1).join(" ") || "";
+        }
+      }
+    }
+  
+    async function saveProfile() {
+      const firstName = document.getElementById("profileFirstName").value.trim();
+      const lastName = document.getElementById("profileLastName").value.trim();
+      const displayName = firstName + (lastName ? " " + lastName : "");
+      try {
+        await auth.currentUser.updateProfile({ displayName });
+        // Update greeting text on live preview
+        document.getElementById("greeting").innerHTML = '<span class="helloText">Hello, </span><span class="usernameText">' + (auth.currentUser.displayName || auth.currentUser.email) + '</span>';
+        // Hide profile page and show video container again
+        document.getElementById("profilePage").style.display = "none";
+        document.querySelector(".video-container").style.display = "block";
+      } catch (error) {
+        alert("Error saving profile: " + error.message);
+      }
+    }
+  
     // Sign Out function for the live preview. Errors are handled silently.
     async function signOutUser() {
       if (recording) { stopRecording(); }
@@ -867,4 +959,3 @@
   </script>
 </body>
 </html>
-
