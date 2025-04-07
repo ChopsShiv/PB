@@ -26,12 +26,14 @@
   </script>
   
   <style>
-    /* Global reset and iOS dark mode style */
+    /* Global reset and force Helvetica font */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { 
-      width: 100%; height: 100%; 
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif; 
-      background: #1c1c1e; color: #ffffff;
+      width: 100%; 
+      height: 100%; 
+      font-family: Helvetica, sans-serif; 
+      background: #1c1c1e; 
+      color: #ffffff;
     }
     button {
       transition: background-color 0.3s ease, opacity 0.3s ease;
@@ -40,18 +42,35 @@
     
     /* Login Container */
     #loginContainer {
-      display: flex; flex-direction: column; justify-content: center; align-items: center;
-      height: 100vh; background: #1c1c1e; padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: #1c1c1e;
+      padding: 20px;
     }
     #loginContainer h2 { margin-bottom: 20px; }
     #loginContainer input {
-      width: 80%; max-width: 300px; margin: 10px 0; padding: 12px;
-      border: 1px solid #3a3a3c; border-radius: 10px;
-      background: #2c2c2e; color: #ffffff;
+      width: 80%;
+      max-width: 300px;
+      margin: 10px 0;
+      padding: 12px;
+      border: 1px solid #3a3a3c;
+      border-radius: 10px;
+      background: #2c2c2e;
+      color: #ffffff;
     }
     #loginContainer button {
-      width: 80%; max-width: 300px; padding: 14px; margin-top: 10px;
-      border-radius: 10px; border: none; color: #ffffff; font-size: 16px; cursor: pointer;
+      width: 80%;
+      max-width: 300px;
+      padding: 14px;
+      margin-top: 10px;
+      border-radius: 10px;
+      border: none;
+      color: #ffffff;
+      font-size: 16px;
+      cursor: pointer;
     }
     /* Different button styles */
     #emailSignInBtn { background: #0a84ff; }
@@ -62,30 +81,44 @@
     /* Main App Container */
     #appContainer { display: none; position: relative; }
     
-    /* Start Overlay with greeting */
+    /* Start Overlay with Greeting */
     #startOverlay {
       position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
-      background: rgba(28,28,30,0.95); z-index: 999;
+      background: rgba(28,28,30,0.95);
+      z-index: 999;
       display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px;
     }
-    /* Greeting text, inserted dynamically */
+    /* Greeting text is 400% larger (approx 72px) */
     #greeting {
-      font-size: 18px;
+      font-size: 72px;
       font-weight: 500;
     }
-    /* Updated label text style */
-    #startOverlay label {
-      font-size: 16px;
+    /* We split the greeting into two spans: .helloText in white and .gradientText for username */
+    .helloText { color: #ffffff; }
+    .gradientText {
+      background: linear-gradient(90deg, rgba(69,188,207,1) 24%, rgba(9,46,121,1) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
+    /* Updated label for game title */
+    #startOverlay label { font-size: 16px; }
     #startOverlay input {
-      width: 80%; max-width: 300px; padding: 12px;
-      border: 1px solid #3a3a3c; border-radius: 10px;
-      background: #2c2c2e; color: #ffffff;
+      width: 80%; max-width: 300px;
+      padding: 12px;
+      border: 1px solid #3a3a3c;
+      border-radius: 10px;
+      background: #2c2c2e;
+      color: #ffffff;
     }
-    /* Updated button text and gradient */
+    /* Updated button text and gradient for start game button */
     #startOverlay button {
-      width: 80%; max-width: 300px; padding: 14px; border-radius: 10px;
-      border: none; color: #ffffff; font-size: 16px; cursor: pointer;
+      width: 80%; max-width: 300px;
+      padding: 14px;
+      border-radius: 10px;
+      border: none;
+      color: #ffffff;
+      font-size: 16px;
+      cursor: pointer;
       background: rgb(69,188,207);
       background: linear-gradient(90deg, rgba(69,188,207,1) 24%, rgba(9,46,121,1) 100%);
     }
@@ -98,12 +131,18 @@
     
     /* Controls (10% smaller) */
     .controls {
-      position: absolute; top: 50%; right: 20px; transform: translateY(-50%);
+      position: absolute; top: 50%; right: 20px;
+      transform: translateY(-50%);
       z-index: 2; display: flex; flex-direction: column; gap: 10px;
     }
     .controls button {
-      padding: 9px; border-radius: 10px; background: #3a3a3c;
-      border: none; color: #ffffff; font-size: 12px; cursor: pointer;
+      padding: 9px;
+      border-radius: 10px;
+      background: #3a3a3c;
+      border: none;
+      color: #ffffff;
+      font-size: 12px;
+      cursor: pointer;
     }
     .controls button:hover { background: #48484a; }
     .controls button.signout { background: #ff3b30; }
@@ -117,17 +156,19 @@
       background: linear-gradient(90deg, rgba(233,68,0,1) 0%, rgba(121,21,9,1) 87%);
     }
     .muteButton {
-      width: 30px; height: 30px; border-radius: 50%;
-      padding: 0; font-size: 12px; background: #3a3a3c;
-      border: none; color: #ffffff; cursor: pointer;
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      padding: 0; font-size: 12px;
+      background: #3a3a3c; border: none;
+      color: #ffffff; cursor: pointer;
     }
     .muteButton:hover { background: #48484a; }
     
-    /* Timeline moved to the left side, stacked vertically and scrollable */
+    /* Timeline: left side, vertical and scrollable */
     .timeline {
       position: absolute; top: 10%; left: 5px; width: auto;
-      background: transparent; z-index: 3; display: flex;
-      flex-direction: column; align-items: center; padding: 5px;
+      background: transparent; z-index: 3;
+      display: flex; flex-direction: column; align-items: center; padding: 5px;
       max-height: 80vh; overflow-y: auto;
     }
     .timeline-item { margin: 5px; display: flex; flex-direction: column; align-items: center; }
@@ -140,20 +181,24 @@
     /* Review Button Container */
     #reviewButtonContainer {
       position: absolute; top: 50%; left: 50%;
-      transform: translate(-50%, -50%); z-index: 4; display: none;
+      transform: translate(-50%, -50%);
+      z-index: 4; display: none;
     }
     #reviewButton {
-      background: #bf5af2; color: #ffffff; padding: 24px 40px;
-      border: none; border-radius: 10px; font-size: 36px; cursor: pointer; opacity: 0.8;
+      background: #bf5af2; color: #ffffff;
+      padding: 24px 40px; border: none;
+      border-radius: 10px; font-size: 36px; cursor: pointer;
+      opacity: 0.8;
     }
     #reviewButton:hover { opacity: 1; }
     
     /* Download Overlay */
     #downloadOverlay {
-      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      position: fixed; top: 0; left: 0;
+      width: 100vw; height: 100vh;
       background: rgba(28,28,30,0.95); z-index: 1000;
-      display: flex; flex-direction: column; justify-content: center; align-items: center;
-      overflow-y: auto; padding: 20px;
+      display: flex; flex-direction: column; justify-content: center;
+      align-items: center; overflow-y: auto; padding: 20px;
     }
     #downloadOverlay h2 { margin-bottom: 20px; }
     #downloadOverlay .clipItem {
@@ -166,7 +211,8 @@
     }
     #downloadOverlay input[type="email"] {
       padding: 10px; font-size: 16px; width: 300px; margin-top: 20px;
-      border: 1px solid #3a3a3c; border-radius: 10px; background: #2c2c2e; color: #ffffff;
+      border: 1px solid #3a3a3c; border-radius: 10px;
+      background: #2c2c2e; color: #ffffff;
     }
     #downloadOverlay button {
       padding: 12px 24px; font-size: 18px; background: #32d74b;
@@ -212,7 +258,7 @@
   
   <!-- Main App Container (hidden until login) -->
   <div id="appContainer">
-    <!-- Start Overlay with greeting and updated text -->
+    <!-- Start Overlay with Greeting and Updated Text -->
     <div id="startOverlay">
       <div id="greeting" class="text-lg font-semibold"></div>
       <label class="text-lg" for="rallyTitle">Add a name for today's game</label>
@@ -271,8 +317,8 @@
       if (user) {
         document.getElementById("loginContainer").style.display = "none";
         document.getElementById("appContainer").style.display = "block";
-        // Update greeting text using displayName if available, else email.
-        document.getElementById("greeting").innerText = "Hello, " + (user.displayName || user.email);
+        // Update greeting with "Hello, " in white and username in gradient text.
+        document.getElementById("greeting").innerHTML = '<span class="helloText">Hello, </span><span class="gradientText">' + (user.displayName || user.email) + '</span>';
       } else {
         document.getElementById("loginContainer").style.display = "flex";
         document.getElementById("appContainer").style.display = "none";
@@ -469,7 +515,7 @@
         thumb.loop = true;
         thumb.onclick = () => replayRally(clip.url);
         const label = document.createElement("span");
-        // Show only first 3 characters of the filename
+        // Only show first 3 characters of the filename
         label.innerText = clip.filename ? clip.filename.substring(0, 3) : ("Rally " + (index + 1));
         div.appendChild(thumb);
         div.appendChild(label);
@@ -640,7 +686,6 @@
         </form>
       `;
       
-      // Populate rally clips as selectable items.
       const clipsSelection = overlay.querySelector("#clipsSelection");
       rallyClips.forEach((clip, index) => {
         const clipDiv = document.createElement("div");
@@ -663,7 +708,7 @@
         thumb.style.height = "80px";
         thumb.style.borderRadius = "8px";
         const label = document.createElement("div");
-        // Only show first 3 characters of the clip filename
+        // Only show first 3 characters of the filename
         label.innerText = clip.filename ? clip.filename.substring(0, 3) : ("Rally " + (index + 1));
         label.style.fontSize = "12px";
         label.style.marginTop = "5px";
@@ -723,9 +768,7 @@
   
     // Sign Out function for the live preview. Errors are handled silently.
     async function signOutUser() {
-      if (recording) {
-        stopRecording();
-      }
+      if (recording) { stopRecording(); }
       if (videoElement.srcObject) {
         videoElement.srcObject.getTracks().forEach(track => track.stop());
       }
@@ -739,3 +782,4 @@
   </script>
 </body>
 </html>
+
