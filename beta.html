@@ -12,7 +12,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- DaisyUI CSS -->
   <link href="https://cdn.jsdelivr.net/npm/daisyui@3.0.10/dist/full.css" rel="stylesheet">
-
+  
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-storage-compat.js"></script>
@@ -128,66 +128,80 @@
       display: none; z-index: 5; 
     }
     
-    /* Controls (10% smaller buttons) */
+    /* Controls (10% smaller) */
     .controls { 
-      position: absolute; 
-      top: 50%; right: 20px; 
+      position: absolute; top: 50%; right: 20px; 
       transform: translateY(-50%); 
-      z-index: 2; 
-      display: flex; 
-      flex-direction: column; 
-      gap: 10px; /* Slightly reduced gap */
+      z-index: 2; display: flex; 
+      flex-direction: column; gap: 10px;
     }
     .controls button {
-      padding: 9px; /* 10% smaller padding */
+      padding: 9px;
       border-radius: 10px;
       background: #3a3a3c;
       border: none;
       color: #ffffff;
-      font-size: 12px; /* 10% smaller font size */
+      font-size: 12px;
       cursor: pointer;
     }
     .controls button:hover { background: #48484a; }
     .controls button.signout { background: #ff3b30; }
     .controls button.signout:hover { background: #ff453a; }
+    .controls button.startRec {
+      background: rgb(0,233,150);
+      background: linear-gradient(90deg, rgba(0,233,150,1) 0%, rgba(9,121,51,1) 87%);
+    }
+    .controls button.stopRec {
+      background: rgb(233,68,0);
+      background: linear-gradient(90deg, rgba(233,68,0,1) 0%, rgba(121,21,9,1) 87%);
+    }
+    .muteButton {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      padding: 0;
+      font-size: 12px;
+      background: #3a3a3c;
+      border: none;
+      color: #ffffff;
+      cursor: pointer;
+    }
+    .muteButton:hover { background: #48484a; }
     
     /* Timeline moved to the left side, stacked vertically */
     .timeline { 
-      position: absolute; 
-      top: 10%; /* Positioned near the top */
-      left: 5px; /* A small margin from the left edge */
-      width: auto; 
-      background: rgba(28,28,30,0.8); 
-      z-index: 3; 
-      display: flex; 
-      flex-direction: column; 
-      align-items: center; 
-      padding: 5px; 
+      position: absolute; top: 10%; left: 5px; 
+      width: auto; background: transparent; 
+      z-index: 3; display: flex; 
+      flex-direction: column; align-items: center; padding: 5px;
     }
     .timeline-item { margin: 5px; display: flex; flex-direction: column; align-items: center; }
     .timeline-item video { 
-      width: 56px;  /* 30% smaller than 80px */
-      height: 35px; /* 30% smaller than 50px */
+      width: 56px; height: 35px; 
       object-fit: cover; 
       border: 1px solid #3a3a3c; 
-      border-radius: 8px; 
-      cursor: pointer; 
+      border-radius: 8px; cursor: pointer; 
     }
-    .timeline-item span { font-size: 10px; color: #ffffff; margin-top: 4px; }
+    .timeline-item span { 
+      font-size: 10px; color: #ffffff; margin-top: 4px; 
+    }
+    
+    /* Only show first 4 characters of the clip filename */
+    .shortName::after {
+      content: attr(data-short);
+    }
     
     /* Review Button Container */
     #reviewButtonContainer { 
-      position: absolute; 
-      top: 50%; left: 50%; 
+      position: absolute; top: 50%; left: 50%; 
       transform: translate(-50%, -50%); 
       z-index: 4; display: none; 
     }
     #reviewButton { 
-      background: #bf5af2; 
-      color: #ffffff; 
-      padding: 24px 40px; 
-      border: none; border-radius: 10px; 
-      font-size: 36px; cursor: pointer; opacity: 0.8; 
+      background: #bf5af2; color: #ffffff; 
+      padding: 24px 40px; border: none; 
+      border-radius: 10px; font-size: 36px; 
+      cursor: pointer; opacity: 0.8; 
     }
     #reviewButton:hover { opacity: 1; }
     
@@ -196,26 +210,23 @@
       position: fixed; top: 0; left: 0; 
       width: 100vw; height: 100vh; 
       background: rgba(28,28,30,0.95); 
-      z-index: 1000; 
-      display: flex; flex-direction: column; 
-      justify-content: center; align-items: center; 
-      overflow-y: auto; padding: 20px; 
+      z-index: 1000; display: flex; 
+      flex-direction: column; justify-content: center; 
+      align-items: center; overflow-y: auto; padding: 20px; 
     }
     #downloadOverlay h2 { margin-bottom: 20px; }
     #downloadOverlay .clipItem { 
-      border: 1px solid #3a3a3c; 
-      padding: 5px; margin: 5px; text-align: center; border-radius: 8px;
+      border: 1px solid #3a3a3c; padding: 5px; 
+      margin: 5px; text-align: center; border-radius: 8px;
     }
     #downloadOverlay .clipItem video { 
-      width: 120px; height: 80px; 
-      object-fit: cover; display: block; 
-      margin: 0 auto; border-radius: 8px;
+      width: 120px; height: 80px; object-fit: cover; 
+      display: block; margin: 0 auto; border-radius: 8px;
     }
     #downloadOverlay input[type="email"] { 
-      padding: 10px; font-size: 16px; 
-      width: 300px; margin-top: 20px; 
-      border: 1px solid #3a3a3c; border-radius: 10px;
-      background: #2c2c2e; color: #ffffff;
+      padding: 10px; font-size: 16px; width: 300px; 
+      margin-top: 20px; border: 1px solid #3a3a3c; 
+      border-radius: 10px; background: #2c2c2e; color: #ffffff;
     }
     #downloadOverlay button { 
       padding: 12px 24px; font-size: 18px; 
@@ -228,15 +239,11 @@
     /* Replay Overlay */
     #replayOverlay { 
       position: fixed; top: 0; left: 0; 
-      width: 100vw; height: 100vh; 
-      background: #1c1c1e; 
-      z-index: 10; 
-      display: flex; flex-direction: column; 
+      width: 100vw; height: 100vh; background: #1c1c1e; 
+      z-index: 10; display: flex; flex-direction: column; 
       justify-content: center; align-items: center; 
     }
-    #replayOverlay video { 
-      width: 100%; height: 100%; object-fit: contain; 
-    }
+    #replayOverlay video { width: 100%; height: 100%; object-fit: contain; }
     .replay-controls { 
       position: absolute; top: 20px; left: 50%; 
       transform: translateX(-50%); display: flex; 
@@ -250,11 +257,10 @@
     }
     .replay-controls button:hover { background: #2c2c2e; }
     #backButton, #shareButton { 
-      position: absolute; top: 20px; 
-      padding: 10px 15px; font-size: 16px; 
-      background: rgba(28,28,30,0.8); color: #ffffff; 
-      border: 1px solid #3a3a3c; border-radius: 10px; 
-      cursor: pointer; z-index: 11; 
+      position: absolute; top: 20px; padding: 10px 15px; 
+      font-size: 16px; background: rgba(28,28,30,0.8); 
+      color: #ffffff; border: 1px solid #3a3a3c; 
+      border-radius: 10px; cursor: pointer; z-index: 11; 
     }
     #backButton { left: 20px; }
     #shareButton { right: 20px; }
@@ -289,11 +295,11 @@
       </div>
       <!-- Controls Container -->
       <div class="controls">
-        <button onclick="manualStart()">Start Rec</button>
-        <button onclick="manualStop()">Stop Rec</button>
+        <button class="startRec" onclick="manualStart()">Start Rec</button>
+        <button class="stopRec" onclick="manualStop()">Stop Rec</button>
         <button onclick="stopGame()">End Session</button>
         <button id="toggleCameraButton" onclick="toggleCamera()">Toggle Camera</button>
-        <button id="muteToggleButton" onclick="toggleMute()">🔇</button>
+        <button id="muteToggleButton" class="muteButton" onclick="toggleMute()">🔇</button>
         <button class="signout" onclick="signOutUser()">Sign Out</button>
       </div>
       <div class="timeline" id="timeline"></div>
@@ -344,7 +350,7 @@
       }
     }
   
-    // New function to support Google Sign In.
+    // Google Sign In
     async function googleSignIn() {
       const provider = new firebase.auth.GoogleAuthProvider();
       try {
@@ -524,7 +530,8 @@
         thumb.loop = true;
         thumb.onclick = () => replayRally(clip.url);
         const label = document.createElement("span");
-        label.innerText = clip.filename || ("Rally " + (index + 1));
+        // Only display first 4 characters of the filename (if exists)
+        label.innerText = clip.filename ? clip.filename.substring(0, 4) : ("Rally " + (index + 1));
         div.appendChild(thumb);
         div.appendChild(label);
         timeline.appendChild(div);
@@ -679,7 +686,7 @@
       speechRecognition.start();
     }
   
-    // New: Display overlay for email input and selecting rallies to download.
+    // Display overlay for email input and selecting rallies to download.
     function showDownloadOverlay() {
       const overlay = document.createElement("div");
       overlay.id = "downloadOverlay";
@@ -694,7 +701,6 @@
         </form>
       `;
       
-      // Populate rally clips as selectable items.
       const clipsSelection = overlay.querySelector("#clipsSelection");
       rallyClips.forEach((clip, index) => {
         const clipDiv = document.createElement("div");
@@ -717,7 +723,7 @@
         thumb.style.height = "80px";
         thumb.style.borderRadius = "8px";
         const label = document.createElement("div");
-        label.innerText = clip.filename || ("Rally " + (index + 1));
+        label.innerText = clip.filename ? clip.filename.substring(0, 4) : ("Rally " + (index + 1));
         label.style.fontSize = "12px";
         label.style.marginTop = "5px";
         clipDiv.appendChild(checkbox);
@@ -726,7 +732,6 @@
         clipsSelection.appendChild(clipDiv);
       });
       
-      // Process form submission via EmailJS.
       const downloadForm = overlay.querySelector("#downloadForm");
       downloadForm.addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -761,7 +766,6 @@
           alert("Error sending email: " + errorMsg);
         }
   
-        // After a delay, remove overlay and sign out.
         setTimeout(async () => {
           document.body.removeChild(overlay);
           try {
@@ -776,7 +780,7 @@
       document.body.appendChild(overlay);
     }
   
-    // New: Sign Out function for the live preview. Errors are handled silently.
+    // Sign Out function for the live preview. Errors are handled silently.
     async function signOutUser() {
       if (recording) {
         stopRecording();
