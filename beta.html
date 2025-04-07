@@ -71,7 +71,7 @@
       display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px;
       text-align: center;
     }
-    /* Greeting text now 48px */
+    /* Greeting text is now 48px */
     #greeting {
       font-size: 48px;
       font-weight: 500;
@@ -82,14 +82,14 @@
     .helloText { color: #ffffff; }
     .usernameText { color: #C7FE2E; text-decoration: none; }
     
-    /* Updated label and input */
+    /* Updated label and input for game title */
     #startOverlay label { font-size: 16px; }
     #startOverlay input {
       width: 80%; max-width: 300px; padding: 12px;
       border: 1px solid #3a3a3c; border-radius: 10px;
       background: #2c2c2e; color: #ffffff;
     }
-    /* "Lets pickle!" button updated: text in #383836 and background solid #C7FE2E */
+    /* "Lets pickle!" button: text in #383836 and background solid #C7FE2E */
     #startOverlay button {
       width: 80%; max-width: 300px; padding: 14px; border-radius: 10px;
       border: none; font-size: 16px; cursor: pointer;
@@ -97,6 +97,19 @@
       color: #383836;
     }
     #startOverlay button:hover { opacity: 0.9; }
+    
+    /* Countdown Overlay */
+    #countdownOverlay {
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      display: flex; justify-content: center; align-items: center;
+      z-index: 1000;
+    }
+    #countdownOverlay div {
+      font-size: 80px;
+      color: #ffffff;
+    }
     
     /* Video Container */
     .video-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #1c1c1e; }
@@ -131,7 +144,7 @@
       align-items: center;
       gap: 10px;
     }
-    /* Toggle Camera Button: now uses Font Awesome camera icon in #C7FE2E */
+    /* Toggle Camera Button: uses Font Awesome camera icon in #C7FE2E */
     #toggleCameraButton {
       background: none;
       border: none;
@@ -139,7 +152,7 @@
       font-size: 20px;
       color: #C7FE2E;
     }
-    /* Mute Button: uses Font Awesome volume icon, color #C7FE2E */
+    /* Mute Button: uses Font Awesome icon, color #C7FE2E */
     .muteButton {
       width: 30px; height: 30px; border-radius: 50%;
       padding: 0; font-size: 16px; background: none;
@@ -203,13 +216,20 @@
     }
     #downloadOverlay button:hover { opacity: 0.9; }
     
-    /* New "Nah, I'm good" Button */
+    /* "Nah, I'm good" Button Container */
+    #nahContainer {
+      width: 100%;
+      background: #383836;
+      display: flex;
+      justify-content: center;
+      padding: 10px;
+    }
+    /* "Nah, I'm good" Button */
     #nahImGoodBtn {
-      margin-top: 20px;
       padding: 12px 24px;
       border-radius: 10px;
       border: none;
-      background: #383836;
+      background: none;
       color: #C7FE2E;
       font-size: 18px;
       cursor: pointer;
@@ -292,6 +312,7 @@
   </div>
   
   <script>
+    let firstRecordingStarted = false;
     let rallyTitleGlobal = "";
     let clipCounter = 0;
     let segmentedMode = true;
@@ -424,7 +445,36 @@
       createMediaRecorder();
       segmentedMode = true;
       startVoiceRecognition();
-      startRecording();
+      // Only show countdown on first recording.
+      if (!firstRecordingStarted) {
+        firstRecordingStarted = true;
+        startCountdown();
+      } else {
+        startRecording();
+      }
+    }
+  
+    function startCountdown() {
+      const countdownOverlay = document.createElement("div");
+      countdownOverlay.id = "countdownOverlay";
+      const countdownText = document.createElement("div");
+      countdownOverlay.appendChild(countdownText);
+      document.body.appendChild(countdownOverlay);
+      let count = 10;
+      countdownText.innerText = count;
+      const interval = setInterval(() => {
+        count--;
+        if(count > 0) {
+          countdownText.innerText = count;
+        } else {
+          clearInterval(interval);
+          countdownText.innerText = "GO!";
+          setTimeout(() => {
+            document.body.removeChild(countdownOverlay);
+            startRecording();
+          }, 500);
+        }
+      }, 1000);
     }
   
     function createMediaRecorder() {
@@ -517,7 +567,6 @@
         thumb.loop = true;
         thumb.onclick = () => replayRally(clip.url);
         const label = document.createElement("span");
-        // Only show first 3 characters of the filename
         label.innerText = clip.filename ? clip.filename.substring(0, 3) : ("Rally " + (index + 1));
         div.appendChild(thumb);
         div.appendChild(label);
@@ -688,23 +737,41 @@
         </form>
       `;
       
-      // Add the new "Nah, I'm good" button
+      // Autofill the email field with the current user's email.
+      const emailInput = overlay.querySelector("#downloadEmail");
+      if (auth.currentUser && auth.currentUser.email) {
+        emailInput.value = auth.currentUser.email;
+      }
+      
+      // Create container for "Nah, I'm good" button with background #383836
+      const nahContainer = document.createElement("div");
+      nahContainer.id = "nahContainer";
+      nahContainer.style.backgroundColor = "#383836";
+      nahContainer.style.width = "100%";
+      nahContainer.style.display = "flex";
+      nahContainer.style.justifyContent = "center";
+      nahContainer.style.padding = "10px";
+      
       const nahBtn = document.createElement("button");
       nahBtn.id = "nahImGoodBtn";
       nahBtn.innerText = "Nah, I'm good";
+      nahBtn.style.color = "#C7FE2E";
+      nahBtn.style.background = "none";
       nahBtn.addEventListener("click", async () => {
         try {
           if (videoElement.srcObject) {
             videoElement.srcObject.getTracks().forEach(track => track.stop());
           }
           await auth.signOut();
+          // Remove the download overlay so only the login page is visible.
+          overlay.remove();
           console.log("User signed out without download.");
         } catch (e) {
           // Silently handle errors.
         }
       });
-      // Append the "Nah, I'm good" button after the form in the overlay
-      overlay.appendChild(nahBtn);
+      nahContainer.appendChild(nahBtn);
+      overlay.appendChild(nahContainer);
       
       const clipsSelection = overlay.querySelector("#clipsSelection");
       rallyClips.forEach((clip, index) => {
@@ -772,7 +839,7 @@
         }
   
         setTimeout(async () => {
-          document.body.removeChild(overlay);
+          overlay.remove();
           try {
             await auth.signOut();
             console.log("User signed out, returning to login screen.");
@@ -801,4 +868,3 @@
   </script>
 </body>
 </html>
-
