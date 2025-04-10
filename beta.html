@@ -72,12 +72,14 @@
       display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px;
       text-align: center;
     }
+    /* Updated label and input for game title */
     #startOverlay label { font-size: 16px; }
     #startOverlay input {
       width: 80%; max-width: 300px; padding: 12px;
       border: 1px solid #3a3a3c; border-radius: 10px;
       background: #2c2c2e; color: #ffffff;
     }
+    /* "Lets pickle!" button: text in #383836 and background solid #C7FE2E */
     #startOverlay button#startGameBtn {
       width: 80%; max-width: 300px; padding: 14px; border-radius: 10px;
       border: none; font-size: 16px; cursor: pointer;
@@ -85,6 +87,7 @@
       color: #383836;
     }
     #startOverlay button#startGameBtn:hover { opacity: 0.9; }
+    /* Sign Out Button on Game Details Page */
     #startOverlay button#signOutFromDetails {
       width: 80%; max-width: 300px; padding: 10px; border-radius: 10px;
       border: none; font-size: 16px; cursor: pointer;
@@ -93,7 +96,7 @@
     }
     #startOverlay button#signOutFromDetails:hover { opacity: 0.9; }
     
-    /* Header Container in Live Video Page */
+    /* Header Container in Live Video Page: holds game details and recording indicator */
     #headerContainer {
       position: absolute;
       top: 10px;
@@ -102,13 +105,13 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      font-size: 18px;
+      font-size: 18px; /* Smaller font */
     }
-    /* Greeting: contains the game details (rallyTitleGlobal) */
+    /* The greeting container now displays the game title with prefix "Game:" */
     #greetingContainer {
-      /* No absolute positioning; inherits flex layout from headerContainer */
+      /* Initially empty – will be set in startGame() and updated after profile save */
     }
-    /* Recording Indicator: ensure Helvetica font is used */
+    /* Ensure recording indicator uses Helvetica */
     #recordingIndicator {
       font-family: Helvetica, sans-serif;
     }
@@ -144,7 +147,6 @@
     /* Video Container (Live Video Page) */
     .video-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #1c1c1e; }
     #liveVideo { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: 1; }
-    #recordingIndicator { /* Moved into headerContainer so no separate positioning */ }
     
     /* Controls (bottom right) */
     .controls {
@@ -352,12 +354,12 @@
     
     <!-- Video Container (Live Video Page) -->
     <div class="video-container">
-      <!-- Header Container that holds the game details and recording indicator -->
+      <!-- Header Container: Displays Game Title (with prefix) and Recording Indicator -->
       <div id="headerContainer">
         <div id="greetingContainer"></div>
         <div id="recordingIndicator">🔴 Recording</div>
       </div>
-      <!-- Profile Button Container (top right) -->
+      <!-- Profile Button Container at Top Right -->
       <div id="profileButtonContainer">
         <button id="profileButton" onclick="showProfilePage()"><i class="fas fa-user-circle"></i></button>
       </div>
@@ -424,7 +426,7 @@
       if (user) {
         document.getElementById("loginContainer").style.display = "none";
         document.getElementById("appContainer").style.display = "block";
-        // Upon a fresh sign-in, clear previous session data.
+        // Upon fresh sign-in, clear previous session data.
         rallyClips = [];
         firstRecordingStarted = false;
       } else {
@@ -519,8 +521,8 @@
         const titleInput = document.getElementById("rallyTitle");
         rallyTitleGlobal = titleInput && titleInput.value ? titleInput.value.replace(/[^a-zA-Z0-9-_]/g, "") : "";
         console.log("Game title set:", rallyTitleGlobal);
-        // Set the greeting to display the game details (smaller font already set in CSS)
-        greetingContainer.innerText = rallyTitleGlobal;
+        // Set the greeting to show "Game: <title>" in the header.
+        greetingContainer.innerText = "Game: " + rallyTitleGlobal;
         startOverlay.remove();
       }
       await startLivePreview();
@@ -559,7 +561,7 @@
           countdownText.innerText = "GO!";
           console.log("Countdown complete. Starting recording.");
           setTimeout(() => {
-            if(countdownOverlay.parentNode) {
+            if (countdownOverlay.parentNode) {
               document.body.removeChild(countdownOverlay);
             }
             startRecording();
@@ -621,7 +623,7 @@
         mediaRecorder.start();
         recording = true;
         console.log("Recording started.");
-        recordingIndicator.style.display = "block";
+        // The recording indicator is now within the headerContainer (no separate absolute positioning)
         reviewButtonContainer.style.display = "block";
         if (segmentedMode) {
           segmentTimer = setTimeout(() => stopRecording(), 60000);
@@ -634,7 +636,6 @@
         mediaRecorder.stop();
         recording = false;
         console.log("Recording stopped.");
-        recordingIndicator.style.display = "none";
         reviewButtonContainer.style.display = "none";
         if (segmentTimer) clearTimeout(segmentTimer);
       }
@@ -956,9 +957,9 @@
       const name = document.getElementById("profileName").value.trim();
       try {
         await auth.currentUser.updateProfile({ displayName: name });
-        // Preserve the game details greeting (if available)
-        if(rallyTitleGlobal) {
-          greetingContainer.innerText = rallyTitleGlobal;
+        // Instead of changing the greeting to user's name, keep the game title.
+        if (rallyTitleGlobal) {
+          greetingContainer.innerText = "Game: " + rallyTitleGlobal;
         }
         document.getElementById("profilePage").style.display = "none";
         document.querySelector(".video-container").style.display = "block";
