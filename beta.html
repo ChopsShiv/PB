@@ -72,14 +72,12 @@
       display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px;
       text-align: center;
     }
-    /* Updated label and input for game title */
     #startOverlay label { font-size: 16px; }
     #startOverlay input {
       width: 80%; max-width: 300px; padding: 12px;
       border: 1px solid #3a3a3c; border-radius: 10px;
       background: #2c2c2e; color: #ffffff;
     }
-    /* "Lets pickle!" button: text in #383836 and background solid #C7FE2E */
     #startOverlay button#startGameBtn {
       width: 80%; max-width: 300px; padding: 14px; border-radius: 10px;
       border: none; font-size: 16px; cursor: pointer;
@@ -87,7 +85,6 @@
       color: #383836;
     }
     #startOverlay button#startGameBtn:hover { opacity: 0.9; }
-    /* Sign Out Button on Game Details Page */
     #startOverlay button#signOutFromDetails {
       width: 80%; max-width: 300px; padding: 10px; border-radius: 10px;
       border: none; font-size: 16px; cursor: pointer;
@@ -96,20 +93,25 @@
     }
     #startOverlay button#signOutFromDetails:hover { opacity: 0.9; }
     
-    /* Live Video Page */
-    .video-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #1c1c1e; }
-    /* Display game details instead of "Hello, user" in a smaller font */
-    #greetingContainer { 
+    /* Header Container in Live Video Page */
+    #headerContainer {
       position: absolute;
       top: 10px;
       left: 10px;
       z-index: 6;
-      font-size: 18px;  /* Smaller font */
-      font-weight: 500;
-      word-wrap: break-word;
-      max-width: 90%;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 18px;
     }
-    /* The greeting will be set to the game title entered by the user. */
+    /* Greeting: contains the game details (rallyTitleGlobal) */
+    #greetingContainer {
+      /* No absolute positioning; inherits flex layout from headerContainer */
+    }
+    /* Recording Indicator: ensure Helvetica font is used */
+    #recordingIndicator {
+      font-family: Helvetica, sans-serif;
+    }
     
     /* Profile Button Container at Top Right */
     #profileButtonContainer {
@@ -139,9 +141,10 @@
       color: #ffffff;
     }
     
-    /* Video Container (continued) */
+    /* Video Container (Live Video Page) */
+    .video-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #1c1c1e; }
     #liveVideo { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: 1; }
-    #recordingIndicator { position: absolute; top: 10px; right: 20px; font-size: 10px; color: #ff453a; display: none; z-index: 5; }
+    #recordingIndicator { /* Moved into headerContainer so no separate positioning */ }
     
     /* Controls (bottom right) */
     .controls {
@@ -163,7 +166,6 @@
       background: #C7FE2E;
       color: #383836;
     }
-    /* Extra Buttons Group: Camera and Mute */
     .extraButtonsGroup {
       display: flex;
       flex-direction: row;
@@ -350,14 +352,16 @@
     
     <!-- Video Container (Live Video Page) -->
     <div class="video-container">
-      <!-- Greeting now shows the game details (rallyTitleGlobal) in a smaller font -->
-      <div id="greetingContainer"></div>
-      <!-- Profile Button Container, positioned at top right -->
+      <!-- Header Container that holds the game details and recording indicator -->
+      <div id="headerContainer">
+        <div id="greetingContainer"></div>
+        <div id="recordingIndicator">🔴 Recording</div>
+      </div>
+      <!-- Profile Button Container (top right) -->
       <div id="profileButtonContainer">
         <button id="profileButton" onclick="showProfilePage()"><i class="fas fa-user-circle"></i></button>
       </div>
       <video id="liveVideo" autoplay playsinline muted webkit-playsinline></video>
-      <div id="recordingIndicator">🔴 Recording</div>
       <div id="reviewButtonContainer">
         <button id="reviewButton" onclick="reviewLastClip()">Review</button>
       </div>
@@ -420,7 +424,7 @@
       if (user) {
         document.getElementById("loginContainer").style.display = "none";
         document.getElementById("appContainer").style.display = "block";
-        // Upon fresh sign-in, clear previous session data.
+        // Upon a fresh sign-in, clear previous session data.
         rallyClips = [];
         firstRecordingStarted = false;
       } else {
@@ -515,7 +519,7 @@
         const titleInput = document.getElementById("rallyTitle");
         rallyTitleGlobal = titleInput && titleInput.value ? titleInput.value.replace(/[^a-zA-Z0-9-_]/g, "") : "";
         console.log("Game title set:", rallyTitleGlobal);
-        // Use the game title as the greeting on the live video page.
+        // Set the greeting to display the game details (smaller font already set in CSS)
         greetingContainer.innerText = rallyTitleGlobal;
         startOverlay.remove();
       }
@@ -952,10 +956,9 @@
       const name = document.getElementById("profileName").value.trim();
       try {
         await auth.currentUser.updateProfile({ displayName: name });
-        // Instead of updating the greeting with the user's name, keep the game details.
-        // If rallyTitleGlobal is defined, use it; otherwise do not change.
+        // Preserve the game details greeting (if available)
         if(rallyTitleGlobal) {
-          document.getElementById("greetingContainer").innerText = rallyTitleGlobal;
+          greetingContainer.innerText = rallyTitleGlobal;
         }
         document.getElementById("profilePage").style.display = "none";
         document.querySelector(".video-container").style.display = "block";
@@ -972,14 +975,10 @@
       try {
         await auth.signOut();
         console.log("User signed out successfully.");
-        // Clear previous session data.
         rallyClips = [];
         firstRecordingStarted = false;
-        // Reload the page to show game details on next sign-in.
         location.reload();
-      } catch (error) {
-        // Silently handle errors.
-      }
+      } catch (error) { }
     }
   </script>
 </body>
