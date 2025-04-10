@@ -79,7 +79,7 @@
       border: 1px solid #3a3a3c; border-radius: 10px;
       background: #2c2c2e; color: #ffffff;
     }
-    /* "Lets pickle!" button: text in #383836 and background solid #C7FE2E */
+    /* "Lets pickle!" button */
     #startOverlay button#startGameBtn {
       width: 80%; max-width: 300px; padding: 14px; border-radius: 10px;
       border: none; font-size: 16px; cursor: pointer;
@@ -87,7 +87,7 @@
       color: #383836;
     }
     #startOverlay button#startGameBtn:hover { opacity: 0.9; }
-    /* New Sign Out Button on Game Details Page */
+    /* Sign Out Button on Game Details Page */
     #startOverlay button#signOutFromDetails {
       width: 80%; max-width: 300px; padding: 10px; border-radius: 10px;
       border: none; font-size: 16px; cursor: pointer;
@@ -96,7 +96,7 @@
     }
     #startOverlay button#signOutFromDetails:hover { opacity: 0.9; }
     
-    /* Greeting Container on Live Preview (always visible) */
+    /* Greeting Container on Live Preview (only used to display a greeting if needed) */
     #greetingContainer {
       position: absolute;
       top: 10px;
@@ -123,7 +123,7 @@
       color: #ffffff;
     }
     
-    /* Video Container */
+    /* Video Container (Live Video Page) */
     .video-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #1c1c1e; }
     #liveVideo { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: 1; }
     #recordingIndicator { position: absolute; top: 10px; right: 20px; font-size: 10px; color: #ff453a; display: none; z-index: 5; }
@@ -301,6 +301,19 @@
       cursor: pointer;
     }
     #profilePage button:hover { opacity: 0.9; }
+    
+    /* Countdown Overlay */
+    #countdownOverlay {
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      display: flex; justify-content: center; align-items: center;
+      z-index: 1000;
+    }
+    #countdownOverlay div {
+      font-size: 80px;
+      color: #ffffff;
+    }
   </style>
 </head>
 <body>
@@ -316,7 +329,7 @@
   
   <!-- Main App Container -->
   <div id="appContainer">
-    <!-- Start Overlay with Game Details -->
+    <!-- Start Overlay (Game Details Page) -->
     <div id="startOverlay">
       <label class="text-lg" for="rallyTitle">Add a name for today's game</label>
       <input class="input input-bordered" type="text" id="rallyTitle" placeholder="Enter Game Title">
@@ -328,7 +341,7 @@
       </button>
     </div>
     
-    <!-- Video Container -->
+    <!-- Video Container (Live Video Page) -->
     <div class="video-container">
       <div id="greetingContainer"></div>
       <video id="liveVideo" autoplay playsinline muted webkit-playsinline></video>
@@ -367,7 +380,7 @@
     </div>
   </div>
   
-  <!-- Countdown Overlay (added dynamically) -->
+  <!-- Countdown Overlay (created dynamically) -->
   
   <script>
     let firstRecordingStarted = false;
@@ -394,12 +407,16 @@
     auth.setPersistence(firebase.auth.Auth.Persistence.SESSION)
       .catch(error => console.error("Error setting auth persistence:", error));
   
-    auth.onAuthStateChanged((user) => {
+    auth.onAuthStateChanged(user => {
       if (user) {
         document.getElementById("loginContainer").style.display = "none";
         document.getElementById("appContainer").style.display = "block";
         document.getElementById("greetingContainer").innerHTML =
           '<span class="helloText">Hello, </span><span class="usernameText">' + (user.displayName || user.email) + '</span>';
+          
+        // Upon a fresh sign-in, clear old rally clips and reset the recording state.
+        rallyClips = [];
+        firstRecordingStarted = false;
       } else {
         document.getElementById("loginContainer").style.display = "flex";
         document.getElementById("appContainer").style.display = "none";
@@ -490,9 +507,10 @@
       if (startOverlay) {
         const titleInput = document.getElementById("rallyTitle");
         rallyTitleGlobal = titleInput && titleInput.value ? titleInput.value.replace(/[^a-zA-Z0-9-_]/g, "") : "";
+        console.log("Game title set:", rallyTitleGlobal);
         startOverlay.remove();
       }
-      if (videoElement.srcObject) return;
+      // Do not return early: always initialize fresh preview
       await startLivePreview();
       if (typeof MediaRecorder === "undefined") {
         alert("MediaRecorder not supported. Please use Safari on iOS.");
@@ -503,6 +521,7 @@
       startVoiceRecognition();
       if (!firstRecordingStarted) {
         firstRecordingStarted = true;
+        console.log("Starting countdown for first recording.");
         startCountdown();
       } else {
         startRecording();
@@ -517,15 +536,20 @@
       document.body.appendChild(countdownOverlay);
       let count = 10;
       countdownText.innerText = count;
+      console.log("Countdown started at 10 seconds.");
       const interval = setInterval(() => {
         count--;
-        if(count > 0) {
+        if (count > 0) {
           countdownText.innerText = count;
+          console.log("Countdown:", count);
         } else {
           clearInterval(interval);
           countdownText.innerText = "GO!";
+          console.log("Countdown complete. Starting recording.");
           setTimeout(() => {
-            document.body.removeChild(countdownOverlay);
+            if(countdownOverlay.parentNode) {
+              document.body.removeChild(countdownOverlay);
+            }
             startRecording();
           }, 500);
         }
@@ -540,10 +564,14 @@
           audioBitsPerSecond: 128000
         });
         mediaRecorder.ondataavailable = (event) => {
-          if (event.data && event.data.size > 0) recordedChunks.push(event.data);
+          if (event.data && event.data.size > 0) {
+            recordedChunks.push(event.data);
+            console.log("Data chunk received.");
+          }
         };
         mediaRecorder.onstop = async () => {
           if (recordedChunks.length > 0) {
+            console.log("Recording stopped, uploading clip...");
             const blob = new Blob(recordedChunks, { type: "video/mp4" });
             const result = await uploadToFirebase(blob);
             const clip = { url: result.url, timestamp: new Date().toLocaleTimeString(), filename: result.filename, manual: false };
@@ -554,7 +582,7 @@
               replayRally(clip.url);
             } else if (segmentedMode) {
               createMediaRecorder();
-              setTimeout(() => { startRecording(); }, 500);
+              setTimeout(() => startRecording(), 500);
             }
           }
         };
@@ -580,10 +608,11 @@
         recordedChunks = [];
         mediaRecorder.start();
         recording = true;
+        console.log("Recording started.");
         recordingIndicator.style.display = "block";
         reviewButtonContainer.style.display = "block";
         if (segmentedMode) {
-          segmentTimer = setTimeout(() => { stopRecording(); }, 60000);
+          segmentTimer = setTimeout(() => stopRecording(), 60000);
         }
       }
     }
@@ -592,6 +621,7 @@
       if (recording && mediaRecorder) {
         mediaRecorder.stop();
         recording = false;
+        console.log("Recording stopped.");
         recordingIndicator.style.display = "none";
         reviewButtonContainer.style.display = "none";
         if (segmentTimer) clearTimeout(segmentTimer);
@@ -633,10 +663,8 @@
       if (recording) {
         pausedForReview = true;
         stopRecording();
-      } else {
-        if (rallyClips.length > 0) {
-          replayRally(rallyClips[rallyClips.length - 1].url);
-        }
+      } else if (rallyClips.length > 0) {
+        replayRally(rallyClips[rallyClips.length - 1].url);
       }
     }
   
@@ -651,7 +679,7 @@
         if (pausedForReview) {
           pausedForReview = false;
           createMediaRecorder();
-          setTimeout(() => { startRecording(); }, 500);
+          setTimeout(() => startRecording(), 500);
         }
         videoElement.play();
       };
@@ -776,7 +804,6 @@
       speechRecognition.start();
     }
   
-    // Display overlay for download
     function showDownloadOverlay() {
       const overlay = document.createElement("div");
       overlay.id = "downloadOverlay";
@@ -817,9 +844,7 @@
           await auth.signOut();
           overlay.remove();
           console.log("User signed out without download.");
-        } catch (e) {
-          // Silently handle errors.
-        }
+        } catch (e) { }
       });
       nahContainer.appendChild(nahBtn);
       overlay.appendChild(nahContainer);
@@ -894,9 +919,7 @@
           try {
             await auth.signOut();
             console.log("User signed out, returning to login screen.");
-          } catch (error) {
-            // Silently handle sign out errors.
-          }
+          } catch (error) { }
         }, 5000);
       });
       
@@ -939,6 +962,11 @@
       try {
         await auth.signOut();
         console.log("User signed out successfully.");
+        // Clear previously saved rallies and reset first recording flag.
+        rallyClips = [];
+        firstRecordingStarted = false;
+        // Reload the page to reset the DOM.
+        location.reload();
       } catch (error) {
         // Silently handle errors.
       }
