@@ -72,14 +72,12 @@
       display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px;
       text-align: center;
     }
-    /* Updated label and input for game title */
     #startOverlay label { font-size: 16px; }
     #startOverlay input {
       width: 80%; max-width: 300px; padding: 12px;
       border: 1px solid #3a3a3c; border-radius: 10px;
       background: #2c2c2e; color: #ffffff;
     }
-    /* "Lets pickle!" button: text in #383836 and background solid #C7FE2E */
     #startOverlay button#startGameBtn {
       width: 80%; max-width: 300px; padding: 14px; border-radius: 10px;
       border: none; font-size: 16px; cursor: pointer;
@@ -87,7 +85,6 @@
       color: #383836;
     }
     #startOverlay button#startGameBtn:hover { opacity: 0.9; }
-    /* Sign Out Button on Game Details Page */
     #startOverlay button#signOutFromDetails {
       width: 80%; max-width: 300px; padding: 10px; border-radius: 10px;
       border: none; font-size: 16px; cursor: pointer;
@@ -105,11 +102,11 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      font-size: 18px; /* Smaller font */
+      font-size: 14px; /* Reduced by 20% from 18px */
     }
-    /* The greeting container now displays the game title with prefix "Game:" */
+    /* Greeting container for game details ("Game: <title>") */
     #greetingContainer {
-      /* Initially empty – will be set in startGame() and updated after profile save */
+      /* Will be set by script in startGame() and saveProfile() */
     }
     /* Ensure recording indicator uses Helvetica */
     #recordingIndicator {
@@ -354,7 +351,7 @@
     
     <!-- Video Container (Live Video Page) -->
     <div class="video-container">
-      <!-- Header Container: Displays Game Title (with prefix) and Recording Indicator -->
+      <!-- Header Container: Displays game details and recording indicator -->
       <div id="headerContainer">
         <div id="greetingContainer"></div>
         <div id="recordingIndicator">🔴 Recording</div>
@@ -426,7 +423,7 @@
       if (user) {
         document.getElementById("loginContainer").style.display = "none";
         document.getElementById("appContainer").style.display = "block";
-        // Upon fresh sign-in, clear previous session data.
+        // Upon a fresh sign-in, clear previous session data.
         rallyClips = [];
         firstRecordingStarted = false;
       } else {
@@ -521,7 +518,7 @@
         const titleInput = document.getElementById("rallyTitle");
         rallyTitleGlobal = titleInput && titleInput.value ? titleInput.value.replace(/[^a-zA-Z0-9-_]/g, "") : "";
         console.log("Game title set:", rallyTitleGlobal);
-        // Set the greeting to show "Game: <title>" in the header.
+        // Set the greeting to display the game details with prefix
         greetingContainer.innerText = "Game: " + rallyTitleGlobal;
         startOverlay.remove();
       }
@@ -561,7 +558,7 @@
           countdownText.innerText = "GO!";
           console.log("Countdown complete. Starting recording.");
           setTimeout(() => {
-            if (countdownOverlay.parentNode) {
+            if(countdownOverlay.parentNode) {
               document.body.removeChild(countdownOverlay);
             }
             startRecording();
@@ -623,7 +620,6 @@
         mediaRecorder.start();
         recording = true;
         console.log("Recording started.");
-        // The recording indicator is now within the headerContainer (no separate absolute positioning)
         reviewButtonContainer.style.display = "block";
         if (segmentedMode) {
           segmentTimer = setTimeout(() => stopRecording(), 60000);
@@ -957,7 +953,7 @@
       const name = document.getElementById("profileName").value.trim();
       try {
         await auth.currentUser.updateProfile({ displayName: name });
-        // Instead of changing the greeting to user's name, keep the game title.
+        // Keep the game details greeting intact.
         if (rallyTitleGlobal) {
           greetingContainer.innerText = "Game: " + rallyTitleGlobal;
         }
