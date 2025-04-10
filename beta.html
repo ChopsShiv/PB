@@ -146,10 +146,11 @@
     .video-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #1c1c1e; }
     #liveVideo { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: 1; }
     
-    /* Controls (bottom right) */
+    /* Controls (bottom right) -- update to move up by 20% */
     .controls {
       position: absolute; bottom: 20px; right: 20px;
       z-index: 2; display: flex; flex-direction: column; gap: 10px;
+      transform: translateY(-20%);
     }
     .controls button {
       padding: 9px; border-radius: 10px; background: #3a3a3c;
@@ -621,7 +622,7 @@
         mediaRecorder.start();
         recording = true;
         console.log("Recording started.");
-        // Show the recording indicator when recording starts.
+        // Show the recording indicator only when recording begins.
         recordingIndicator.style.display = "block";
         reviewButtonContainer.style.display = "block";
         if (segmentedMode) {
@@ -985,3 +986,4 @@
   </script>
 </body>
 </html>
+
