@@ -102,7 +102,7 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      font-size: 14px; /* 20% smaller than original 18px */
+      font-size: 14px; /* 20% smaller than 18px */
     }
     /* Greeting container displays the game title prefixed with "Game:" */
     #greetingContainer {
@@ -146,11 +146,11 @@
     .video-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #1c1c1e; }
     #liveVideo { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: 1; }
     
-    /* Controls (bottom right) -- update to move up by 20% */
+    /* Controls (bottom right) -- update to move up by 30% more */
     .controls {
       position: absolute; bottom: 20px; right: 20px;
       z-index: 2; display: flex; flex-direction: column; gap: 10px;
-      transform: translateY(-20%);
+      transform: translateY(-50%); /* Updated to 50% upward shift (20% + 30%) */
     }
     .controls button {
       padding: 9px; border-radius: 10px; background: #3a3a3c;
@@ -329,7 +329,7 @@
 <body>
   <!-- Login Container with Logo -->
   <div id="loginContainer">
-    <img id="loginLogo" src="https://i.postimg.cc/1tsKBkMk/SC-logo.png" alt="App Logo">
+    <img id="loginLogo" src="https://i.postimg.cc/pTd33Wf1/logo.png" alt="App Logo">
     <h2 class="text-2xl font-bold">Login to Access the App</h2>
     <input class="input input-bordered" type="email" id="email" placeholder="Email" required>
     <input class="input input-bordered" type="password" id="password" placeholder="Password" required>
@@ -986,4 +986,3 @@
   </script>
 </body>
 </html>
-
