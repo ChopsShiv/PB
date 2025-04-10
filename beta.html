@@ -81,6 +81,7 @@
     }
     .helloText { color: #ffffff; }
     .usernameText { color: #C7FE2E; text-decoration: none; }
+    
     /* Updated label and input for game title */
     #startOverlay label { font-size: 16px; }
     #startOverlay input {
@@ -88,7 +89,7 @@
       border: 1px solid #3a3a3c; border-radius: 10px;
       background: #2c2c2e; color: #ffffff;
     }
-    /* "Lets pickle!" button: text in #383836 and background solid #C7FE2E */
+    /* "Lets pickle!" button */
     #startGameBtn {
       width: 80%; max-width: 300px; padding: 14px; border-radius: 10px;
       border: none; font-size: 16px; cursor: pointer;
@@ -105,7 +106,7 @@
     }
     #signOutFromDetails:hover { opacity: 0.9; }
     
-    /* Live Video Page (no greeting) */
+    /* Live Video Page (no greeting shown on live video) */
     .video-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #1c1c1e; }
     #liveVideo { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: 1; }
     #recordingIndicator { position: absolute; top: 10px; right: 20px; font-size: 10px; color: #ff453a; display: none; z-index: 5; }
@@ -440,13 +441,8 @@
         console.log("Camera stream acquired.");
         videoElement.srcObject = stream;
         videoElement.muted = true;
-        // Wait until metadata is loaded to ensure the video is ready
-        await new Promise(resolve => {
-          videoElement.onloadedmetadata = () => {
-            videoElement.play();
-            resolve();
-          }
-        });
+        // Use play() promise to ensure the video starts playing.
+        await videoElement.play();
       } catch (error) {
         console.error("getUserMedia error:", error);
         alert("Unable to access camera/microphone. Check your device settings.");
@@ -929,7 +925,7 @@
       }
       try {
         await auth.currentUser.updateProfile({ displayName: name, photoURL: photoURL });
-        // Optionally update the start overlay greeting if present.
+        // Optionally update start overlay greeting if available.
         if(document.getElementById("startGreeting")){
           document.getElementById("startGreeting").innerHTML =
             '<span class="helloText">Hello, </span><span class="usernameText">' +
@@ -957,4 +953,3 @@
   </script>
 </body>
 </html>
-
