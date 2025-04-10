@@ -72,7 +72,7 @@
       display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px;
       text-align: center;
     }
-    /* Greeting appears ONLY on this page */
+    /* Greeting appears ONLY on the game details page */
     #startGreeting {
       font-size: 48px;
       font-weight: 500;
@@ -105,7 +105,7 @@
     }
     #signOutFromDetails:hover { opacity: 0.9; }
     
-    /* Live Video Page (no greeting here) */
+    /* Live Video Page (no greeting) */
     .video-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #1c1c1e; }
     #liveVideo { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: 1; }
     #recordingIndicator { position: absolute; top: 10px; right: 20px; font-size: 10px; color: #ff453a; display: none; z-index: 5; }
@@ -440,6 +440,13 @@
         console.log("Camera stream acquired.");
         videoElement.srcObject = stream;
         videoElement.muted = true;
+        // Wait until metadata is loaded to ensure the video is ready
+        await new Promise(resolve => {
+          videoElement.onloadedmetadata = () => {
+            videoElement.play();
+            resolve();
+          }
+        });
       } catch (error) {
         console.error("getUserMedia error:", error);
         alert("Unable to access camera/microphone. Check your device settings.");
@@ -481,7 +488,6 @@
         rallyTitleGlobal = titleInput && titleInput.value ? titleInput.value.replace(/[^a-zA-Z0-9-_]/g, "") : "";
         startOverlay.remove();
       }
-      // Removed the early return to ensure countdown executes.
       await startLivePreview();
       if (typeof MediaRecorder === "undefined") {
         alert("MediaRecorder not supported. Please use Safari on iOS.");
@@ -558,7 +564,6 @@
       createMediaRecorder();
       startRecording(); 
     }
-  
     function manualStop() { 
       segmentedMode = false;
       if (segmentTimer) clearTimeout(segmentTimer);
@@ -952,3 +957,4 @@
   </script>
 </body>
 </html>
+
