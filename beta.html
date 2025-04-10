@@ -32,8 +32,7 @@
     /* Global reset and force Helvetica font */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { 
-      width: 100%; 
-      height: 100%; 
+      width: 100%; height: 100%; 
       font-family: Helvetica, sans-serif; 
       background: #1c1c1e; 
       color: #ffffff;
@@ -73,7 +72,7 @@
       display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px;
       text-align: center;
     }
-    /* Greeting appears ONLY here on the game details page */
+    /* Greeting appears ONLY on this page */
     #startGreeting {
       font-size: 48px;
       font-weight: 500;
@@ -89,7 +88,7 @@
       border: 1px solid #3a3a3c; border-radius: 10px;
       background: #2c2c2e; color: #ffffff;
     }
-    /* "Lets pickle!" button: text in #383836, background solid #C7FE2E */
+    /* "Lets pickle!" button: text in #383836 and background solid #C7FE2E */
     #startGameBtn {
       width: 80%; max-width: 300px; padding: 14px; border-radius: 10px;
       border: none; font-size: 16px; cursor: pointer;
@@ -106,7 +105,7 @@
     }
     #signOutFromDetails:hover { opacity: 0.9; }
     
-    /* Live Video Page: Note – no greeting here */
+    /* Live Video Page (no greeting here) */
     .video-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #1c1c1e; }
     #liveVideo { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: 1; }
     #recordingIndicator { position: absolute; top: 10px; right: 20px; font-size: 10px; color: #ff453a; display: none; z-index: 5; }
@@ -272,7 +271,6 @@
       background: #1c1c1e;
       border: none;
     }
-    /* New: File input for profile picture */
     #profilePage input[type="file"] {
       margin-bottom: 15px;
     }
@@ -303,7 +301,7 @@
   
   <!-- Main App Container -->
   <div id="appContainer">
-    <!-- Start Overlay (Game Details Page) with Greeting -->
+    <!-- Start Overlay (Game Details Page) -->
     <div id="startOverlay">
       <div id="startGreeting"></div>
       <label class="text-lg" for="rallyTitle">Add a name for today's game</label>
@@ -316,7 +314,7 @@
       </button>
     </div>
     
-    <!-- Video Container (Live Video Page) without greeting -->
+    <!-- Video Container (Live Video Page) -->
     <div class="video-container">
       <video id="liveVideo" autoplay playsinline muted webkit-playsinline></video>
       <div id="recordingIndicator">🔴 Recording</div>
@@ -387,7 +385,6 @@
       if (user) {
         document.getElementById("loginContainer").style.display = "none";
         document.getElementById("appContainer").style.display = "block";
-        // Set greeting on the start overlay only (if it exists)
         if(document.getElementById("startGreeting")) {
           document.getElementById("startGreeting").innerHTML =
             '<span class="helloText">Hello, </span><span class="usernameText">' + (user.displayName || user.email) + '</span>';
@@ -484,7 +481,7 @@
         rallyTitleGlobal = titleInput && titleInput.value ? titleInput.value.replace(/[^a-zA-Z0-9-_]/g, "") : "";
         startOverlay.remove();
       }
-      if (videoElement.srcObject) return;
+      // Removed the early return to ensure countdown executes.
       await startLivePreview();
       if (typeof MediaRecorder === "undefined") {
         alert("MediaRecorder not supported. Please use Safari on iOS.");
@@ -511,7 +508,7 @@
       countdownText.innerText = count;
       const interval = setInterval(() => {
         count--;
-        if(count > 0) {
+        if (count > 0) {
           countdownText.innerText = count;
         } else {
           clearInterval(interval);
@@ -561,6 +558,7 @@
       createMediaRecorder();
       startRecording(); 
     }
+  
     function manualStop() { 
       segmentedMode = false;
       if (segmentTimer) clearTimeout(segmentTimer);
@@ -768,7 +766,6 @@
       speechRecognition.start();
     }
   
-    // Display overlay for downloading clips, with autofilled email and a "Nah, I'm good" button.
     function showDownloadOverlay() {
       const overlay = document.createElement("div");
       overlay.id = "downloadOverlay";
@@ -783,13 +780,11 @@
         </form>
       `;
       
-      // Autofill with current user's email.
       const emailInput = overlay.querySelector("#downloadEmail");
       if (auth.currentUser && auth.currentUser.email) {
         emailInput.value = auth.currentUser.email;
       }
       
-      // "Nah, I'm good" container and button.
       const nahContainer = document.createElement("div");
       nahContainer.id = "nahContainer";
       nahContainer.style.backgroundColor = "#383836";
@@ -915,7 +910,6 @@
       const name = document.getElementById("profileName").value.trim();
       let photoURL = null;
       const fileInput = document.getElementById("profilePhoto");
-      // If a file is selected, upload it
       if (fileInput.files && fileInput.files[0]) {
         const file = fileInput.files[0];
         const storageRef = firebase.storage().ref();
@@ -930,7 +924,7 @@
       }
       try {
         await auth.currentUser.updateProfile({ displayName: name, photoURL: photoURL });
-        // Update the start overlay greeting (if it exists)
+        // Optionally update the start overlay greeting if present.
         if(document.getElementById("startGreeting")){
           document.getElementById("startGreeting").innerHTML =
             '<span class="helloText">Hello, </span><span class="usernameText">' +
