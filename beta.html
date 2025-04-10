@@ -1,1 +1,948 @@
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <!-- For cross‑origin isolation -->
+  <meta http-equiv="Cross-Origin-Embedder-Policy" content="require-corp">
+  <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pickleball Instant Replay - Login Required</title>
+  
+  <!-- Tailwind CSS (required for DaisyUI) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- DaisyUI CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@3.0.10/dist/full.css" rel="stylesheet">
+  
+  <!-- Font Awesome 5 CDN for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-storage-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
+  
+  <!-- EmailJS SDK -->
+  <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
+  <script>
+    // Initialize EmailJS with your EmailJS User ID
+    emailjs.init('9IH3dz_bfpWORWxZH');
+  </script>
+  
+  <style>
+    /* Global reset and force Helvetica font */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { 
+      width: 100%; height: 100%; 
+      font-family: Helvetica, sans-serif; 
+      background: #1c1c1e; 
+      color: #ffffff;
+    }
+    button {
+      transition: background-color 0.3s ease, opacity 0.3s ease;
+      font-weight: 600;
+    }
+    
+    /* Login Container */
+    #loginContainer {
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      height: 100vh; background: #1c1c1e; padding: 20px;
+    }
+    #loginContainer h2 { margin-bottom: 20px; }
+    #loginContainer input {
+      width: 80%; max-width: 300px; margin: 10px 0; padding: 12px;
+      border: 1px solid #3a3a3c; border-radius: 10px;
+      background: #2c2c2e; color: #ffffff;
+    }
+    #loginContainer button {
+      width: 80%; max-width: 300px; padding: 14px; margin-top: 10px;
+      border-radius: 10px; border: none; color: #ffffff; font-size: 16px; cursor: pointer;
+    }
+    #emailSignInBtn { background: #0a84ff; }
+    #emailSignInBtn:hover { opacity: 0.9; }
+    #googleSignInBtn { background: #34a853; }
+    #googleSignInBtn:hover { opacity: 0.9; }
+    
+    /* Main App Container */
+    #appContainer { display: none; position: relative; }
+    
+    /* Start Overlay (Game Details Page) */
+    #startOverlay {
+      position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(28,28,30,0.95); z-index: 999;
+      display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px;
+      text-align: center;
+    }
+    /* Updated label and input for game title */
+    #startOverlay label { font-size: 16px; }
+    #startOverlay input {
+      width: 80%; max-width: 300px; padding: 12px;
+      border: 1px solid #3a3a3c; border-radius: 10px;
+      background: #2c2c2e; color: #ffffff;
+    }
+    /* "Lets pickle!" button: text in #383836 and background solid #C7FE2E */
+    #startOverlay button#startGameBtn {
+      width: 80%; max-width: 300px; padding: 14px; border-radius: 10px;
+      border: none; font-size: 16px; cursor: pointer;
+      background: #C7FE2E;
+      color: #383836;
+    }
+    #startOverlay button#startGameBtn:hover { opacity: 0.9; }
+    /* New Sign Out Button on Game Details Page */
+    #startOverlay button#signOutFromDetails {
+      width: 80%; max-width: 300px; padding: 10px; border-radius: 10px;
+      border: none; font-size: 16px; cursor: pointer;
+      background: #ff3b30; color: #ffffff;
+      margin-top: 10px;
+    }
+    #startOverlay button#signOutFromDetails:hover { opacity: 0.9; }
+    
+    /* Greeting Container on Live Preview (always visible) */
+    #greetingContainer {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 6;
+      font-size: 48px;
+      font-weight: 500;
+      word-wrap: break-word;
+      max-width: 90%;
+    }
+    .helloText { color: #ffffff; }
+    .usernameText { color: #C7FE2E; text-decoration: none; }
+    
+    /* Countdown Overlay */
+    #countdownOverlay {
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      display: flex; justify-content: center; align-items: center;
+      z-index: 1000;
+    }
+    #countdownOverlay div {
+      font-size: 80px;
+      color: #ffffff;
+    }
+    
+    /* Video Container */
+    .video-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #1c1c1e; }
+    #liveVideo { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: 1; }
+    #recordingIndicator { position: absolute; top: 10px; right: 20px; font-size: 10px; color: #ff453a; display: none; z-index: 5; }
+    
+    /* Controls */
+    .controls {
+      position: absolute; top: 50%; right: 20px;
+      transform: translateY(-50%);
+      z-index: 2; display: flex; flex-direction: column; gap: 10px;
+    }
+    .controls button {
+      padding: 9px; border-radius: 10px; background: #3a3a3c;
+      border: none; font-size: 12px; cursor: pointer;
+    }
+    .controls button:hover { background: #48484a; }
+    .controls button.signout { background: #ff3b30; }
+    .controls button.signout:hover { background: #ff453a; }
+    .controls button.startRec {
+      background: #C7FE2E;
+      color: #383836;
+    }
+    .controls button.stopRec {
+      background: #C7FE2E;
+      color: #383836;
+    }
+    /* Extra Buttons Group: Camera, Mute, and Profile (horizontal) */
+    .extraButtonsGroup {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 10px;
+    }
+    #toggleCameraButton {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 20px;
+      color: #C7FE2E;
+    }
+    .muteButton {
+      width: 30px; height: 30px; border-radius: 50%;
+      padding: 0; font-size: 16px; background: none;
+      border: none; color: #C7FE2E; cursor: pointer;
+    }
+    .muteButton:hover { opacity: 0.8; }
+    #profileButton {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 20px;
+      color: #C7FE2E;
+    }
+    
+    /* Timeline */
+    .timeline {
+      position: absolute; top: 10%; left: 5px; width: auto;
+      background: transparent; z-index: 3;
+      display: flex; flex-direction: column; align-items: center; padding: 5px;
+      max-height: 80vh; overflow-y: auto;
+    }
+    .timeline-item { margin: 5px; display: flex; flex-direction: column; align-items: center; }
+    .timeline-item video {
+      width: 56px; height: 35px; object-fit: cover;
+      border: 1px solid #3a3a3c; border-radius: 8px; cursor: pointer;
+    }
+    .timeline-item span { font-size: 10px; color: #ffffff; margin-top: 4px; }
+    
+    /* Review Button Container */
+    #reviewButtonContainer {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 4; display: none;
+    }
+    #reviewButton {
+      background: #bf5af2; color: #ffffff;
+      padding: 24px 40px; border: none;
+      border-radius: 10px; font-size: 36px; cursor: pointer;
+      opacity: 0.8;
+    }
+    #reviewButton:hover { opacity: 1; }
+    
+    /* Download Overlay */
+    #downloadOverlay {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(28,28,30,0.95); z-index: 1000;
+      display: flex; flex-direction: column; justify-content: center;
+      align-items: center; overflow-y: auto; padding: 20px;
+    }
+    #downloadOverlay h2 { margin-bottom: 20px; }
+    #downloadOverlay .clipItem {
+      border: 1px solid #3a3a3c; padding: 5px; margin: 5px;
+      text-align: center; border-radius: 8px;
+    }
+    #downloadOverlay .clipItem video {
+      width: 120px; height: 80px; object-fit: cover;
+      display: block; margin: 0 auto; border-radius: 8px;
+    }
+    #downloadOverlay input[type="email"] {
+      padding: 10px; font-size: 16px; width: 300px; margin-top: 20px;
+      border: 1px solid #3a3a3c; border-radius: 10px;
+      background: #2c2c2e; color: #ffffff;
+    }
+    #downloadOverlay button {
+      padding: 12px 24px; font-size: 18px; background: #32d74b;
+      border: none; border-radius: 10px; color: #ffffff;
+      cursor: pointer; margin-top: 20px;
+    }
+    #downloadOverlay button:hover { opacity: 0.9; }
+    
+    /* "Nah, I'm good" Button Container */
+    #nahContainer {
+      width: 100%;
+      background: #383836;
+      display: flex;
+      justify-content: center;
+      padding: 10px;
+    }
+    #nahImGoodBtn {
+      padding: 12px 24px;
+      border-radius: 10px;
+      border: none;
+      background: none;
+      color: #C7FE2E;
+      font-size: 18px;
+      cursor: pointer;
+    }
+    #nahImGoodBtn:hover { opacity: 0.9; }
+    
+    /* Profile Page */
+    #profilePage {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #1c1c1e;
+      z-index: 1000;
+      overflow-y: auto;
+      padding: 20px;
+    }
+    #profilePage h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 24px;
+    }
+    #profilePage label {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 16px;
+    }
+    #profilePage input {
+      width: 100%;
+      max-width: 400px;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #3a3a3c;
+      border-radius: 5px;
+      background: #2c2c2e;
+      color: #ffffff;
+    }
+    #profilePage input[readonly] {
+      background: #1c1c1e;
+      border: none;
+    }
+    #profilePage button {
+      display: block;
+      margin: 0 auto;
+      padding: 12px 24px;
+      background: #C7FE2E;
+      color: #383836;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    #profilePage button:hover { opacity: 0.9; }
+  </style>
+</head>
+<body>
+  <!-- Login Container with Logo -->
+  <div id="loginContainer">
+    <img id="loginLogo" src="https://i.postimg.cc/1tsKBkMk/SC-logo.png" alt="App Logo">
+    <h2 class="text-2xl font-bold">Login to Access the App</h2>
+    <input class="input input-bordered" type="email" id="email" placeholder="Email" required>
+    <input class="input input-bordered" type="password" id="password" placeholder="Password" required>
+    <button id="emailSignInBtn" onclick="login()">Login</button>
+    <button id="googleSignInBtn" onclick="googleSignIn()">Sign in with Google</button>
+  </div>
+  
+  <!-- Main App Container -->
+  <div id="appContainer">
+    <!-- Start Overlay with Game Details -->
+    <div id="startOverlay">
+      <label class="text-lg" for="rallyTitle">Add a name for today's game</label>
+      <input class="input input-bordered" type="text" id="rallyTitle" placeholder="Enter Game Title">
+      <button id="startGameBtn" class="btn btn-primary" onclick="startGame()" style="background: #C7FE2E; color: #383836;">
+        Lets pickle!
+      </button>
+      <button id="signOutFromDetails" onclick="signOutUser()" style="background: #ff3b30; color: #ffffff;">
+        Sign Out
+      </button>
+    </div>
+    
+    <!-- Video Container -->
+    <div class="video-container">
+      <div id="greetingContainer"></div>
+      <video id="liveVideo" autoplay playsinline muted webkit-playsinline></video>
+      <div id="recordingIndicator">🔴 Recording</div>
+      <div id="reviewButtonContainer">
+        <button id="reviewButton" onclick="reviewLastClip()">Review</button>
+      </div>
+      <div class="controls">
+        <button class="startRec" onclick="manualStart()" style="color: #383836;">Start Rec</button>
+        <button class="stopRec" onclick="manualStop()" style="color: #383836;">Stop Rec</button>
+        <button onclick="stopGame()">End Session</button>
+        <div class="extraButtonsGroup">
+          <button id="toggleCameraButton" onclick="toggleCamera()">
+            <i class="fas fa-camera"></i>
+          </button>
+          <button id="muteToggleButton" class="muteButton" onclick="toggleMute()">
+            <i class="fas fa-volume-mute"></i>
+          </button>
+          <button id="profileButton" onclick="showProfilePage()">
+            <i class="fas fa-user-circle"></i>
+          </button>
+        </div>
+        <button class="signout" onclick="signOutUser()">Sign Out</button>
+      </div>
+      <div class="timeline" id="timeline"></div>
+    </div>
+    
+    <!-- Profile Page -->
+    <div id="profilePage">
+      <h2>User Profile</h2>
+      <label for="profileEmail">Email</label>
+      <input type="email" id="profileEmail" readonly>
+      <label for="profileName">Name</label>
+      <input type="text" id="profileName" placeholder="Enter your name">
+      <button onclick="saveProfile()">Save</button>
+    </div>
+  </div>
+  
+  <!-- Countdown Overlay (added dynamically) -->
+  
+  <script>
+    let firstRecordingStarted = false;
+    let rallyTitleGlobal = "";
+    let clipCounter = 0;
+    let segmentedMode = true;
+    let segmentTimer = null;
+    let pausedForReview = false;
+  
+    // Firebase Configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyCunssONBCjlKuNzwScq0HYCRB0upbL7xA",
+      authDomain: "pb01-6dc9b.firebaseapp.com",
+      projectId: "pb01-6dc9b",
+      storageBucket: "pb01-6dc9b.firebasestorage.app",
+      messagingSenderId: "451766893674",
+      appId: "1:451766893674:web:4526c5aba2c5ff86955e13",
+      measurementId: "G-Y22H853R18"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const storage = firebase.storage();
+    const auth = firebase.auth();
+  
+    auth.setPersistence(firebase.auth.Auth.Persistence.SESSION)
+      .catch(error => console.error("Error setting auth persistence:", error));
+  
+    auth.onAuthStateChanged((user) => {
+      if (user) {
+        document.getElementById("loginContainer").style.display = "none";
+        document.getElementById("appContainer").style.display = "block";
+        document.getElementById("greetingContainer").innerHTML =
+          '<span class="helloText">Hello, </span><span class="usernameText">' + (user.displayName || user.email) + '</span>';
+      } else {
+        document.getElementById("loginContainer").style.display = "flex";
+        document.getElementById("appContainer").style.display = "none";
+      }
+    });
+  
+    async function login() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      try {
+        await auth.signInWithEmailAndPassword(email, password);
+      } catch (error) {
+        alert("Login error: " + error.message);
+      }
+    }
+  
+    async function googleSignIn() {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      try {
+        await auth.signInWithPopup(provider);
+      } catch (error) {
+        alert("Google sign-in error: " + error.message);
+      }
+    }
+  
+    let mediaRecorder;
+    let recordedChunks = [];
+    let rallyClips = [];
+    let recording = false;
+    let currentFacingMode = "user";
+    const videoElement = document.getElementById("liveVideo");
+    const timeline = document.getElementById("timeline");
+    const muteToggleButton = document.getElementById("muteToggleButton");
+    const recordingIndicator = document.getElementById("recordingIndicator");
+    const reviewButtonContainer = document.getElementById("reviewButtonContainer");
+  
+    async function startLivePreview() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { 
+            aspectRatio: { ideal: 16/9 },
+            width: { ideal: 816 },
+            height: { ideal: 480 },
+            frameRate: { ideal: 120 },
+            facingMode: currentFacingMode 
+          },
+          audio: true
+        });
+        console.log("Camera stream acquired.");
+        videoElement.srcObject = stream;
+        videoElement.muted = true;
+      } catch (error) {
+        console.error("getUserMedia error:", error);
+        alert("Unable to access camera/microphone. Check your device settings.");
+      }
+    }
+  
+    function getFormattedFileName() {
+      clipCounter++;
+      const clipNumber = clipCounter.toString().padStart(3, '0');
+      const now = new Date();
+      const hh = now.getHours().toString().padStart(2, '0');
+      const mm = now.getMinutes().toString().padStart(2, '0');
+      const timeStr = hh + mm;
+      const month = (now.getMonth() + 1).toString().padStart(2, '0');
+      const dd = now.getDate().toString().padStart(2, '0');
+      const yyyy = now.getFullYear().toString();
+      const dateStr = month + dd + yyyy;
+      return `${clipNumber}_${timeStr}_${dateStr}.mp4`;
+    }
+  
+    async function uploadToFirebase(blob) {
+      try {
+        const storageRef = storage.ref();
+        const fileName = getFormattedFileName();
+        const fileRef = storageRef.child('rallies/' + fileName);
+        const metadata = { contentType: 'video/mp4' };
+        const snapshot = await fileRef.put(blob, metadata);
+        const downloadURL = await snapshot.ref.getDownloadURL();
+        return { url: downloadURL, filename: fileName };
+      } catch (error) {
+        alert("Error uploading clip: " + error.message);
+      }
+    }
+  
+    async function startGame() {
+      const startOverlay = document.getElementById("startOverlay");
+      if (startOverlay) {
+        const titleInput = document.getElementById("rallyTitle");
+        rallyTitleGlobal = titleInput && titleInput.value ? titleInput.value.replace(/[^a-zA-Z0-9-_]/g, "") : "";
+        startOverlay.remove();
+      }
+      if (videoElement.srcObject) return;
+      await startLivePreview();
+      if (typeof MediaRecorder === "undefined") {
+        alert("MediaRecorder not supported. Please use Safari on iOS.");
+        return;
+      }
+      createMediaRecorder();
+      segmentedMode = true;
+      startVoiceRecognition();
+      if (!firstRecordingStarted) {
+        firstRecordingStarted = true;
+        startCountdown();
+      } else {
+        startRecording();
+      }
+    }
+  
+    function startCountdown() {
+      const countdownOverlay = document.createElement("div");
+      countdownOverlay.id = "countdownOverlay";
+      const countdownText = document.createElement("div");
+      countdownOverlay.appendChild(countdownText);
+      document.body.appendChild(countdownOverlay);
+      let count = 10;
+      countdownText.innerText = count;
+      const interval = setInterval(() => {
+        count--;
+        if(count > 0) {
+          countdownText.innerText = count;
+        } else {
+          clearInterval(interval);
+          countdownText.innerText = "GO!";
+          setTimeout(() => {
+            document.body.removeChild(countdownOverlay);
+            startRecording();
+          }, 500);
+        }
+      }, 1000);
+    }
+  
+    function createMediaRecorder() {
+      try {
+        mediaRecorder = new MediaRecorder(videoElement.srcObject, {
+          mimeType: "video/mp4",
+          videoBitsPerSecond: 2500000,
+          audioBitsPerSecond: 128000
+        });
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data && event.data.size > 0) recordedChunks.push(event.data);
+        };
+        mediaRecorder.onstop = async () => {
+          if (recordedChunks.length > 0) {
+            const blob = new Blob(recordedChunks, { type: "video/mp4" });
+            const result = await uploadToFirebase(blob);
+            const clip = { url: result.url, timestamp: new Date().toLocaleTimeString(), filename: result.filename, manual: false };
+            rallyClips.push(clip);
+            updateTimeline();
+            recordedChunks = [];
+            if (pausedForReview) {
+              replayRally(clip.url);
+            } else if (segmentedMode) {
+              createMediaRecorder();
+              setTimeout(() => { startRecording(); }, 500);
+            }
+          }
+        };
+      } catch (e) {
+        console.error("Error creating MediaRecorder:", e);
+        alert("Failed to initialize recording. Your device may not support this feature.");
+      }
+    }
+  
+    function manualStart() { 
+      segmentedMode = true;
+      createMediaRecorder();
+      startRecording(); 
+    }
+    function manualStop() { 
+      segmentedMode = false;
+      if (segmentTimer) clearTimeout(segmentTimer);
+      stopRecording(); 
+    }
+  
+    function startRecording() {
+      if (!recording && mediaRecorder) {
+        recordedChunks = [];
+        mediaRecorder.start();
+        recording = true;
+        recordingIndicator.style.display = "block";
+        reviewButtonContainer.style.display = "block";
+        if (segmentedMode) {
+          segmentTimer = setTimeout(() => { stopRecording(); }, 60000);
+        }
+      }
+    }
+  
+    function stopRecording() {
+      if (recording && mediaRecorder) {
+        mediaRecorder.stop();
+        recording = false;
+        recordingIndicator.style.display = "none";
+        reviewButtonContainer.style.display = "none";
+        if (segmentTimer) clearTimeout(segmentTimer);
+      }
+    }
+  
+    async function stopGame() {
+      segmentedMode = false;
+      if (mediaRecorder && mediaRecorder.state === "recording") {
+        stopRecording();
+      }
+      if (videoElement.srcObject) {
+        videoElement.srcObject.getTracks().forEach(track => track.stop());
+      }
+      showDownloadOverlay();
+    }
+  
+    function updateTimeline() {
+      timeline.innerHTML = "";
+      rallyClips.forEach((clip, index) => {
+        const div = document.createElement("div");
+        div.className = "timeline-item";
+        const thumb = document.createElement("video");
+        thumb.src = clip.url;
+        thumb.muted = true;
+        thumb.playsInline = true;
+        thumb.autoplay = true;
+        thumb.loop = true;
+        thumb.onclick = () => replayRally(clip.url);
+        const label = document.createElement("span");
+        label.innerText = clip.filename ? clip.filename.substring(0, 3) : ("Rally " + (index + 1));
+        div.appendChild(thumb);
+        div.appendChild(label);
+        timeline.appendChild(div);
+      });
+    }
+  
+    async function reviewLastClip() {
+      if (recording) {
+        pausedForReview = true;
+        stopRecording();
+      } else {
+        if (rallyClips.length > 0) {
+          replayRally(rallyClips[rallyClips.length - 1].url);
+        }
+      }
+    }
+  
+    function replayRally(url) {
+      const overlay = document.createElement("div");
+      overlay.id = "replayOverlay";
+      const backButton = document.createElement("button");
+      backButton.id = "backButton";
+      backButton.innerText = "Back";
+      backButton.onclick = () => {
+        document.body.removeChild(overlay);
+        if (pausedForReview) {
+          pausedForReview = false;
+          createMediaRecorder();
+          setTimeout(() => { startRecording(); }, 500);
+        }
+        videoElement.play();
+      };
+      const shareButton = document.createElement("button");
+      shareButton.id = "shareButton";
+      shareButton.innerText = "Share";
+      shareButton.onclick = () => shareClip(url);
+      const replayVideo = document.createElement("video");
+      replayVideo.src = url;
+      replayVideo.controls = true;
+      replayVideo.autoplay = true;
+      replayVideo.style.width = "100%";
+      replayVideo.style.height = "100%";
+      replayVideo.style.objectFit = "contain";
+      replayVideo.muted = true;
+      const replayControls = document.createElement("div");
+      replayControls.className = "replay-controls";
+      const speeds = [
+        { label: "0.25x", value: 0.25 },
+        { label: "0.5x", value: 0.5 },
+        { label: "1.0x", value: 1.0 }
+      ];
+      speeds.forEach(speedOption => {
+        const btn = document.createElement("button");
+        btn.innerText = speedOption.label;
+        btn.onclick = () => { replayVideo.playbackRate = speedOption.value; };
+        replayControls.appendChild(btn);
+      });
+      const replayMuteBtn = document.createElement("button");
+      replayMuteBtn.innerHTML = '<i class="fas fa-volume-mute"></i>';
+      replayMuteBtn.onclick = () => {
+        replayVideo.muted = !replayVideo.muted;
+        replayMuteBtn.innerHTML = replayVideo.muted ? '<i class="fas fa-volume-mute"></i>' : '<i class="fas fa-volume-up"></i>';
+      };
+      overlay.appendChild(replayVideo);
+      overlay.appendChild(replayControls);
+      overlay.appendChild(replayMuteBtn);
+      overlay.appendChild(backButton);
+      overlay.appendChild(shareButton);
+      document.body.appendChild(overlay);
+    }
+  
+    async function shareClip(url) {
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [] })) {
+        try {
+          const response = await fetch(url);
+          const blob = await response.blob();
+          const file = new File([blob], "rally.mp4", { type: "video/mp4" });
+          if (!navigator.canShare({ files: [file] })) {
+            throw new Error("Sharing files is not supported on this device.");
+          }
+          await navigator.share({
+            title: "Pickleball Rally",
+            text: "Check out this rally clip!",
+            files: [file]
+          });
+        } catch (error) {
+          alert("Error sharing the clip: " + error.message);
+        }
+      } else {
+        try {
+          await navigator.clipboard.writeText(url);
+          alert("Clip URL copied to clipboard. You can now share it manually.");
+        } catch (error) {
+          alert("Sharing not supported on this device.");
+        }
+      }
+    }
+  
+    function toggleMute() {
+      videoElement.muted = !videoElement.muted;
+      muteToggleButton.innerHTML = videoElement.muted ? '<i class="fas fa-volume-mute"></i>' : '<i class="fas fa-volume-up"></i>';
+    }
+  
+    async function toggleCamera() {
+      if (recording) {
+        alert("Stop recording before toggling camera.");
+        return;
+      }
+      currentFacingMode = (currentFacingMode === "user") ? "environment" : "user";
+      if (videoElement.srcObject) {
+        videoElement.srcObject.getTracks().forEach(track => track.stop());
+      }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { 
+            aspectRatio: { ideal: 16/9 },
+            width: { ideal: 816 },
+            height: { ideal: 480 },
+            frameRate: { ideal: 120 },
+            facingMode: currentFacingMode 
+          },
+          audio: true
+        });
+        videoElement.srcObject = stream;
+        createMediaRecorder();
+      } catch (error) {
+        alert("Unable to switch camera.");
+      }
+    }
+  
+    function startVoiceRecognition() {
+      if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
+        alert("Voice commands are not supported in Chrome on iPad. Use manual buttons.");
+        return;
+      }
+      const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const speechRecognition = new Recognition();
+      speechRecognition.continuous = true;
+      speechRecognition.lang = "en-US";
+      speechRecognition.onresult = (event) => {
+        const lastTranscript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
+        if (lastTranscript === "start") {
+          startRecording();
+        } else if (lastTranscript === "stop") {
+          stopRecording();
+        }
+      };
+      speechRecognition.onerror = (event) => {
+        console.log("Speech recognition error:", event.error);
+      };
+      speechRecognition.start();
+    }
+  
+    // Display overlay for download
+    function showDownloadOverlay() {
+      const overlay = document.createElement("div");
+      overlay.id = "downloadOverlay";
+      overlay.innerHTML = `
+        <h2>Download Session Highlights</h2>
+        <div id="clipsSelection" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; width: 80%;"></div>
+        <form id="downloadForm">
+          <label style="margin-top: 20px; font-size: 16px;">Enter your email:</label>
+          <input type="email" name="to_email" id="downloadEmail" placeholder="your.email@example.com" required>
+          <textarea name="message" id="downloadMessage" style="display:none;"></textarea>
+          <button type="submit">Get Download Link</button>
+        </form>
+      `;
+      
+      const emailInput = overlay.querySelector("#downloadEmail");
+      if (auth.currentUser && auth.currentUser.email) {
+        emailInput.value = auth.currentUser.email;
+      }
+      
+      const nahContainer = document.createElement("div");
+      nahContainer.id = "nahContainer";
+      nahContainer.style.backgroundColor = "#383836";
+      nahContainer.style.width = "100%";
+      nahContainer.style.display = "flex";
+      nahContainer.style.justifyContent = "center";
+      nahContainer.style.padding = "10px";
+      
+      const nahBtn = document.createElement("button");
+      nahBtn.id = "nahImGoodBtn";
+      nahBtn.innerText = "Nah, I'm good";
+      nahBtn.style.color = "#C7FE2E";
+      nahBtn.style.background = "none";
+      nahBtn.addEventListener("click", async () => {
+        try {
+          if (videoElement.srcObject) {
+            videoElement.srcObject.getTracks().forEach(track => track.stop());
+          }
+          await auth.signOut();
+          overlay.remove();
+          console.log("User signed out without download.");
+        } catch (e) {
+          // Silently handle errors.
+        }
+      });
+      nahContainer.appendChild(nahBtn);
+      overlay.appendChild(nahContainer);
+      
+      const clipsSelection = overlay.querySelector("#clipsSelection");
+      rallyClips.forEach((clip, index) => {
+        const clipDiv = document.createElement("div");
+        clipDiv.className = "clipItem";
+        clipDiv.style.border = "1px solid #3a3a3c";
+        clipDiv.style.padding = "5px";
+        clipDiv.style.textAlign = "center";
+        clipDiv.style.borderRadius = "8px";
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.id = "clipCheckbox" + index;
+        checkbox.value = clip.url;
+        const thumb = document.createElement("video");
+        thumb.src = clip.url;
+        thumb.muted = true;
+        thumb.playsInline = true;
+        thumb.autoplay = true;
+        thumb.loop = true;
+        thumb.style.width = "120px";
+        thumb.style.height = "80px";
+        thumb.style.borderRadius = "8px";
+        const label = document.createElement("div");
+        label.innerText = clip.filename ? clip.filename.substring(0, 3) : ("Rally " + (index + 1));
+        label.style.fontSize = "12px";
+        label.style.marginTop = "5px";
+        clipDiv.appendChild(checkbox);
+        clipDiv.appendChild(thumb);
+        clipDiv.appendChild(label);
+        clipsSelection.appendChild(clipDiv);
+      });
+      
+      const downloadForm = overlay.querySelector("#downloadForm");
+      downloadForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const selectedUrls = [];
+        rallyClips.forEach((clip, index) => {
+          const checkbox = overlay.querySelector("#clipCheckbox" + index);
+          if (checkbox && checkbox.checked) {
+            selectedUrls.push(clip.url);
+          }
+        });
+        if (selectedUrls.length === 0) {
+          alert("Please select at least one rally clip.");
+          return;
+        }
+        const emailInput = overlay.querySelector("#downloadEmail");
+        const to_email = emailInput ? emailInput.value.trim() : "";
+        if (!to_email) {
+          alert("Please enter your email.");
+          return;
+        }
+  
+        const downloadMessage = overlay.querySelector("#downloadMessage");
+        downloadMessage.value = "Here are your download links:\n\n" + selectedUrls.join("\n");
+  
+        try {
+          const response = await emailjs.sendForm('service_5an1el5', 'template_gph38u7', downloadForm);
+          console.log("EmailJS response:", response);
+          alert("Download link sent to your email.");
+        } catch (error) {
+          console.error("Email send error:", error);
+          const errorMsg = error && error.text ? error.text : (error.message || "Unknown error");
+          alert("Error sending email: " + errorMsg);
+        }
+  
+        setTimeout(async () => {
+          overlay.remove();
+          try {
+            await auth.signOut();
+            console.log("User signed out, returning to login screen.");
+          } catch (error) {
+            // Silently handle sign out errors.
+          }
+        }, 5000);
+      });
+      
+      document.body.appendChild(overlay);
+    }
+  
+    // Profile Page functions
+    function showProfilePage() {
+      if (recording) {
+        stopRecording();
+      }
+      document.querySelector(".video-container").style.display = "none";
+      document.getElementById("profilePage").style.display = "block";
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        document.getElementById("profileEmail").value = currentUser.email;
+        document.getElementById("profileName").value = currentUser.displayName || "";
+      }
+    }
+  
+    async function saveProfile() {
+      const name = document.getElementById("profileName").value.trim();
+      try {
+        await auth.currentUser.updateProfile({ displayName: name });
+        document.getElementById("greetingContainer").innerHTML =
+          '<span class="helloText">Hello, </span><span class="usernameText">' +
+          (auth.currentUser.displayName || auth.currentUser.email) + '</span>';
+        document.getElementById("profilePage").style.display = "none";
+        document.querySelector(".video-container").style.display = "block";
+      } catch (error) {
+        alert("Error saving profile: " + error.message);
+      }
+    }
+  
+    async function signOutUser() {
+      if (recording) { stopRecording(); }
+      if (videoElement.srcObject) {
+        videoElement.srcObject.getTracks().forEach(track => track.stop());
+      }
+      try {
+        await auth.signOut();
+        console.log("User signed out successfully.");
+      } catch (error) {
+        // Silently handle errors.
+      }
+    }
+  </script>
+</body>
+</html>
