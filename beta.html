@@ -102,15 +102,16 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      font-size: 14px; /* Reduced by 20% from 18px */
+      font-size: 14px; /* 20% smaller than original 18px */
     }
-    /* Greeting container for game details ("Game: <title>") */
+    /* Greeting container displays the game title prefixed with "Game:" */
     #greetingContainer {
-      /* Will be set by script in startGame() and saveProfile() */
+      /* Set in script */
     }
-    /* Ensure recording indicator uses Helvetica */
+    /* Recording Indicator should only be visible during recording */
     #recordingIndicator {
       font-family: Helvetica, sans-serif;
+      display: none; /* Initially hidden */
     }
     
     /* Profile Button Container at Top Right */
@@ -351,7 +352,7 @@
     
     <!-- Video Container (Live Video Page) -->
     <div class="video-container">
-      <!-- Header Container: Displays game details and recording indicator -->
+      <!-- Header Container: Displays Game Title and Recording Indicator -->
       <div id="headerContainer">
         <div id="greetingContainer"></div>
         <div id="recordingIndicator">🔴 Recording</div>
@@ -518,7 +519,7 @@
         const titleInput = document.getElementById("rallyTitle");
         rallyTitleGlobal = titleInput && titleInput.value ? titleInput.value.replace(/[^a-zA-Z0-9-_]/g, "") : "";
         console.log("Game title set:", rallyTitleGlobal);
-        // Set the greeting to display the game details with prefix
+        // Set the greeting to display "Game: <title>".
         greetingContainer.innerText = "Game: " + rallyTitleGlobal;
         startOverlay.remove();
       }
@@ -620,6 +621,8 @@
         mediaRecorder.start();
         recording = true;
         console.log("Recording started.");
+        // Show the recording indicator when recording starts.
+        recordingIndicator.style.display = "block";
         reviewButtonContainer.style.display = "block";
         if (segmentedMode) {
           segmentTimer = setTimeout(() => stopRecording(), 60000);
@@ -632,6 +635,8 @@
         mediaRecorder.stop();
         recording = false;
         console.log("Recording stopped.");
+        // Hide the recording indicator when recording stops.
+        recordingIndicator.style.display = "none";
         reviewButtonContainer.style.display = "none";
         if (segmentTimer) clearTimeout(segmentTimer);
       }
@@ -953,7 +958,7 @@
       const name = document.getElementById("profileName").value.trim();
       try {
         await auth.currentUser.updateProfile({ displayName: name });
-        // Keep the game details greeting intact.
+        // Preserve the game details greeting using rallyTitleGlobal.
         if (rallyTitleGlobal) {
           greetingContainer.innerText = "Game: " + rallyTitleGlobal;
         }
