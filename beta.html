@@ -45,37 +45,42 @@
       padding-bottom: env(safe-area-inset-bottom);
       padding-left: env(safe-area-inset-left);
       padding-right: env(safe-area-inset-right);
-      overflow: hidden; /* Disable scrolling globally */
+      overflow: hidden; /* Disable global scrolling */
     }
     button {
       transition: background-color 0.3s ease, opacity 0.3s ease;
       font-weight: 600;
     }
     
-    /* Responsive Login Container */
+    /* Login Container for Portrait Mode (default) */
     #loginContainer {
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      height: 100vh; /* Always exactly fill the viewport */
+      height: 100vh;
       background: #1c1c1e;
       padding: 20px;
-      overflow: hidden; /* No scrolling */
+      overflow: hidden;
     }
-    /* Logo styling: scales down nicely */
+    /* In portrait, show the following structure */
+    #loginContainer .login-left,
+    #loginContainer .login-right {
+      width: 100%;
+    }
+    #loginContainer .login-left {
+      display: none;
+    }
     #loginContainer img {
       max-width: 70%;
       height: auto;
       margin-bottom: 20px;
     }
-    /* Login Heading */
     #loginContainer h2 {
       margin-bottom: 20px;
       text-align: center;
       font-size: 1.75rem;
     }
-    /* Inputs and Buttons will fill the width of their container up to a maximum */
     #loginContainer input,
     #loginContainer button {
       width: 100%;
@@ -97,10 +102,54 @@
     #googleSignInBtn { background: #34a853; }
     #googleSignInBtn:hover { opacity: 0.9; }
     
-    /* Main App Container (hidden until login) */
-    #appContainer { display: none; position: relative; }
+    /* Landscape Mode Adjustments for the Login Page */
+    @media screen and (orientation: landscape) {
+      /* Change layout to two columns */
+      #loginContainer {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px;
+      }
+      /* Left column for logo (make it visible and smaller) */
+      #loginContainer .login-left {
+        display: block;
+        flex: 1;
+        text-align: left;
+      }
+      #loginContainer .login-left img {
+        max-width: 50%;
+        height: auto;
+        margin: 0;
+      }
+      /* Right column for form inputs */
+      #loginContainer .login-right {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+      }
+      #loginContainer .login-right h2 {
+        margin-bottom: 20px;
+        text-align: right;
+        width: 100%;
+        max-width: 320px;
+      }
+      #loginContainer .login-right input,
+      #loginContainer .login-right button {
+        width: 100%;
+        max-width: 320px;
+        margin: 8px 0;
+        padding: 12px;
+        font-size: 1rem;
+      }
+    }
     
     /* ---------- The rest of the application styling remains unchanged ---------- */
+    
+    /* Main App Container */
+    #appContainer { display: none; position: relative; }
+    
     /* Start Overlay (Game Details Page) */
     #startOverlay {
       position: absolute;
@@ -162,7 +211,7 @@
       z-index: 1; 
     }
     
-    /* Header Container: Game Title and Recording Indicator */
+    /* Header Container */
     #headerContainer {
       position: fixed;
       top: 10px;
@@ -177,7 +226,7 @@
       font-family: Helvetica, sans-serif;
       font-size: 16px;
       color: #ff3b30;
-      display: none; /* Block during recording */
+      display: none;
     }
     
     /* Review Button Container */
@@ -201,7 +250,7 @@
     }
     #reviewButton:hover { opacity: 1; }
     
-    /* Right Panel: Profile Button and Controls */
+    /* Right Panel */
     #rightPanel {
       position: fixed;
       top: 10px;
@@ -214,7 +263,6 @@
       gap: 20px;
       z-index: 20;
     }
-    /* Profile Button within Right Panel */
     #profileButtonContainer button {
       background: none;
       border: none;
@@ -222,7 +270,6 @@
       font-size: 24px;
       color: #C7FE2E;
     }
-    /* Controls inside the Right Panel */
     .controls {
       display: flex;
       flex-direction: column;
@@ -416,33 +463,6 @@
     }
     #profilePage button:hover { opacity: 0.9; }
     
-    /* Media Queries for Landscape Mode */
-    @media screen and (orientation: landscape) {
-      #loginContainer,
-      #startOverlay,
-      #downloadOverlay,
-      #profilePage {
-        padding: 10px;
-      }
-      #loginContainer input,
-      #loginContainer button,
-      #startOverlay input,
-      #startOverlay button,
-      #downloadOverlay input,
-      #downloadOverlay button,
-      #profilePage input,
-      #profilePage button {
-        width: 90%;
-        max-width: 400px;
-      }
-      #rightPanel {
-        right: 10px;
-      }
-      #countdownOverlay div {
-        font-size: 60px;
-      }
-    }
-    
     @media (max-height: 500px) {
       #startOverlay,
       #downloadOverlay,
@@ -453,19 +473,24 @@
   </style>
 </head>
 <body>
-  <!-- Login Container with Logo -->
+  <!-- Login Container -->
   <div id="loginContainer">
-    <img id="loginLogo" src="https://i.postimg.cc/pTd33Wf1/logo.png" alt="App Logo">
-    <h2 class="text-2xl font-bold">Login to Access the App</h2>
-    <input class="input input-bordered" type="email" id="email" placeholder="Email" required>
-    <input class="input input-bordered" type="password" id="password" placeholder="Password" required>
-    <button id="emailSignInBtn" onclick="login()">Login</button>
-    <button id="googleSignInBtn" onclick="googleSignIn()">Sign in with Google</button>
+    <!-- For portrait mode, only the login-right will be visible; in landscape the HTML is restructured -->
+    <div class="login-left">
+      <img id="loginLogo" src="https://i.postimg.cc/pTd33Wf1/logo.png" alt="App Logo">
+    </div>
+    <div class="login-right">
+      <h2 class="text-2xl font-bold">Login to Access the App</h2>
+      <input class="input input-bordered" type="email" id="email" placeholder="Email" required>
+      <input class="input input-bordered" type="password" id="password" placeholder="Password" required>
+      <button id="emailSignInBtn" onclick="login()">Login</button>
+      <button id="googleSignInBtn" onclick="googleSignIn()">Sign in with Google</button>
+    </div>
   </div>
   
   <!-- Main App Container -->
   <div id="appContainer">
-    <!-- Start Overlay (Game Details Page) -->
+    <!-- Start Overlay (Game Details) -->
     <div id="startOverlay">
       <label class="text-lg" for="rallyTitle">Add a name for today's game</label>
       <input class="input input-bordered" type="text" id="rallyTitle" placeholder="Enter Game Title">
@@ -477,22 +502,22 @@
       </button>
     </div>
     
-    <!-- Video Container (Live Video Page) -->
+    <!-- Video Container (Live Video) -->
     <div class="video-container">
       <video id="liveVideo" autoplay playsinline muted webkit-playsinline></video>
       
-      <!-- Header Container: Game Title and Recording Indicator -->
+      <!-- Header: Game Title & Recording -->
       <div id="headerContainer">
         <div id="greetingContainer"></div>
         <div id="recordingIndicator">🔴 Recording</div>
       </div>
       
-      <!-- Review Button Container -->
+      <!-- Review Button -->
       <div id="reviewButtonContainer">
         <button id="reviewButton" onclick="reviewLastClip()">Review</button>
       </div>
       
-      <!-- Fixed Right Panel: Contains Profile Button and Controls -->
+      <!-- Right Panel: Profile Button and Controls -->
       <div id="rightPanel">
         <div id="profileButtonContainer">
           <button id="profileButton" onclick="showProfilePage()">
@@ -515,7 +540,7 @@
         </div>
       </div>
       
-      <!-- Timeline (optional) -->
+      <!-- Timeline (if needed) -->
       <div class="timeline" id="timeline"></div>
     </div>
     
@@ -530,7 +555,7 @@
     </div>
   </div>
   
-  <!-- Countdown Overlay (created dynamically) -->
+  <!-- Countdown Overlay (dynamically created) -->
   <script>
     let firstRecordingStarted = false;
     let rallyTitleGlobal = "";
