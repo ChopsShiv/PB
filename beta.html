@@ -217,16 +217,15 @@
       z-index: 1; 
     }
     
-    /* Controls (Bottom Right) */
+    /* Controls (Now Fixed on the UI) */
     .controls {
-      position: absolute;
+      position: fixed;
       bottom: 20px;
       right: 20px;
       z-index: 2;
       display: flex;
       flex-direction: column;
       gap: 10px;
-      transform: translateY(-50%);
     }
     .controls button {
       padding: 9px;
@@ -524,6 +523,7 @@
       <div id="reviewButtonContainer">
         <button id="reviewButton" onclick="reviewLastClip()">Review</button>
       </div>
+      <!-- Controls now fixed at the right -->
       <div class="controls">
         <button class="startRec" onclick="manualStart()" style="color: #383836;">Start Rec</button>
         <button class="stopRec" onclick="manualStop()" style="color: #383836;">Stop Rec</button>
