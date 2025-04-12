@@ -146,58 +146,6 @@
     }
     #startOverlay button#signOutFromDetails:hover { opacity: 0.9; }
     
-    /* Header Container in Live Video Page */
-    #headerContainer {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      z-index: 6;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 14px;
-    }
-    /* Greeting container displays the game title prefixed with "Game:" */
-    #greetingContainer { }
-    /* Recording Indicator should only be visible during recording */
-    #recordingIndicator {
-      font-family: Helvetica, sans-serif;
-      display: none;
-    }
-    
-    /* Profile Button Container at Top Right */
-    #profileButtonContainer {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      z-index: 10;
-    }
-    #profileButtonContainer button {
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-size: 24px;
-      color: #C7FE2E;
-    }
-    
-    /* Countdown Overlay */
-    #countdownOverlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0,0,0,0.5);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-    }
-    #countdownOverlay div {
-      font-size: 80px;
-      color: #ffffff;
-    }
-    
     /* Video Container (Live Video Page) */
     .video-container { 
       position: fixed; 
@@ -217,12 +165,34 @@
       z-index: 1; 
     }
     
-    /* Controls (Now Fixed on the UI) */
-    .controls {
+    /* Right Panel: Groups Profile Button and Controls */
+    #rightPanel {
       position: fixed;
-      bottom: 20px;
-      right: 20px;
-      z-index: 2;
+      top: 10px;
+      right: 10px;
+      bottom: 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      z-index: 20;
+    }
+    
+    /* Profile Button Container (within right panel) */
+    #profileButtonContainer {
+      /* No separate positioning – inherits from rightPanel */
+    }
+    #profileButtonContainer button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 24px;
+      color: #C7FE2E;
+    }
+    
+    /* Controls in the Right Panel */
+    .controls {
       display: flex;
       flex-direction: column;
       gap: 10px;
@@ -271,6 +241,24 @@
       cursor: pointer;
     }
     .muteButton:hover { opacity: 0.8; }
+    
+    /* Countdown Overlay */
+    #countdownOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    #countdownOverlay div {
+      font-size: 80px;
+      color: #ffffff;
+    }
     
     /* Timeline */
     .timeline {
@@ -461,9 +449,8 @@
         width: 90%;
         max-width: 400px;
       }
-      .controls {
-        bottom: 30px;
-        right: 30px;
+      #rightPanel {
+        right: 10px;
       }
       #countdownOverlay div {
         font-size: 60px;
@@ -476,9 +463,6 @@
       #downloadOverlay,
       #profilePage {
         overflow-y: auto;
-      }
-      .controls {
-        bottom: 10px;
       }
     }
   </style>
@@ -510,35 +494,32 @@
     
     <!-- Video Container (Live Video Page) -->
     <div class="video-container">
-      <!-- Header Container: Displays Game Title and Recording Indicator -->
-      <div id="headerContainer">
-        <div id="greetingContainer"></div>
-        <div id="recordingIndicator">🔴 Recording</div>
-      </div>
-      <!-- Profile Button Container at Top Right -->
-      <div id="profileButtonContainer">
-        <button id="profileButton" onclick="showProfilePage()"><i class="fas fa-user-circle"></i></button>
-      </div>
       <video id="liveVideo" autoplay playsinline muted webkit-playsinline></video>
       <div id="reviewButtonContainer">
         <button id="reviewButton" onclick="reviewLastClip()">Review</button>
       </div>
-      <!-- Controls now fixed at the right -->
-      <div class="controls">
-        <button class="startRec" onclick="manualStart()" style="color: #383836;">Start Rec</button>
-        <button class="stopRec" onclick="manualStop()" style="color: #383836;">Stop Rec</button>
-        <button onclick="stopGame()">End Session</button>
-        <div class="extraButtonsGroup">
-          <button id="toggleCameraButton" onclick="toggleCamera()">
-            <i class="fas fa-camera"></i>
-          </button>
-          <button id="muteToggleButton" class="muteButton" onclick="toggleMute()">
-            <i class="fas fa-volume-mute"></i>
-          </button>
-        </div>
-        <button class="signout" onclick="signOutUser()">Sign Out</button>
-      </div>
       <div class="timeline" id="timeline"></div>
+      
+      <!-- Fixed Right Panel containing Profile Button and Controls -->
+      <div id="rightPanel">
+        <div id="profileButtonContainer">
+          <button id="profileButton" onclick="showProfilePage()"><i class="fas fa-user-circle"></i></button>
+        </div>
+        <div class="controls">
+          <button class="startRec" onclick="manualStart()" style="color: #383836;">Start Rec</button>
+          <button class="stopRec" onclick="manualStop()" style="color: #383836;">Stop Rec</button>
+          <button onclick="stopGame()">End Session</button>
+          <div class="extraButtonsGroup">
+            <button id="toggleCameraButton" onclick="toggleCamera()">
+              <i class="fas fa-camera"></i>
+            </button>
+            <button id="muteToggleButton" class="muteButton" onclick="toggleMute()">
+              <i class="fas fa-volume-mute"></i>
+            </button>
+          </div>
+          <button class="signout" onclick="signOutUser()">Sign Out</button>
+        </div>
+      </div>
     </div>
     
     <!-- Profile Page -->
@@ -617,10 +598,7 @@
     let currentFacingMode = "user";
     const videoElement = document.getElementById("liveVideo");
     const timeline = document.getElementById("timeline");
-    const muteToggleButton = document.getElementById("muteToggleButton");
-    const recordingIndicator = document.getElementById("recordingIndicator");
     const reviewButtonContainer = document.getElementById("reviewButtonContainer");
-    const greetingContainer = document.getElementById("greetingContainer");
   
     async function startLivePreview() {
       try {
@@ -677,7 +655,7 @@
         const titleInput = document.getElementById("rallyTitle");
         rallyTitleGlobal = titleInput && titleInput.value ? titleInput.value.replace(/[^a-zA-Z0-9-_]/g, "") : "";
         console.log("Game title set:", rallyTitleGlobal);
-        greetingContainer.innerText = "Game: " + rallyTitleGlobal;
+        document.getElementById("profileButton").innerText = "Game: " + rallyTitleGlobal;
         startOverlay.remove();
       }
       await startLivePreview();
@@ -778,7 +756,7 @@
         mediaRecorder.start();
         recording = true;
         console.log("Recording started.");
-        recordingIndicator.style.display = "block";
+        document.getElementById("recordingIndicator").style.display = "block";
         reviewButtonContainer.style.display = "block";
         if (segmentedMode) {
           segmentTimer = setTimeout(() => stopRecording(), 60000);
@@ -791,7 +769,7 @@
         mediaRecorder.stop();
         recording = false;
         console.log("Recording stopped.");
-        recordingIndicator.style.display = "none";
+        document.getElementById("recordingIndicator").style.display = "none";
         reviewButtonContainer.style.display = "none";
         if (segmentTimer) clearTimeout(segmentTimer);
       }
@@ -920,7 +898,7 @@
   
     function toggleMute() {
       videoElement.muted = !videoElement.muted;
-      muteToggleButton.innerHTML = videoElement.muted ? '<i class="fas fa-volume-mute"></i>' : '<i class="fas fa-volume-up"></i>';
+      document.getElementById("muteToggleButton").innerHTML = videoElement.muted ? '<i class="fas fa-volume-mute"></i>' : '<i class="fas fa-volume-up"></i>';
     }
   
     async function toggleCamera() {
@@ -1114,7 +1092,7 @@
       try {
         await auth.currentUser.updateProfile({ displayName: name });
         if (rallyTitleGlobal) {
-          greetingContainer.innerText = "Game: " + rallyTitleGlobal;
+          // Optionally update UI greeting with game title
         }
         document.getElementById("profilePage").style.display = "none";
         document.querySelector(".video-container").style.display = "block";
