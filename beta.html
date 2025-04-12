@@ -50,8 +50,8 @@
       transition: background-color 0.3s ease, opacity 0.3s ease;
       font-weight: 600;
     }
-    
-    /* Login Container */
+
+    /* Responsive Login Container */
     #loginContainer {
       display: flex;
       flex-direction: column;
@@ -62,33 +62,37 @@
       padding: 20px;
       overflow-y: auto;
     }
-    #loginContainer h2 { margin-bottom: 20px; }
-    #loginContainer input {
-      width: 80%;
-      max-width: 300px;
+    #loginContainer img {
+      max-width: 80%;
+      height: auto;
+      margin-bottom: 20px;
+    }
+    #loginContainer h2 {
+      margin-bottom: 20px;
+      text-align: center;
+      font-size: 1.75rem;
+    }
+    #loginContainer input,
+    #loginContainer button {
+      width: 100%;
+      max-width: 320px;
       margin: 10px 0;
       padding: 12px;
       border: 1px solid #3a3a3c;
       border-radius: 10px;
       background: #2c2c2e;
       color: #ffffff;
+      font-size: 1rem;
     }
     #loginContainer button {
-      width: 80%;
-      max-width: 300px;
-      padding: 14px;
-      margin-top: 10px;
-      border-radius: 10px;
       border: none;
-      color: #ffffff;
-      font-size: 16px;
       cursor: pointer;
     }
     #emailSignInBtn { background: #0a84ff; }
     #emailSignInBtn:hover { opacity: 0.9; }
     #googleSignInBtn { background: #34a853; }
     #googleSignInBtn:hover { opacity: 0.9; }
-    
+
     /* Main App Container */
     #appContainer { display: none; position: relative; }
     
@@ -112,39 +116,27 @@
     }
     #startOverlay label { font-size: 16px; }
     #startOverlay input {
-      width: 80%;
-      max-width: 300px;
+      width: 100%;
+      max-width: 320px;
       padding: 12px;
       border: 1px solid #3a3a3c;
       border-radius: 10px;
       background: #2c2c2e;
       color: #ffffff;
     }
-    #startOverlay button#startGameBtn {
-      width: 80%;
-      max-width: 300px;
+    #startOverlay button {
+      width: 100%;
+      max-width: 320px;
       padding: 14px;
       border-radius: 10px;
       border: none;
       font-size: 16px;
       cursor: pointer;
-      background: #C7FE2E;
-      color: #383836;
     }
-    #startOverlay button#startGameBtn:hover { opacity: 0.9; }
-    #startOverlay button#signOutFromDetails {
-      width: 80%;
-      max-width: 300px;
-      padding: 10px;
-      border-radius: 10px;
-      border: none;
-      font-size: 16px;
-      cursor: pointer;
-      background: #ff3b30;
-      color: #ffffff;
-      margin-top: 10px;
-    }
-    #startOverlay button#signOutFromDetails:hover { opacity: 0.9; }
+    #startGameBtn { background: #C7FE2E; color: #383836; }
+    #startGameBtn:hover { opacity: 0.9; }
+    #signOutFromDetails { background: #ff3b30; color: #ffffff; margin-top: 10px; }
+    #signOutFromDetails:hover { opacity: 0.9; }
     
     /* Video Container (Live Video Page) */
     .video-container { 
@@ -175,9 +167,7 @@
       align-items: center;
       gap: 10px;
     }
-    #greetingContainer {
-      font-size: 16px;
-    }
+    #greetingContainer { font-size: 16px; }
     #recordingIndicator {
       font-family: Helvetica, sans-serif;
       font-size: 16px;
@@ -219,8 +209,7 @@
       gap: 20px;
       z-index: 20;
     }
-    
-    /* Profile Button Container (within right panel) */
+    /* Profile Button (within Right Panel) */
     #profileButtonContainer button {
       background: none;
       border: none;
@@ -246,14 +235,8 @@
     .controls button:hover { background: #48484a; }
     .controls button.signout { background: #ff3b30; }
     .controls button.signout:hover { background: #ff453a; }
-    .controls button.startRec {
-      background: #C7FE2E;
-      color: #383836;
-    }
-    .controls button.stopRec {
-      background: #C7FE2E;
-      color: #383836;
-    }
+    .controls button.startRec { background: #C7FE2E; color: #383836; }
+    .controls button.stopRec { background: #C7FE2E; color: #383836; }
     .extraButtonsGroup {
       display: flex;
       flex-direction: row;
@@ -429,7 +412,7 @@
     }
     #profilePage button:hover { opacity: 0.9; }
     
-    /* Media Queries for Landscape Orientation and Shorter Heights */
+    /* Media Queries for Landscape Orientation and Smaller Heights */
     @media screen and (orientation: landscape) {
       #loginContainer,
       #startOverlay,
@@ -483,7 +466,7 @@
     <div id="startOverlay">
       <label class="text-lg" for="rallyTitle">Add a name for today's game</label>
       <input class="input input-bordered" type="text" id="rallyTitle" placeholder="Enter Game Title">
-      <button id="startGameBtn" class="btn btn-primary" onclick="startGame()" style="background: #C7FE2E; color: #383836;">
+      <button id="startGameBtn" onclick="startGame()" style="background: #C7FE2E; color: #383836;">
         Lets pickle!
       </button>
       <button id="signOutFromDetails" onclick="signOutUser()" style="background: #ff3b30; color: #ffffff;">
@@ -509,7 +492,9 @@
       <!-- Fixed Right Panel containing Profile Button and Controls -->
       <div id="rightPanel">
         <div id="profileButtonContainer">
-          <button id="profileButton" onclick="showProfilePage()"><i class="fas fa-user-circle"></i></button>
+          <button id="profileButton" onclick="showProfilePage()">
+            <i class="fas fa-user-circle"></i>
+          </button>
         </div>
         <div class="controls">
           <button class="startRec" onclick="manualStart()" style="color: #383836;">Start Rec</button>
@@ -543,7 +528,6 @@
   </div>
   
   <!-- Countdown Overlay (created dynamically) -->
-  
   <script>
     let firstRecordingStarted = false;
     let rallyTitleGlobal = "";
@@ -664,7 +648,6 @@
         const titleInput = document.getElementById("rallyTitle");
         rallyTitleGlobal = titleInput && titleInput.value ? titleInput.value.replace(/[^a-zA-Z0-9-_]/g, "") : "";
         console.log("Game title set:", rallyTitleGlobal);
-        // Update greeting text if needed. For example, you can show the game title via the header or profile button.
         document.getElementById("greetingContainer").innerText = "Game: " + rallyTitleGlobal;
         startOverlay.remove();
       }
@@ -908,7 +891,8 @@
   
     function toggleMute() {
       videoElement.muted = !videoElement.muted;
-      document.getElementById("muteToggleButton").innerHTML = videoElement.muted ? '<i class="fas fa-volume-mute"></i>' : '<i class="fas fa-volume-up"></i>';
+      document.getElementById("muteToggleButton").innerHTML =
+        videoElement.muted ? '<i class="fas fa-volume-mute"></i>' : '<i class="fas fa-volume-up"></i>';
     }
   
     async function toggleCamera() {
