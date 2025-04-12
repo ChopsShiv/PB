@@ -5,7 +5,8 @@
   <!-- For cross‑origin isolation -->
   <meta http-equiv="Cross-Origin-Embedder-Policy" content="require-corp">
   <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <!-- Disable user zoom/scaling -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
   <title>Pickleball Instant Replay - Login Required</title>
   
   <!-- Tailwind CSS (required for DaisyUI) -->
@@ -29,7 +30,9 @@
   </script>
   
   <style>
-    /* Global Reset and Safe-Area Insets */
+    /* ========================
+       Global Reset and Safe-Area Insets
+       ======================== */
     * {
       margin: 0;
       padding: 0;
@@ -61,7 +64,7 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      height: 100vh; /* Fill viewport */
+      height: 100vh; /* Fill viewport exactly */
       background: #1c1c1e;
       padding: 20px;
       overflow: hidden;
@@ -72,19 +75,19 @@
       width: 100%;
       text-align: center;
     }
-    /* Logo styling in Portrait */
+    /* Logo styling in Portrait: Centered */
     #loginContainer .login-left img {
       max-width: 70%;
       height: auto;
       margin-bottom: 20px;
     }
-    /* Heading text in Portrait: Updated text and reduced font-size */
+    /* Heading text in Portrait: Updated and reduced font-size */
     #loginContainer .login-right h2 {
       margin-bottom: 20px;
       font-size: 1.4rem; /* Reduced by ~20% */
       text-align: center;
     }
-    /* Inputs and buttons for Portrait */
+    /* Inputs and buttons styling in Portrait */
     #loginContainer .login-right input,
     #loginContainer .login-right button {
       width: 100%;
@@ -116,27 +119,25 @@
         align-items: center;
         padding: 20px;
       }
-      /* Left column: Logo now appears */
+      /* Left column: Logo with horizontal shift */
       #loginContainer .login-left {
         display: block;
         flex: 1;
         text-align: left;
       }
-      /* Logo shifted 20% to the right (using margin-left) and size reduced */
       #loginContainer .login-left img {
         max-width: 50%;
         height: auto;
         margin-left: 20%;  /* Shift logo 20% to the right */
         margin-bottom: 0;
       }
-      /* Right column: Form elements, center aligned */
+      /* Right column: Form elements aligned center */
       #loginContainer .login-right {
         flex: 1;
         display: flex;
         flex-direction: column;
         align-items: center;
       }
-      /* Update heading: new text, center aligned and reduced font size */
       #loginContainer .login-right h2 {
         width: 100%;
         max-width: 320px;
@@ -144,7 +145,6 @@
         margin-bottom: 20px;
         font-size: 1.4rem; /* Reduced font size */
       }
-      /* Inputs and buttons remain with same dimensions */
       #loginContainer .login-right input,
       #loginContainer .login-right button {
         width: 100%;
@@ -530,7 +530,7 @@
         <button id="reviewButton" onclick="reviewLastClip()">Review</button>
       </div>
       
-      <!-- Right Panel: Profile Button & Controls -->
+      <!-- Right Panel: Profile Button and Controls -->
       <div id="rightPanel">
         <div id="profileButtonContainer">
           <button id="profileButton" onclick="showProfilePage()">
