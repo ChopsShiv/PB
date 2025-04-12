@@ -45,43 +45,46 @@
       padding-bottom: env(safe-area-inset-bottom);
       padding-left: env(safe-area-inset-left);
       padding-right: env(safe-area-inset-right);
-      overflow: hidden; /* Disable scrolling globally */
+      overflow: hidden; /* Disable global scrolling */
     }
     button {
       transition: background-color 0.3s ease, opacity 0.3s ease;
       font-weight: 600;
     }
     
-    /* LOGIN PAGE STYLES */
-    /* Default portrait mode: a centered, stacked column */
+    /* ========================
+       Login Page Styles
+       ======================== */
+    /* Default (Portrait) Mode: Stacked and Centered */
     #loginContainer {
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      height: 100vh; /* Fill the viewport exactly */
+      height: 100vh; /* Fill viewport */
       background: #1c1c1e;
       padding: 20px;
       overflow: hidden;
     }
-    /* In portrait mode, both logo and form are visible in one column */
+    /* In portrait mode both columns are stacked */
     #loginContainer .login-left,
     #loginContainer .login-right {
       width: 100%;
       text-align: center;
     }
-    /* Logo styling */
+    /* Logo styling in Portrait */
     #loginContainer .login-left img {
       max-width: 70%;
       height: auto;
       margin-bottom: 20px;
     }
-    /* Heading: Updated text */
+    /* Heading text in Portrait: Updated text and reduced font-size */
     #loginContainer .login-right h2 {
       margin-bottom: 20px;
-      font-size: 1.75rem;
+      font-size: 1.4rem; /* Reduced by ~20% */
+      text-align: center;
     }
-    /* Inputs and buttons styling */
+    /* Inputs and buttons for Portrait */
     #loginContainer .login-right input,
     #loginContainer .login-right button {
       width: 100%;
@@ -102,21 +105,10 @@
     #emailSignInBtn:hover { opacity: 0.9; }
     #googleSignInBtn { background: #34a853; }
     #googleSignInBtn:hover { opacity: 0.9; }
-    /* Change heading text globally */
-    #loginContainer .login-right h2::after {
-      content: "Welcome back to Smash Cam";
-      display: block;
-    }
-    /* Hide the original text content (if any) in h2 */
-    #loginContainer .login-right h2 {
-      visibility: hidden;
-    }
-    /* Show the content from ::after */
-    #loginContainer .login-right h2::after {
-      visibility: visible;
-    }
     
-    /* Landscape Mode Adjustments for the Login Page */
+    /* ========================
+       Landscape Mode Adjustments for Login Page
+       ======================== */
     @media screen and (orientation: landscape) {
       #loginContainer {
         flex-direction: row;
@@ -124,30 +116,35 @@
         align-items: center;
         padding: 20px;
       }
-      /* Left column: logo */
+      /* Left column: Logo now appears */
       #loginContainer .login-left {
         display: block;
         flex: 1;
         text-align: left;
       }
+      /* Logo shifted 20% to the right (using margin-left) and size reduced */
       #loginContainer .login-left img {
         max-width: 50%;
         height: auto;
-        margin: 0;
+        margin-left: 20%;  /* Shift logo 20% to the right */
+        margin-bottom: 0;
       }
-      /* Right column: form elements */
+      /* Right column: Form elements, center aligned */
       #loginContainer .login-right {
         flex: 1;
         display: flex;
         flex-direction: column;
-        align-items: flex-end;
+        align-items: center;
       }
+      /* Update heading: new text, center aligned and reduced font size */
       #loginContainer .login-right h2 {
         width: 100%;
         max-width: 320px;
-        text-align: right;
+        text-align: center;
         margin-bottom: 20px;
+        font-size: 1.4rem; /* Reduced font size */
       }
+      /* Inputs and buttons remain with same dimensions */
       #loginContainer .login-right input,
       #loginContainer .login-right button {
         width: 100%;
@@ -156,13 +153,11 @@
         padding: 12px;
         font-size: 1rem;
       }
-      /* Ensure the updated heading text appears correctly */
-      #loginContainer .login-right h2::after {
-        content: "Welcome back to Smash Cam";
-      }
     }
     
-    /* ---------- The rest of the application styling remains unchanged ---------- */
+    /* ========================
+       The Rest of the Application CSS (Unchanged)
+       ======================== */
     
     /* Main App Container */
     #appContainer { display: none; position: relative; }
@@ -228,7 +223,7 @@
       z-index: 1; 
     }
     
-    /* Header Container: Game Title & Recording Indicator */
+    /* Header Container (Game Title & Recording Indicator) */
     #headerContainer {
       position: fixed;
       top: 10px;
@@ -267,7 +262,7 @@
     }
     #reviewButton:hover { opacity: 1; }
     
-    /* Right Panel: Profile Button and Controls */
+    /* Right Panel (Profile Button and Controls) */
     #rightPanel {
       position: fixed;
       top: 10px;
@@ -492,12 +487,13 @@
 <body>
   <!-- Login Container -->
   <div id="loginContainer">
-    <!-- Both left and right columns are visible in portrait, then side-by-side in landscape -->
+    <!-- Left Column: Logo -->
     <div class="login-left">
       <img id="loginLogo" src="https://i.postimg.cc/pTd33Wf1/logo.png" alt="App Logo">
     </div>
+    <!-- Right Column: Login Form -->
     <div class="login-right">
-      <h2 class="text-2xl font-bold">Welcome back to Smash Cam</h2>
+      <h2 class="text-2xl font-bold">Welcome back to SmashCam</h2>
       <input class="input input-bordered" type="email" id="email" placeholder="Email" required>
       <input class="input input-bordered" type="password" id="password" placeholder="Password" required>
       <button id="emailSignInBtn" onclick="login()">Login</button>
@@ -534,7 +530,7 @@
         <button id="reviewButton" onclick="reviewLastClip()">Review</button>
       </div>
       
-      <!-- Right Panel: Profile Button and Controls -->
+      <!-- Right Panel: Profile Button & Controls -->
       <div id="rightPanel">
         <div id="profileButtonContainer">
           <button id="profileButton" onclick="showProfilePage()">
