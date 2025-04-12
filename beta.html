@@ -143,8 +143,23 @@
     }
     
     /* Video Container (Live Video Page) */
-    .video-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #1c1c1e; }
-    #liveVideo { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: 1; }
+    .video-container { 
+  position: fixed; 
+  inset: 0;
+  width: 100%; 
+  height: 100%; 
+  background: #1c1c1e; 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+#liveVideo { 
+  width: 100%; 
+  height: 100%; 
+  object-fit: cover; 
+  z-index: 1; 
+}
     
     /* Controls (bottom right) -- update to move up by 30% more */
     .controls {
@@ -192,7 +207,7 @@
       position: absolute; top: 10%; left: 5px; width: auto;
       background: transparent; z-index: 3;
       display: flex; flex-direction: column; align-items: center; padding: 5px;
-      max-height: 80vh; overflow-y: auto;
+      max-height: 80%; overflow-y: auto;
     }
     .timeline-item { margin: 5px; display: flex; flex-direction: column; align-items: center; }
     .timeline-item video {
@@ -324,6 +339,11 @@
       font-size: 80px;
       color: #ffffff;
     }
+    @media screen and (orientation: landscape) {
+  #startOverlay, #downloadOverlay, #profilePage {
+    padding: 10px;
+  }
+}
   </style>
 </head>
 <body>
