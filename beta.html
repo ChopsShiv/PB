@@ -45,44 +45,45 @@
       padding-bottom: env(safe-area-inset-bottom);
       padding-left: env(safe-area-inset-left);
       padding-right: env(safe-area-inset-right);
-      overflow: hidden; /* Disable global scrolling */
+      overflow: hidden; /* Disable scrolling globally */
     }
     button {
       transition: background-color 0.3s ease, opacity 0.3s ease;
       font-weight: 600;
     }
     
-    /* Login Container for Portrait Mode (default) */
+    /* LOGIN PAGE STYLES */
+    /* Default portrait mode: a centered, stacked column */
     #loginContainer {
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      height: 100vh;
+      height: 100vh; /* Fill the viewport exactly */
       background: #1c1c1e;
       padding: 20px;
       overflow: hidden;
     }
-    /* In portrait, show the following structure */
+    /* In portrait mode, both logo and form are visible in one column */
     #loginContainer .login-left,
     #loginContainer .login-right {
       width: 100%;
+      text-align: center;
     }
-    #loginContainer .login-left {
-      display: none;
-    }
-    #loginContainer img {
+    /* Logo styling */
+    #loginContainer .login-left img {
       max-width: 70%;
       height: auto;
       margin-bottom: 20px;
     }
-    #loginContainer h2 {
+    /* Heading: Updated text */
+    #loginContainer .login-right h2 {
       margin-bottom: 20px;
-      text-align: center;
       font-size: 1.75rem;
     }
-    #loginContainer input,
-    #loginContainer button {
+    /* Inputs and buttons styling */
+    #loginContainer .login-right input,
+    #loginContainer .login-right button {
       width: 100%;
       max-width: 320px;
       margin: 8px 0;
@@ -93,7 +94,7 @@
       color: #ffffff;
       font-size: 1rem;
     }
-    #loginContainer button {
+    #loginContainer .login-right button {
       border: none;
       cursor: pointer;
     }
@@ -101,17 +102,29 @@
     #emailSignInBtn:hover { opacity: 0.9; }
     #googleSignInBtn { background: #34a853; }
     #googleSignInBtn:hover { opacity: 0.9; }
+    /* Change heading text globally */
+    #loginContainer .login-right h2::after {
+      content: "Welcome back to Smash Cam";
+      display: block;
+    }
+    /* Hide the original text content (if any) in h2 */
+    #loginContainer .login-right h2 {
+      visibility: hidden;
+    }
+    /* Show the content from ::after */
+    #loginContainer .login-right h2::after {
+      visibility: visible;
+    }
     
     /* Landscape Mode Adjustments for the Login Page */
     @media screen and (orientation: landscape) {
-      /* Change layout to two columns */
       #loginContainer {
         flex-direction: row;
-        align-items: center;
         justify-content: space-between;
+        align-items: center;
         padding: 20px;
       }
-      /* Left column for logo (make it visible and smaller) */
+      /* Left column: logo */
       #loginContainer .login-left {
         display: block;
         flex: 1;
@@ -122,7 +135,7 @@
         height: auto;
         margin: 0;
       }
-      /* Right column for form inputs */
+      /* Right column: form elements */
       #loginContainer .login-right {
         flex: 1;
         display: flex;
@@ -130,10 +143,10 @@
         align-items: flex-end;
       }
       #loginContainer .login-right h2 {
-        margin-bottom: 20px;
-        text-align: right;
         width: 100%;
         max-width: 320px;
+        text-align: right;
+        margin-bottom: 20px;
       }
       #loginContainer .login-right input,
       #loginContainer .login-right button {
@@ -142,6 +155,10 @@
         margin: 8px 0;
         padding: 12px;
         font-size: 1rem;
+      }
+      /* Ensure the updated heading text appears correctly */
+      #loginContainer .login-right h2::after {
+        content: "Welcome back to Smash Cam";
       }
     }
     
@@ -211,7 +228,7 @@
       z-index: 1; 
     }
     
-    /* Header Container */
+    /* Header Container: Game Title & Recording Indicator */
     #headerContainer {
       position: fixed;
       top: 10px;
@@ -250,7 +267,7 @@
     }
     #reviewButton:hover { opacity: 1; }
     
-    /* Right Panel */
+    /* Right Panel: Profile Button and Controls */
     #rightPanel {
       position: fixed;
       top: 10px;
@@ -475,12 +492,12 @@
 <body>
   <!-- Login Container -->
   <div id="loginContainer">
-    <!-- For portrait mode, only the login-right will be visible; in landscape the HTML is restructured -->
+    <!-- Both left and right columns are visible in portrait, then side-by-side in landscape -->
     <div class="login-left">
       <img id="loginLogo" src="https://i.postimg.cc/pTd33Wf1/logo.png" alt="App Logo">
     </div>
     <div class="login-right">
-      <h2 class="text-2xl font-bold">Login to Access the App</h2>
+      <h2 class="text-2xl font-bold">Welcome back to Smash Cam</h2>
       <input class="input input-bordered" type="email" id="email" placeholder="Email" required>
       <input class="input input-bordered" type="password" id="password" placeholder="Password" required>
       <button id="emailSignInBtn" onclick="login()">Login</button>
@@ -490,7 +507,7 @@
   
   <!-- Main App Container -->
   <div id="appContainer">
-    <!-- Start Overlay (Game Details) -->
+    <!-- Start Overlay (Game Details Page) -->
     <div id="startOverlay">
       <label class="text-lg" for="rallyTitle">Add a name for today's game</label>
       <input class="input input-bordered" type="text" id="rallyTitle" placeholder="Enter Game Title">
@@ -502,17 +519,17 @@
       </button>
     </div>
     
-    <!-- Video Container (Live Video) -->
+    <!-- Video Container (Live Video Page) -->
     <div class="video-container">
       <video id="liveVideo" autoplay playsinline muted webkit-playsinline></video>
       
-      <!-- Header: Game Title & Recording -->
+      <!-- Header Container: Game Title & Recording Indicator -->
       <div id="headerContainer">
         <div id="greetingContainer"></div>
         <div id="recordingIndicator">🔴 Recording</div>
       </div>
       
-      <!-- Review Button -->
+      <!-- Review Button Container -->
       <div id="reviewButtonContainer">
         <button id="reviewButton" onclick="reviewLastClip()">Review</button>
       </div>
