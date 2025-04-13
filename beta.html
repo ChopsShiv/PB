@@ -55,6 +55,22 @@
       font-weight: 600;
     }
     
+    /* Countdown Overlay: Displayed when "Lets pickle!" is tapped */
+    #countdownOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      z-index: 10000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 80px;
+      color: #ffffff;
+    }
+    
     /* ========================
        Login Page Styles
        ======================== */
@@ -88,10 +104,10 @@
       max-width: 70%;
       height: auto;
     }
-    /* Heading styling for Portrait (only one appearance) */
+    /* Heading styling for Portrait */
     #loginContainer .login-right h2 {
       margin-bottom: 20px;
-      font-size: 1.4rem; /* Reduced font size (20% less than original 1.75rem) */
+      font-size: 1.4rem; /* Reduced font size */
       text-align: center;
     }
     /* Inputs and buttons styling in Portrait */
@@ -115,6 +131,13 @@
     #emailSignInBtn:hover { opacity: 0.9; }
     #googleSignInBtn { background: #34a853; }
     #googleSignInBtn:hover { opacity: 0.9; }
+    /* Error message for incorrect credentials */
+    #loginError {
+      color: red;
+      font-size: 1rem;
+      margin-top: 10px;
+      display: none;
+    }
     
     /* ========================
        Landscape Mode Adjustments for Login Page
@@ -165,9 +188,36 @@
     }
     
     /* ========================
+       Portrait Mode Adjustments for Live Video Page
+       ======================== */
+    @media screen and (orientation: portrait) {
+      /* Bring down the profile button by 20% */
+      #rightPanel {
+        top: 20%;
+      }
+      /* Bring down the game details text (header container) by 20% */
+      #headerContainer {
+        top: 20%;
+      }
+    }
+    
+    /* ========================
+       Landscape Mode Adjustments for Live Video Page
+       ======================== */
+    @media screen and (orientation: landscape) {
+      /* Move the right panel buttons 5% to the left */
+      #rightPanel {
+        right: 5%;
+      }
+      /* Move the game details text 5% to the right */
+      #headerContainer {
+        left: 5%;
+      }
+    }
+    
+    /* ========================
        The Rest of the Application CSS (Unchanged)
        ======================== */
-    
     /* Main App Container */
     #appContainer { display: none; position: relative; }
     
@@ -496,7 +546,7 @@
 <body>
   <!-- Login Container -->
   <div id="loginContainer">
-    <!-- In Portrait: top half logo, bottom half form -->
+    <!-- In Portrait Mode: Top half for logo, Bottom half for form -->
     <div class="login-left">
       <img id="loginLogo" src="https://i.postimg.cc/pTd33Wf1/logo.png" alt="App Logo">
     </div>
@@ -506,6 +556,7 @@
       <input class="input input-bordered" type="password" id="password" placeholder="Password" required>
       <button id="emailSignInBtn" onclick="login()">Login</button>
       <button id="googleSignInBtn" onclick="googleSignIn()">Sign in with Google</button>
+      <div id="loginError">Incorrect Email/Password</div>
     </div>
   </div>
   
@@ -620,7 +671,9 @@
       try {
         await auth.signInWithEmailAndPassword(email, password);
       } catch (error) {
-        alert("Login error: " + error.message);
+        // Show error message in the login page
+        document.getElementById("loginError").style.display = "block";
+        document.getElementById("loginError").innerText = "Incorrect Email/Password";
       }
     }
   
