@@ -30,7 +30,9 @@
   </script>
   
   <style>
-    /* Global Reset and Safe-Area Insets */
+    /* ========================
+       Global Reset and Safe-Area Insets
+       ======================== */
     * {
       margin: 0;
       padding: 0;
@@ -56,15 +58,15 @@
     /* ========================
        Login Page Styles
        ======================== */
-    /* Default Portrait Mode: Container split vertically into two halves */
+    /* Default Portrait Mode: Container split vertically */
     #loginContainer {
       display: flex;
       flex-direction: column;
-      height: 100vh;
+      height: 100vh; /* Fill viewport */
       background: #1c1c1e;
       overflow: hidden;
     }
-    /* Top half: Logo container */
+    /* Top half: Logo container (centered vertically and horizontally) */
     #loginContainer .login-left {
       display: flex;
       flex: 1;
@@ -72,7 +74,7 @@
       align-items: center;
       text-align: center;
     }
-    /* Bottom half: Login form container */
+    /* Bottom half: Login form container (centered) */
     #loginContainer .login-right {
       display: flex;
       flex-direction: column;
@@ -81,15 +83,15 @@
       align-items: center;
       text-align: center;
     }
-    /* Logo styling for Portrait: Centered in its container */
+    /* Logo styling for Portrait */
     #loginContainer .login-left img {
       max-width: 70%;
       height: auto;
     }
-    /* Login Form Heading: Updated text and reduced font-size (20% reduction from 1.75rem to 1.4rem) */
+    /* Heading styling for Portrait (only one appearance) */
     #loginContainer .login-right h2 {
       margin-bottom: 20px;
-      font-size: 1.4rem;
+      font-size: 1.4rem; /* Reduced font size (20% less than original 1.75rem) */
       text-align: center;
     }
     /* Inputs and buttons styling in Portrait */
@@ -113,13 +115,6 @@
     #emailSignInBtn:hover { opacity: 0.9; }
     #googleSignInBtn { background: #34a853; }
     #googleSignInBtn:hover { opacity: 0.9; }
-    /* Update heading text */
-    #loginContainer .login-right h2::before {
-      content: "Welcome back to SmashCam";
-    }
-    #loginContainer .login-right h2 span {
-      display: none;
-    }
     
     /* ========================
        Landscape Mode Adjustments for Login Page
@@ -131,19 +126,20 @@
         align-items: center;
         padding: 20px;
       }
-      /* In landscape, show both columns side by side */
+      /* Left Column: Logo */
       #loginContainer .login-left {
         display: flex;
         flex: 1;
         justify-content: flex-start;
         align-items: center;
       }
-      /* Logo shifted 20% to the right and reduced size */
+      /* Shift logo 20% to the right and reduce size */
       #loginContainer .login-left img {
         max-width: 50%;
         height: auto;
-        margin-left: 20%;  /* Shift logo 20% to the right */
+        margin-left: 20%;
       }
+      /* Right Column: Form */
       #loginContainer .login-right {
         flex: 1;
         display: flex;
@@ -500,11 +496,10 @@
 <body>
   <!-- Login Container -->
   <div id="loginContainer">
-    <!-- Left Column: Logo (Portrait mode: occupies top half) -->
+    <!-- In Portrait: top half logo, bottom half form -->
     <div class="login-left">
       <img id="loginLogo" src="https://i.postimg.cc/pTd33Wf1/logo.png" alt="App Logo">
     </div>
-    <!-- Right Column: Login Form (Portrait mode: occupies bottom half) -->
     <div class="login-right">
       <h2 class="text-2xl font-bold">Welcome back to SmashCam</h2>
       <input class="input input-bordered" type="email" id="email" placeholder="Email" required>
@@ -566,7 +561,7 @@
         </div>
       </div>
       
-      <!-- Timeline (Optional) -->
+      <!-- Timeline (if needed) -->
       <div class="timeline" id="timeline"></div>
     </div>
     
