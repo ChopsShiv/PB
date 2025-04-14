@@ -82,7 +82,7 @@
       background: #1c1c1e;
       overflow: hidden;
     }
-    /* Top half: Logo container (centered vertically & horizontally) */
+    /* Top half: Logo container */
     #loginContainer .login-left {
       display: flex;
       flex: 1;
@@ -90,7 +90,7 @@
       align-items: center;
       text-align: center;
     }
-    /* Bottom half: Login form container (centered) */
+    /* Bottom half: Login form container */
     #loginContainer .login-right {
       display: flex;
       flex-direction: column;
@@ -99,18 +99,18 @@
       align-items: center;
       text-align: center;
     }
-    /* Logo styling for Portrait */
+    /* Logo styling */
     #loginContainer .login-left img {
       max-width: 70%;
       height: auto;
     }
-    /* Heading styling for Portrait */
+    /* Heading styling */
     #loginContainer .login-right h2 {
       margin-bottom: 20px;
       font-size: 1.4rem;
       text-align: center;
     }
-    /* Inputs and buttons styling in Portrait */
+    /* Inputs and buttons */
     #loginContainer .login-right input,
     #loginContainer .login-right button {
       width: 100%;
@@ -161,7 +161,7 @@
         height: auto;
         margin-left: 20%;
       }
-      /* Right Column: Form */
+      /* Right Column: Login Form */
       #loginContainer .login-right {
         flex: 1;
         display: flex;
@@ -198,7 +198,7 @@
         top: 20%;
       }
     }
-    /* Landscape: Move right panel 5% to the left; header 5% to the right */
+    /* Landscape: Adjust right panel and header positions */
     @media screen and (orientation: landscape) {
       #rightPanel {
         right: 5%;
@@ -392,7 +392,7 @@
     }
     
     /* ========================
-       Profile Page (Unchanged)
+       Profile Page
        ======================== */
     #profilePage {
       display: none;
@@ -786,7 +786,7 @@
       if (videoElement.srcObject) {
         videoElement.srcObject.getTracks().forEach(track => track.stop());
       }
-      // Show the download overlay and let the user decide.
+      // Show the download overlay and wait for the user's decision.
       showDownloadOverlay();
     }
   
@@ -1027,7 +1027,7 @@
           const errorMsg = error && error.text ? error.text : (error.message || "Unknown error");
           alert("Error sending email: " + errorMsg);
         }
-        // Remove the overlay and sign out.
+        // Remove overlay and sign out after the selection
         overlay.remove();
         try {
           await auth.signOut();
