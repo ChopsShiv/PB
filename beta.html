@@ -74,15 +74,13 @@
     /* ========================
        Login Page Styles
        ======================== */
-    /* Default Portrait Mode: Container split vertically */
     #loginContainer {
       display: flex;
       flex-direction: column;
-      height: 100vh; /* Fill viewport */
+      height: 100vh;
       background: #1c1c1e;
       overflow: hidden;
     }
-    /* Top half: Logo container (centered vertically and horizontally) */
     #loginContainer .login-left {
       display: flex;
       flex: 1;
@@ -90,7 +88,6 @@
       align-items: center;
       text-align: center;
     }
-    /* Bottom half: Login form container (centered) */
     #loginContainer .login-right {
       display: flex;
       flex-direction: column;
@@ -99,18 +96,15 @@
       align-items: center;
       text-align: center;
     }
-    /* Logo styling for Portrait */
     #loginContainer .login-left img {
       max-width: 70%;
       height: auto;
     }
-    /* Heading styling for Portrait */
     #loginContainer .login-right h2 {
       margin-bottom: 20px;
-      font-size: 1.4rem; /* Reduced font size */
+      font-size: 1.4rem;
       text-align: center;
     }
-    /* Inputs and buttons styling in Portrait */
     #loginContainer .login-right input,
     #loginContainer .login-right button {
       width: 100%;
@@ -131,7 +125,6 @@
     #emailSignInBtn:hover { opacity: 0.9; }
     #googleSignInBtn { background: #34a853; }
     #googleSignInBtn:hover { opacity: 0.9; }
-    /* Error message for incorrect credentials */
     #loginError {
       color: red;
       font-size: 1rem;
@@ -139,9 +132,6 @@
       display: none;
     }
     
-    /* ========================
-       Landscape Mode Adjustments for Login Page
-       ======================== */
     @media screen and (orientation: landscape) {
       #loginContainer {
         flex-direction: row;
@@ -149,20 +139,16 @@
         align-items: center;
         padding: 20px;
       }
-      /* Left Column: Logo */
       #loginContainer .login-left {
-        display: flex;
         flex: 1;
         justify-content: flex-start;
         align-items: center;
       }
-      /* Shift logo 20% to the right and reduce size */
       #loginContainer .login-left img {
         max-width: 50%;
         height: auto;
         margin-left: 20%;
       }
-      /* Right Column: Form */
       #loginContainer .login-right {
         flex: 1;
         display: flex;
@@ -188,119 +174,28 @@
     }
     
     /* ========================
-       Portrait Mode Adjustments for Live Video Page
+       Live Video Page UI Adjustments
        ======================== */
     @media screen and (orientation: portrait) {
-      /* Bring down the profile button by 20% */
-      #rightPanel {
-        top: 20%;
-      }
-      /* Bring down the game details text (header container) by 20% */
       #headerContainer {
         top: 20%;
       }
+      #rightPanel {
+        top: 20%;
+      }
     }
-    
-    /* ========================
-       Landscape Mode Adjustments for Live Video Page
-       ======================== */
     @media screen and (orientation: landscape) {
-      /* Move the right panel buttons 5% to the left */
       #rightPanel {
         right: 5%;
       }
-      /* Move the game details text 5% to the right */
       #headerContainer {
         left: 5%;
       }
     }
     
     /* ========================
-       The Rest of the Application CSS (Unchanged)
+       Review Button Styling
        ======================== */
-    /* Main App Container */
-    #appContainer { display: none; position: relative; }
-    
-    /* Start Overlay (Game Details Page) */
-    #startOverlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      min-height: 100vh;
-      background: rgba(28,28,30,0.95);
-      z-index: 999;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      gap: 20px;
-      text-align: center;
-      padding: 20px;
-      overflow-y: auto;
-    }
-    #startOverlay label { font-size: 16px; }
-    #startOverlay input {
-      width: 100%;
-      max-width: 320px;
-      padding: 12px;
-      border: 1px solid #3a3a3c;
-      border-radius: 10px;
-      background: #2c2c2e;
-      color: #ffffff;
-    }
-    #startOverlay button {
-      width: 100%;
-      max-width: 320px;
-      padding: 14px;
-      border-radius: 10px;
-      border: none;
-      font-size: 16px;
-      cursor: pointer;
-    }
-    #startGameBtn { background: #C7FE2E; color: #383836; }
-    #startGameBtn:hover { opacity: 0.9; }
-    #signOutFromDetails { background: #ff3b30; color: #ffffff; margin-top: 10px; }
-    #signOutFromDetails:hover { opacity: 0.9; }
-    
-    /* Video Container (Live Video Page) */
-    .video-container { 
-      position: fixed; 
-      inset: 0;
-      width: 100%; 
-      height: 100%; 
-      background: #1c1c1e; 
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      overflow: hidden;
-    }
-    #liveVideo { 
-      width: 100%; 
-      height: 100%; 
-      object-fit: cover; 
-      z-index: 1; 
-    }
-    
-    /* Header Container (Game Title & Recording Indicator) */
-    #headerContainer {
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      z-index: 30;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    #greetingContainer { font-size: 16px; }
-    #recordingIndicator {
-      font-family: Helvetica, sans-serif;
-      font-size: 16px;
-      color: #ff3b30;
-      display: none;
-    }
-    
-    /* Review Button Container */
     #reviewButtonContainer {
       position: fixed;
       top: 50%;
@@ -310,10 +205,10 @@
       display: none;
     }
     #reviewButton {
-      background: #bf5af2;
-      color: #ffffff;
+      background: transparent; /* No fill color */
+      border: 4px solid #C7FE2E;
+      color: #C7FE2E;
       padding: 24px 40px;
-      border: none;
       border-radius: 10px;
       font-size: 36px;
       cursor: pointer;
@@ -321,7 +216,9 @@
     }
     #reviewButton:hover { opacity: 1; }
     
-    /* Right Panel (Profile Button and Controls) */
+    /* ========================
+       Right Panel (Profile Button and Controls)
+       ======================== */
     #rightPanel {
       position: fixed;
       top: 10px;
@@ -385,7 +282,9 @@
     }
     .muteButton:hover { opacity: 0.8; }
     
-    /* Timeline */
+    /* ========================
+       Timeline
+       ======================== */
     .timeline {
       position: absolute;
       top: 10%;
@@ -411,7 +310,9 @@
     }
     .timeline-item span { font-size: 10px; color: #ffffff; margin-top: 4px; }
     
-    /* Download Overlay */
+    /* ========================
+       Download Overlay and Action Buttons Styling
+       ======================== */
     #downloadOverlay {
       position: fixed;
       top: 0;
@@ -453,38 +354,32 @@
       background: #2c2c2e;
       color: #ffffff;
     }
-    #downloadOverlay button {
+    .action-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .action-buttons button {
       padding: 12px 24px;
       font-size: 18px;
-      background: #32d74b;
       border: none;
       border-radius: 10px;
       color: #ffffff;
       cursor: pointer;
-      margin-top: 20px;
+      min-width: 150px;
     }
-    #downloadOverlay button:hover { opacity: 0.9; }
-    
-    /* "Nah, I'm good" Button Container */
-    #nahContainer {
-      width: 100%;
-      background: #383836;
-      display: flex;
-      justify-content: center;
-      padding: 10px;
+    #getDownloadButton {
+      background: #32d74b;
     }
+    /* "Nah, I'm good" button now shares the same style as the download button except a different fill */
     #nahImGoodBtn {
-      padding: 12px 24px;
-      border-radius: 10px;
-      border: none;
-      background: none;
-      color: #C7FE2E;
-      font-size: 18px;
-      cursor: pointer;
+      background: #808080;
     }
-    #nahImGoodBtn:hover { opacity: 0.9; }
     
-    /* Profile Page */
+    /* ========================
+       Profile Page
+       ======================== */
     #profilePage {
       display: none;
       position: fixed;
@@ -546,7 +441,6 @@
 <body>
   <!-- Login Container -->
   <div id="loginContainer">
-    <!-- In Portrait Mode: Top half for logo, Bottom half for form -->
     <div class="login-left">
       <img id="loginLogo" src="https://i.postimg.cc/pTd33Wf1/logo.png" alt="App Logo">
     </div>
@@ -562,34 +456,22 @@
   
   <!-- Main App Container -->
   <div id="appContainer">
-    <!-- Start Overlay (Game Details Page) -->
     <div id="startOverlay">
       <label class="text-lg" for="rallyTitle">Add a name for today's game</label>
       <input class="input input-bordered" type="text" id="rallyTitle" placeholder="Enter Game Title">
-      <button id="startGameBtn" onclick="startGame()" style="background: #C7FE2E; color: #383836;">
-        Lets pickle!
-      </button>
-      <button id="signOutFromDetails" onclick="signOutUser()" style="background: #ff3b30; color: #ffffff;">
-        Sign Out
-      </button>
+      <button id="startGameBtn" onclick="startGame()" style="background: #C7FE2E; color: #383836;">Lets pickle!</button>
+      <button id="signOutFromDetails" onclick="signOutUser()" style="background: #ff3b30; color: #ffffff;">Sign Out</button>
     </div>
     
-    <!-- Video Container (Live Video Page) -->
     <div class="video-container">
       <video id="liveVideo" autoplay playsinline muted webkit-playsinline></video>
-      
-      <!-- Header Container: Game Title & Recording Indicator -->
       <div id="headerContainer">
         <div id="greetingContainer"></div>
         <div id="recordingIndicator">🔴 Recording</div>
       </div>
-      
-      <!-- Review Button Container -->
       <div id="reviewButtonContainer">
         <button id="reviewButton" onclick="reviewLastClip()">Review</button>
       </div>
-      
-      <!-- Right Panel: Profile Button and Controls -->
       <div id="rightPanel">
         <div id="profileButtonContainer">
           <button id="profileButton" onclick="showProfilePage()">
@@ -611,12 +493,9 @@
           <button class="signout" onclick="signOutUser()">Sign Out</button>
         </div>
       </div>
-      
-      <!-- Timeline (if needed) -->
       <div class="timeline" id="timeline"></div>
     </div>
     
-    <!-- Profile Page -->
     <div id="profilePage">
       <h2>User Profile</h2>
       <label for="profileEmail">Email</label>
@@ -671,7 +550,6 @@
       try {
         await auth.signInWithEmailAndPassword(email, password);
       } catch (error) {
-        // Show error message in the login page
         document.getElementById("loginError").style.display = "block";
         document.getElementById("loginError").innerText = "Incorrect Email/Password";
       }
@@ -727,7 +605,7 @@
       const dd = now.getDate().toString().padStart(2, '0');
       const yyyy = now.getFullYear().toString();
       const dateStr = month + dd + yyyy;
-      return ${clipNumber}_${timeStr}_${dateStr}.mp4;
+      return `${clipNumber}_${timeStr}_${dateStr}.mp4`;
     }
   
     async function uploadToFirebase(blob) {
@@ -878,6 +756,7 @@
       if (videoElement.srcObject) {
         videoElement.srcObject.getTracks().forEach(track => track.stop());
       }
+      // Show the download overlay for user decision
       showDownloadOverlay();
     }
   
@@ -1047,80 +926,40 @@
       speechRecognition.start();
     }
   
-    function showDownloadOverlay() {
+    async function showDownloadOverlay() {
       const overlay = document.createElement("div");
       overlay.id = "downloadOverlay";
-      overlay.innerHTML = 
+      overlay.innerHTML = `
         <h2>Download Session Highlights</h2>
         <div id="clipsSelection" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; width: 80%;"></div>
         <form id="downloadForm">
           <label style="margin-top: 20px; font-size: 16px;">Enter your email:</label>
           <input type="email" name="to_email" id="downloadEmail" placeholder="your.email@example.com" required>
           <textarea name="message" id="downloadMessage" style="display:none;"></textarea>
-          <button type="submit">Get Download Link</button>
+          <div class="action-buttons">
+            <button type="submit" id="getDownloadButton">Get Download Link</button>
+            <button type="button" id="nahImGoodBtn">Nah, I'm good</button>
+          </div>
         </form>
-      ;
+      `;
       
       const emailInput = overlay.querySelector("#downloadEmail");
       if (auth.currentUser && auth.currentUser.email) {
         emailInput.value = auth.currentUser.email;
       }
       
-      const nahContainer = document.createElement("div");
-      nahContainer.id = "nahContainer";
-      nahContainer.style.backgroundColor = "#383836";
-      nahContainer.style.width = "100%";
-      nahContainer.style.display = "flex";
-      nahContainer.style.justifyContent = "center";
-      nahContainer.style.padding = "10px";
-      
-      const nahBtn = document.createElement("button");
-      nahBtn.id = "nahImGoodBtn";
-      nahBtn.innerText = "Nah, I'm good";
-      nahBtn.style.color = "#C7FE2E";
-      nahBtn.style.background = "none";
+      const nahBtn = overlay.querySelector("#nahImGoodBtn");
       nahBtn.addEventListener("click", async () => {
         try {
           if (videoElement.srcObject) {
             videoElement.srcObject.getTracks().forEach(track => track.stop());
           }
-          await auth.signOut();
           overlay.remove();
-          console.log("User signed out without download.");
+          // Sign out only after the user clicks "Nah, I'm good"
+          await auth.signOut();
+          console.log("User signed out after opting out.");
+          setTimeout(() => location.reload(), 1000);
         } catch (e) { }
-      });
-      nahContainer.appendChild(nahBtn);
-      overlay.appendChild(nahContainer);
-      
-      const clipsSelection = overlay.querySelector("#clipsSelection");
-      rallyClips.forEach((clip, index) => {
-        const clipDiv = document.createElement("div");
-        clipDiv.className = "clipItem";
-        clipDiv.style.border = "1px solid #3a3a3c";
-        clipDiv.style.padding = "5px";
-        clipDiv.style.textAlign = "center";
-        clipDiv.style.borderRadius = "8px";
-        const checkbox = document.createElement("input");
-        checkbox.type = "checkbox";
-        checkbox.id = "clipCheckbox" + index;
-        checkbox.value = clip.url;
-        const thumb = document.createElement("video");
-        thumb.src = clip.url;
-        thumb.muted = true;
-        thumb.playsInline = true;
-        thumb.autoplay = true;
-        thumb.loop = true;
-        thumb.style.width = "120px";
-        thumb.style.height = "80px";
-        thumb.style.borderRadius = "8px";
-        const label = document.createElement("div");
-        label.innerText = clip.filename ? clip.filename.substring(0, 3) : ("Rally " + (index + 1));
-        label.style.fontSize = "12px";
-        label.style.marginTop = "5px";
-        clipDiv.appendChild(checkbox);
-        clipDiv.appendChild(thumb);
-        clipDiv.appendChild(label);
-        clipsSelection.appendChild(clipDiv);
       });
       
       const downloadForm = overlay.querySelector("#downloadForm");
@@ -1161,7 +1000,8 @@
           overlay.remove();
           try {
             await auth.signOut();
-            console.log("User signed out, returning to login screen.");
+            console.log("User signed out after download.");
+            setTimeout(() => location.reload(), 1000);
           } catch (error) { }
         }, 5000);
       });
@@ -1169,7 +1009,6 @@
       document.body.appendChild(overlay);
     }
   
-    // Profile Page functions
     function showProfilePage() {
       if (recording) {
         stopRecording();
