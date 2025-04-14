@@ -74,7 +74,6 @@
     /* ========================
          Login Page Styles
          ======================== */
-    /* Default Portrait Mode: Container split vertically */
     #loginContainer {
       display: flex;
       flex-direction: column;
@@ -82,7 +81,6 @@
       background: #1c1c1e;
       overflow: hidden;
     }
-    /* Top half: Logo container (centered vertically and horizontally) */
     #loginContainer .login-left {
       display: flex;
       flex: 1;
@@ -90,7 +88,6 @@
       align-items: center;
       text-align: center;
     }
-    /* Bottom half: Login form container (centered) */
     #loginContainer .login-right {
       display: flex;
       flex-direction: column;
@@ -99,18 +96,15 @@
       align-items: center;
       text-align: center;
     }
-    /* Logo styling for Portrait */
     #loginContainer .login-left img {
       max-width: 70%;
       height: auto;
     }
-    /* Heading styling for Portrait */
     #loginContainer .login-right h2 {
       margin-bottom: 20px;
       font-size: 1.4rem;
       text-align: center;
     }
-    /* Inputs and buttons styling in Portrait */
     #loginContainer .login-right input,
     #loginContainer .login-right button {
       width: 100%;
@@ -131,7 +125,6 @@
     #emailSignInBtn:hover { opacity: 0.9; }
     #googleSignInBtn { background: #34a853; }
     #googleSignInBtn:hover { opacity: 0.9; }
-    /* Error message for incorrect credentials */
     #loginError {
       color: red;
       font-size: 1rem;
@@ -797,6 +790,8 @@
             const result = await uploadToFirebase(blob);
             const clip = { url: result.url, timestamp: new Date().toLocaleTimeString(), filename: result.filename, manual: false };
             rallyClips.push(clip);
+            // Update timeline for debugging purposes
+            console.log("RallyClips:", rallyClips);
             updateTimeline();
             recordedChunks = [];
             if (pausedForReview) {
@@ -849,20 +844,19 @@
       }
     }
   
-   async function stopGame() {
-  segmentedMode = false;
-  if (mediaRecorder && mediaRecorder.state === "recording") {
-    stopRecording();
-    // Wait for 1.5 seconds to allow onstop event to complete
-    await new Promise(resolve => setTimeout(resolve, 1500));
-  }
-  if (videoElement.srcObject) {
-    videoElement.srcObject.getTracks().forEach(track => track.stop());
-  }
-  // Update the timeline to ensure the latest clip is available
-  updateTimeline();
-  showDownloadOverlay();
-}
+    async function stopGame() {
+      segmentedMode = false;
+      if (mediaRecorder && mediaRecorder.state === "recording") {
+        stopRecording();
+        // Wait for 1.5 seconds to ensure the onstop event completes and rallyClips is updated
+        await new Promise(resolve => setTimeout(resolve, 1500));
+      }
+      if (videoElement.srcObject) {
+        videoElement.srcObject.getTracks().forEach(track => track.stop());
+      }
+      updateTimeline();
+      showDownloadOverlay();
+    }
   
     function updateTimeline() {
       timeline.innerHTML = "";
@@ -1053,7 +1047,7 @@
       }
       
       const nahBtn = overlay.querySelector("#nahImGoodBtn");
-      // When "Nah, I'm good" is clicked, log out (same as signOutUser function)
+      // When "Nah, I'm good" is clicked, log out (using signOutUser)
       nahBtn.addEventListener("click", async () => {
         try {
           if (videoElement.srcObject) {
@@ -1063,6 +1057,44 @@
           await signOutUser();
         } catch (e) { }
       });
+      
+      // Populate clips (thumbnails)
+      const clipsSelection = overlay.querySelector("#clipsSelection");
+      if (rallyClips.length === 0) {
+        const msg = document.createElement("p");
+        msg.innerText = "No clips recorded.";
+        clipsSelection.appendChild(msg);
+      } else {
+        rallyClips.forEach((clip, index) => {
+          const clipDiv = document.createElement("div");
+          clipDiv.className = "clipItem";
+          clipDiv.style.border = "1px solid #3a3a3c";
+          clipDiv.style.padding = "5px";
+          clipDiv.style.textAlign = "center";
+          clipDiv.style.borderRadius = "8px";
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.id = "clipCheckbox" + index;
+          checkbox.value = clip.url;
+          const thumb = document.createElement("video");
+          thumb.src = clip.url;
+          thumb.muted = true;
+          thumb.playsInline = true;
+          thumb.autoplay = true;
+          thumb.loop = true;
+          thumb.style.width = "120px";
+          thumb.style.height = "80px";
+          thumb.style.borderRadius = "8px";
+          const label = document.createElement("div");
+          label.innerText = clip.filename ? clip.filename.substring(0, 3) : ("Rally " + (index + 1));
+          label.style.fontSize = "12px";
+          label.style.marginTop = "5px";
+          clipDiv.appendChild(checkbox);
+          clipDiv.appendChild(thumb);
+          clipDiv.appendChild(label);
+          clipsSelection.appendChild(clipDiv);
+        });
+      }
       
       const downloadForm = overlay.querySelector("#downloadForm");
       downloadForm.addEventListener("submit", async (e) => {
