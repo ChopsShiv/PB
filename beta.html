@@ -55,7 +55,7 @@
       font-weight: 600;
     }
     
-    /* Countdown Overlay: Displayed when "Lets pickle!" is tapped */
+    /* Countdown Overlay */
     #countdownOverlay {
       position: fixed;
       top: 0;
@@ -77,7 +77,7 @@
     #loginContainer {
       display: flex;
       flex-direction: column;
-      height: 100vh; /* Fill viewport */
+      height: 100vh;
       background: #1c1c1e;
       overflow: hidden;
     }
@@ -100,13 +100,11 @@
       max-width: 70%;
       height: auto;
     }
-    /* Heading styling for Portrait */
     #loginContainer .login-right h2 {
       margin-bottom: 20px;
       font-size: 1.4rem;
       text-align: center;
     }
-    /* Inputs and buttons styling in Portrait */
     #loginContainer .login-right input,
     #loginContainer .login-right button {
       width: 100%;
@@ -141,9 +139,7 @@
         align-items: center;
         padding: 20px;
       }
-      /* Left Column: Logo */
       #loginContainer .login-left {
-        display: flex;
         flex: 1;
         justify-content: flex-start;
         align-items: center;
@@ -153,7 +149,6 @@
         height: auto;
         margin-left: 20%;
       }
-      /* Right Column: Form */
       #loginContainer .login-right {
         flex: 1;
         display: flex;
@@ -181,7 +176,6 @@
     /* ========================
        Live Video Page UI Adjustments
        ======================== */
-    /* Portrait: Bring down header and profile button by 20% */
     @media screen and (orientation: portrait) {
       #headerContainer {
         top: 20%;
@@ -190,7 +184,6 @@
         top: 20%;
       }
     }
-    /* Landscape: Adjust positions */
     @media screen and (orientation: landscape) {
       #rightPanel {
         right: 5%;
@@ -677,7 +670,7 @@
           countdownText.innerText = "GO!";
           console.log("Countdown complete. Starting recording.");
           setTimeout(() => {
-            if(countdownOverlay.parentNode) {
+            if (countdownOverlay.parentNode) {
               document.body.removeChild(countdownOverlay);
             }
             startRecording();
@@ -686,13 +679,19 @@
       }, 1000);
     }
   
+    // Updated createMediaRecorder() that uses a supported MIME type for recording
     function createMediaRecorder() {
+      let options = {};
+      if (MediaRecorder.isTypeSupported("video/webm;codecs=vp9")) {
+        options = { mimeType: "video/webm;codecs=vp9", videoBitsPerSecond: 2500000, audioBitsPerSecond: 128000 };
+      } else if (MediaRecorder.isTypeSupported("video/webm;codecs=vp8")) {
+        options = { mimeType: "video/webm;codecs=vp8", videoBitsPerSecond: 2500000, audioBitsPerSecond: 128000 };
+      } else {
+        options = { mimeType: "video/webm", videoBitsPerSecond: 2500000, audioBitsPerSecond: 128000 };
+      }
+      
       try {
-        mediaRecorder = new MediaRecorder(videoElement.srcObject, {
-          mimeType: "video/mp4",
-          videoBitsPerSecond: 2500000,
-          audioBitsPerSecond: 128000
-        });
+        mediaRecorder = new MediaRecorder(videoElement.srcObject, options);
         mediaRecorder.ondataavailable = (event) => {
           if (event.data && event.data.size > 0) {
             recordedChunks.push(event.data);
@@ -702,7 +701,7 @@
         mediaRecorder.onstop = async () => {
           if (recordedChunks.length > 0) {
             console.log("Recording stopped, uploading clip...");
-            const blob = new Blob(recordedChunks, { type: "video/mp4" });
+            const blob = new Blob(recordedChunks, { type: options.mimeType });
             const result = await uploadToFirebase(blob);
             const clip = { url: result.url, timestamp: new Date().toLocaleTimeString(), filename: result.filename, manual: false };
             rallyClips.push(clip);
