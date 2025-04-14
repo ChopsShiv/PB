@@ -30,10 +30,9 @@ emailjs.init('9IH3dz_bfpWORWxZH');
 </script>
 
 <style>
-    /* ========================
-       Global Reset and Safe-Area Insets
-       ======================== */
-    /* Global Reset and Safe-Area Insets */
+/* ========================
+      Global Reset and Safe-Area Insets
+      ======================== */
 * {
 margin: 0;
 padding: 0;
@@ -49,63 +48,68 @@ padding-top: env(safe-area-inset-top);
 padding-bottom: env(safe-area-inset-bottom);
 padding-left: env(safe-area-inset-left);
 padding-right: env(safe-area-inset-right);
-      overflow: hidden; /* Disable global scrolling */
-      overflow: hidden;
+overflow: hidden;
 }
 button {
 transition: background-color 0.3s ease, opacity 0.3s ease;
 font-weight: 600;
 }
 
+    /* Countdown Overlay: Displayed when "Lets pickle!" is tapped */
+    #countdownOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      z-index: 10000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 80px;
+      color: #ffffff;
+    }
+    
 /* ========================
       Login Page Styles
       ======================== */
-    /* Default (Portrait) Mode: Stacked and Centered */
-    /* Default Portrait Mode: Container split vertically into two halves */
+/* Default Portrait Mode: Container split vertically */
 #loginContainer {
 display: flex;
 flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      height: 100vh; /* Fill viewport exactly */
-      height: 100vh;
+height: 100vh; /* Fill viewport */
 background: #1c1c1e;
-      padding: 20px;
 overflow: hidden;
 }
-    /* In portrait mode both columns are stacked */
-    #loginContainer .login-left,
-    /* Top half: Logo container */
-    #loginContainer .login-left {
-      display: flex;
-      flex: 1;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-    }
-    /* Bottom half: Login form container */
-#loginContainer .login-right {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      flex: 1;
-      justify-content: center;
-      align-items: center;
+/* Top half: Logo container (centered vertically and horizontally) */
+#loginContainer .login-left {
+display: flex;
+flex: 1;
+justify-content: center;
+align-items: center;
 text-align: center;
 }
-    /* Logo styling in Portrait: Centered */
-    /* Logo styling for Portrait: Centered in its container */
+/* Bottom half: Login form container (centered) */
+#loginContainer .login-right {
+display: flex;
+flex-direction: column;
+flex: 1;
+justify-content: center;
+align-items: center;
+text-align: center;
+}
+/* Logo styling for Portrait */
 #loginContainer .login-left img {
 max-width: 70%;
 height: auto;
-      margin-bottom: 20px;
 }
-    /* Heading text in Portrait: Updated and reduced font-size */
-    /* Login Form Heading: Updated text and reduced font-size (20% reduction from 1.75rem to 1.4rem) */
+    /* Heading styling for Portrait (only one appearance) */
+    /* Heading styling for Portrait */
 #loginContainer .login-right h2 {
 margin-bottom: 20px;
-      font-size: 1.4rem; /* Reduced by ~20% */
-      font-size: 1.4rem;
+      font-size: 1.4rem; /* Reduced font size (20% less than original 1.75rem) */
+      font-size: 1.4rem; /* Reduced font size */
 text-align: center;
 }
 /* Inputs and buttons styling in Portrait */
@@ -129,11 +133,11 @@ cursor: pointer;
 #emailSignInBtn:hover { opacity: 0.9; }
 #googleSignInBtn { background: #34a853; }
 #googleSignInBtn:hover { opacity: 0.9; }
-    /* Update heading text */
-    #loginContainer .login-right h2::before {
-      content: "Welcome back to SmashCam";
-    }
-    #loginContainer .login-right h2 span {
+    /* Error message for incorrect credentials */
+    #loginError {
+      color: red;
+      font-size: 1rem;
+      margin-top: 10px;
       display: none;
     }
 
@@ -147,38 +151,33 @@ justify-content: space-between;
 align-items: center;
 padding: 20px;
 }
-      /* Left column: Logo with horizontal shift */
-      /* In landscape, show both columns side by side */
+/* Left Column: Logo */
 #loginContainer .login-left {
-        display: block;
-        display: flex;
+display: flex;
 flex: 1;
-        text-align: left;
-        justify-content: flex-start;
-        align-items: center;
+justify-content: flex-start;
+align-items: center;
 }
-      /* Logo shifted 20% to the right and reduced size */
+/* Shift logo 20% to the right and reduce size */
 #loginContainer .login-left img {
 max-width: 50%;
 height: auto;
-margin-left: 20%;  /* Shift logo 20% to the right */
-        margin-bottom: 0;
+margin-left: 20%;
 }
-      /* Right column: Form elements aligned center */
+/* Right Column: Form */
 #loginContainer .login-right {
 flex: 1;
 display: flex;
 flex-direction: column;
 align-items: center;
-        justify-content: center;
+justify-content: center;
 }
 #loginContainer .login-right h2 {
 width: 100%;
 max-width: 320px;
 text-align: center;
 margin-bottom: 20px;
-        font-size: 1.4rem; /* Reduced font size */
-        font-size: 1.4rem;
+font-size: 1.4rem;
 }
 #loginContainer .login-right input,
 #loginContainer .login-right button {
@@ -191,9 +190,37 @@ font-size: 1rem;
 }
 
 /* ========================
-      The Rest of the Application CSS (Unchanged)
+       The Rest of the Application CSS (Unchanged)
+       Portrait Mode Adjustments for Live Video Page
       ======================== */
+    @media screen and (orientation: portrait) {
+      /* Bring down the profile button by 20% */
+      #rightPanel {
+        top: 20%;
+      }
+      /* Bring down the game details text (header container) by 20% */
+      #headerContainer {
+        top: 20%;
+      }
+    }
 
+    /* ========================
+       Landscape Mode Adjustments for Live Video Page
+       ======================== */
+    @media screen and (orientation: landscape) {
+      /* Move the right panel buttons 5% to the left */
+      #rightPanel {
+        right: 5%;
+      }
+      /* Move the game details text 5% to the right */
+      #headerContainer {
+        left: 5%;
+      }
+    }
+    
+    /* ========================
+       The Rest of the Application CSS (Unchanged)
+       ======================== */
 /* Main App Container */
 #appContainer { display: none; position: relative; }
 
@@ -522,19 +549,18 @@ overflow-y: auto;
 <body>
 <!-- Login Container -->
 <div id="loginContainer">
-    <!-- Left Column: Logo -->
-    <!-- Left Column: Logo (Portrait mode: occupies top half) -->
+    <!-- In Portrait: top half logo, bottom half form -->
+    <!-- In Portrait Mode: Top half for logo, Bottom half for form -->
 <div class="login-left">
 <img id="loginLogo" src="https://i.postimg.cc/pTd33Wf1/logo.png" alt="App Logo">
 </div>
-    <!-- Right Column: Login Form -->
-    <!-- Right Column: Login Form (Portrait mode: occupies bottom half) -->
 <div class="login-right">
 <h2 class="text-2xl font-bold">Welcome back to SmashCam</h2>
 <input class="input input-bordered" type="email" id="email" placeholder="Email" required>
 <input class="input input-bordered" type="password" id="password" placeholder="Password" required>
 <button id="emailSignInBtn" onclick="login()">Login</button>
 <button id="googleSignInBtn" onclick="googleSignIn()">Sign in with Google</button>
+      <div id="loginError">Incorrect Email/Password</div>
 </div>
 </div>
 
@@ -590,8 +616,7 @@ Sign Out
 </div>
 </div>
 
-      <!-- Timeline (if needed) -->
-      <!-- Timeline (Optional) -->
+<!-- Timeline (if needed) -->
 <div class="timeline" id="timeline"></div>
 </div>
 
@@ -650,7 +675,10 @@ const password = document.getElementById("password").value;
 try {
 await auth.signInWithEmailAndPassword(email, password);
 } catch (error) {
-alert("Login error: " + error.message);
+        alert("Login error: " + error.message);
+        // Show error message in the login page
+        document.getElementById("loginError").style.display = "block";
+        document.getElementById("loginError").innerText = "Incorrect Email/Password";
 }
 }
 
