@@ -1,535 +1,535 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<!-- For cross‑origin isolation -->
-<meta http-equiv="Cross-Origin-Embedder-Policy" content="require-corp">
-<meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
-<!-- Disable user zoom/scaling -->
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
-<title>Pickleball Instant Replay - Login Required</title>
-
-<!-- Tailwind CSS (required for DaisyUI) -->
-<script src="https://cdn.tailwindcss.com"></script>
-<!-- DaisyUI CSS -->
-<link href="https://cdn.jsdelivr.net/npm/daisyui@3.0.10/dist/full.css" rel="stylesheet">
-
-<!-- Font Awesome 5 CDN for icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-
-<!-- Firebase SDKs -->
-<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-storage-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
-
-<!-- EmailJS SDK -->
-<script src="https://cdn.emailjs.com/dist/email.min.js"></script>
-<script>
-// Initialize EmailJS with your EmailJS User ID
-emailjs.init('9IH3dz_bfpWORWxZH');
-</script>
-
-<style>
-/* ========================
-      Global Reset and Safe-Area Insets
-      ======================== */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-html, body {
-  width: 100%;
-  min-height: 100vh;
-  font-family: Helvetica, sans-serif;
-  background: #1c1c1e;
-  color: #ffffff;
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
-  padding-left: env(safe-area-inset-left);
-  padding-right: env(safe-area-inset-right);
-  overflow: hidden;
-}
-button {
-  transition: background-color 0.3s ease, opacity 0.3s ease;
-  font-weight: 600;
-}
-
-/* Countdown Overlay: Displayed when "Lets pickle!" is tapped */
-#countdownOverlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.7);
-  z-index: 10000;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 80px;
-  color: #ffffff;
-}
-
-/* ========================
-      Login Page Styles
-      ======================== */
-/* Default Portrait Mode: Container split vertically */
-#loginContainer {
-  display: flex;
-  flex-direction: column;
-  height: 100vh; /* Fill viewport */
-  background: #1c1c1e;
-  overflow: hidden;
-}
-/* Top half: Logo container (centered vertically and horizontally) */
-#loginContainer .login-left {
-  display: flex;
-  flex: 1;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-}
-/* Bottom half: Login form container (centered) */
-#loginContainer .login-right {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-}
-/* Logo styling for Portrait */
-#loginContainer .login-left img {
-  max-width: 70%;
-  height: auto;
-}
-/* Heading styling for Portrait (only one appearance) */
-#loginContainer .login-right h2 {
-  margin-bottom: 20px;
-  font-size: 1.4rem; /* Reduced font size (20% less than original 1.75rem) */
-  text-align: center;
-}
-/* Inputs and buttons styling in Portrait */
-#loginContainer .login-right input,
-#loginContainer .login-right button {
-  width: 100%;
-  max-width: 320px;
-  margin: 8px 0;
-  padding: 12px;
-  border: 1px solid #3a3a3c;
-  border-radius: 10px;
-  background: #2c2c2e;
-  color: #ffffff;
-  font-size: 1rem;
-}
-#loginContainer .login-right button {
-  border: none;
-  cursor: pointer;
-}
-#emailSignInBtn { background: #0a84ff; }
-#emailSignInBtn:hover { opacity: 0.9; }
-#googleSignInBtn { background: #34a853; }
-#googleSignInBtn:hover { opacity: 0.9; }
-/* Error message for incorrect credentials */
-#loginError {
-  color: red;
-  font-size: 1rem;
-  margin-top: 10px;
-  display: none;
-}
-
-@media screen and (orientation: landscape) {
-  #loginContainer {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px;
-  }
-  /* Left Column: Logo */
-  #loginContainer .login-left {
-    flex: 1;
-    justify-content: flex-start;
-    align-items: center;
-  }
-  /* Shift logo 20% to the right and reduce size */
-  #loginContainer .login-left img {
-    max-width: 50%;
-    height: auto;
-    margin-left: 20%;
-  }
-  /* Right Column: Form */
-  #loginContainer .login-right {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
-  #loginContainer .login-right h2 {
-    width: 100%;
-    max-width: 320px;
-    text-align: center;
-    margin-bottom: 20px;
-    font-size: 1.4rem;
-  }
-  #loginContainer .login-right input,
-  #loginContainer .login-right button {
-    width: 100%;
-    max-width: 320px;
-    margin: 8px 0;
-    padding: 12px;
-    font-size: 1rem;
-  }
-}
-
-/* ========================
-       Portrait Mode Adjustments for Live Video Page
-      ======================== */
-@media screen and (orientation: portrait) {
-  /* Bring down the profile button by 20% */
-  #rightPanel {
-    top: 20%;
-  }
-  /* Bring down the game details text (header container) by 20% */
-  #headerContainer {
-    top: 20%;
-  }
-}
-
-/* ========================
-       Landscape Mode Adjustments for Live Video Page
-      ======================== */
-@media screen and (orientation: landscape) {
-  /* Move the right panel buttons 5% to the left */
-  #rightPanel {
-    right: 5%;
-  }
-  /* Move the game details text 5% to the right */
-  #headerContainer {
-    left: 5%;
-  }
-}
-
-/* ========================
-       The Rest of the Application CSS (Unchanged)
-      ======================== */
-/* Main App Container */
-#appContainer { display: none; position: relative; }
-
-/* Start Overlay (Game Details Page) */
-#startOverlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  min-height: 100vh;
-  background: rgba(28,28,30,0.95);
-  z-index: 999;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 20px;
-  text-align: center;
-  padding: 20px;
-  overflow-y: auto;
-}
-#startOverlay label { font-size: 16px; }
-#startOverlay input {
-  width: 100%;
-  max-width: 320px;
-  padding: 12px;
-  border: 1px solid #3a3a3c;
-  border-radius: 10px;
-  background: #2c2c2e;
-  color: #ffffff;
-}
-#startOverlay button {
-  width: 100%;
-  max-width: 320px;
-  padding: 14px;
-  border-radius: 10px;
-  border: none;
-  font-size: 16px;
-  cursor: pointer;
-}
-#startGameBtn { background: #C7FE2E; color: #383836; }
-#startGameBtn:hover { opacity: 0.9; }
-#signOutFromDetails { background: #ff3b30; color: #ffffff; margin-top: 10px; }
-#signOutFromDetails:hover { opacity: 0.9; }
-
-/* Video Container (Live Video Page) */
-.video-container { 
-  position: fixed; 
-  inset: 0;
-  width: 100%; 
-  height: 100%; 
-  background: #1c1c1e; 
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden;
-}
-#liveVideo { 
-  width: 100%; 
-  height: 100%; 
-  object-fit: cover; 
-  z-index: 1; 
-}
-
-/* Header Container (Game Title & Recording Indicator) */
-#headerContainer {
-  position: fixed;
-  top: 10px;
-  left: 10px;
-  z-index: 30;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-#greetingContainer { font-size: 16px; }
-#recordingIndicator {
-  font-family: Helvetica, sans-serif;
-  font-size: 16px;
-  color: #ff3b30;
-  display: none;
-}
-
-/* Review Button Container */
-#reviewButtonContainer {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 30;
-  display: none;
-}
-/* UPDATED REVIEW BUTTON STYLING */
-#reviewButton {
-  background: transparent;
-  border: 7px solid #C7FE2E;
-  color: #C7FE2E;
-  padding: 24px 40px;
-  border-radius: 10px;
-  font-size: 36px;
-  cursor: pointer;
-  opacity: 1.0;
-}
-#reviewButton:hover { opacity: 1; }
-
-/* Right Panel (Profile Button and Controls) */
-#rightPanel {
-  position: fixed;
-  top: 10px;
-  right: 10px;
-  bottom: 10px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  align-items: center;
-  gap: 20px;
-  z-index: 20;
-}
-#profileButtonContainer button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 24px;
-  color: #C7FE2E;
-}
-.controls {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.controls button {
-  padding: 9px;
-  border-radius: 10px;
-  background: #3a3a3c;
-  border: none;
-  font-size: 12px;
-  cursor: pointer;
-}
-.controls button:hover { background: #48484a; }
-.controls button.signout { background: #ff3b30; }
-.controls button.signout:hover { background: #ff453a; }
-.controls button.startRec { background: #C7FE2E; color: #383836; }
-.controls button.stopRec { background: #C7FE2E; color: #383836; }
-.extraButtonsGroup {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 10px;
-}
-#toggleCameraButton {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 20px;
-  color: #C7FE2E;
-}
-.muteButton {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  padding: 0;
-  font-size: 16px;
-  background: none;
-  border: none;
-  color: #C7FE2E;
-  cursor: pointer;
-}
-.muteButton:hover { opacity: 0.8; }
-
-/* Timeline */
-.timeline {
-  position: absolute;
-  top: 10%;
-  left: 5px;
-  width: auto;
-  background: transparent;
-  z-index: 3;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 5px;
-  max-height: 80%;
-  overflow-y: auto;
-}
-.timeline-item { margin: 5px; display: flex; flex-direction: column; align-items: center; }
-.timeline-item video {
-  width: 56px;
-  height: 35px;
-  object-fit: cover;
-  border: 1px solid #3a3a3c;
-  border-radius: 8px;
-  cursor: pointer;
-}
-.timeline-item span { font-size: 10px; color: #ffffff; margin-top: 4px; }
-
-/* Download Overlay and Action Buttons Styling */
-#downloadOverlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  min-height: 100vh;
-  background: rgba(28,28,30,0.95);
-  z-index: 1000;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  overflow-y: auto;
-  padding: 20px;
-}
-#downloadOverlay h2 { margin-bottom: 20px; }
-#downloadOverlay .clipItem {
-  border: 1px solid #3a3a3c;
-  padding: 5px;
-  margin: 5px;
-  text-align: center;
-  border-radius: 8px;
-}
-#downloadOverlay .clipItem video {
-  width: 120px;
-  height: 80px;
-  object-fit: cover;
-  display: block;
-  margin: 0 auto;
-  border-radius: 8px;
-}
-#downloadOverlay input[type="email"] {
-  padding: 10px;
-  font-size: 16px;
-  width: 300px;
-  margin-top: 20px;
-  border: 1px solid #3a3a3c;
-  border-radius: 10px;
-  background: #2c2c2e;
-  color: #ffffff;
-}
-.action-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-  margin-top: 20px;
-}
-.action-buttons button {
-  padding: 12px 24px;
-  font-size: 18px;
-  border: none;
-  border-radius: 10px;
-  color: #ffffff;
-  cursor: pointer;
-  min-width: 150px;
-}
-#getDownloadButton {
-  background: #32d74b;
-}
-/* "Nah, I'm good" button now uses the same style as Get Download Link */
-#nahImGoodBtn {
-  background: #808080;
-}
-
-/* Profile Page */
-#profilePage {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  min-height: 100vh;
-  background: #1c1c1e;
-  z-index: 1000;
-  overflow-y: auto;
-  padding: 20px;
-}
-#profilePage h2 {
-  text-align: center;
-  margin-bottom: 20px;
-  font-size: 24px;
-}
-#profilePage label {
-  display: block;
-  margin-bottom: 5px;
-  font-size: 16px;
-}
-#profilePage input {
-  width: 100%;
-  max-width: 400px;
-  padding: 10px;
-  margin-bottom: 15px;
-  border: 1px solid #3a3a3c;
-  border-radius: 5px;
-  background: #2c2c2e;
-  color: #ffffff;
-}
-#profilePage input[readonly] {
-  background: #1c1c1e;
-  border: none;
-}
-#profilePage button {
-  display: block;
-  margin: 0 auto;
-  padding: 12px 24px;
-  background: #C7FE2E;
-  color: #383836;
-  border: none;
-  border-radius: 5px;
-  font-size: 16px;
-  cursor: pointer;
-}
-#profilePage button:hover { opacity: 0.9; }
-
-@media (max-height: 500px) {
-  #startOverlay,
-  #downloadOverlay,
-  #profilePage {
-    overflow-y: auto;
-  }
-}
+  <meta charset="UTF-8" />
+  <!-- For cross‑origin isolation -->
+  <meta http-equiv="Cross-Origin-Embedder-Policy" content="require-corp">
+  <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
+  <!-- Disable user zoom/scaling -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+  <title>Pickleball Instant Replay - Login Required</title>
+  
+  <!-- Tailwind CSS (required for DaisyUI) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- DaisyUI CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@3.0.10/dist/full.css" rel="stylesheet">
+  
+  <!-- Font Awesome 5 CDN for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-storage-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
+  
+  <!-- EmailJS SDK -->
+  <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
+  <script>
+    // Initialize EmailJS with your EmailJS User ID
+    emailjs.init('9IH3dz_bfpWORWxZH');
+  </script>
+  
+  <style>
+    /* ========================
+         Global Reset and Safe-Area Insets
+         ======================== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    html, body {
+      width: 100%;
+      min-height: 100vh;
+      font-family: Helvetica, sans-serif;
+      background: #1c1c1e;
+      color: #ffffff;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+      overflow: hidden;
+    }
+    button {
+      transition: background-color 0.3s ease, opacity 0.3s ease;
+      font-weight: 600;
+    }
+    
+    /* Countdown Overlay: Displayed when "Lets pickle!" is tapped */
+    #countdownOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      z-index: 10000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 80px;
+      color: #ffffff;
+    }
+    
+    /* ========================
+         Login Page Styles
+         ======================== */
+    /* Default Portrait Mode: Container split vertically */
+    #loginContainer {
+      display: flex;
+      flex-direction: column;
+      height: 100vh; /* Fill viewport */
+      background: #1c1c1e;
+      overflow: hidden;
+    }
+    /* Top half: Logo container (centered vertically and horizontally) */
+    #loginContainer .login-left {
+      display: flex;
+      flex: 1;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+    /* Bottom half: Login form container (centered) */
+    #loginContainer .login-right {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+    /* Logo styling for Portrait */
+    #loginContainer .login-left img {
+      max-width: 70%;
+      height: auto;
+    }
+    /* Heading styling for Portrait */
+    #loginContainer .login-right h2 {
+      margin-bottom: 20px;
+      font-size: 1.4rem;
+      text-align: center;
+    }
+    /* Inputs and buttons styling in Portrait */
+    #loginContainer .login-right input,
+    #loginContainer .login-right button {
+      width: 100%;
+      max-width: 320px;
+      margin: 8px 0;
+      padding: 12px;
+      border: 1px solid #3a3a3c;
+      border-radius: 10px;
+      background: #2c2c2e;
+      color: #ffffff;
+      font-size: 1rem;
+    }
+    #loginContainer .login-right button {
+      border: none;
+      cursor: pointer;
+    }
+    #emailSignInBtn { background: #0a84ff; }
+    #emailSignInBtn:hover { opacity: 0.9; }
+    #googleSignInBtn { background: #34a853; }
+    #googleSignInBtn:hover { opacity: 0.9; }
+    /* Error message for incorrect credentials */
+    #loginError {
+      color: red;
+      font-size: 1rem;
+      margin-top: 10px;
+      display: none;
+    }
+    
+    @media screen and (orientation: landscape) {
+      #loginContainer {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+      }
+      /* Left Column: Logo */
+      #loginContainer .login-left {
+        display: flex;
+        flex: 1;
+        justify-content: flex-start;
+        align-items: center;
+      }
+      /* Shift logo 20% to the right and reduce size */
+      #loginContainer .login-left img {
+        max-width: 50%;
+        height: auto;
+        margin-left: 20%;
+      }
+      /* Right Column: Form */
+      #loginContainer .login-right {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+      #loginContainer .login-right h2 {
+        width: 100%;
+        max-width: 320px;
+        text-align: center;
+        margin-bottom: 20px;
+        font-size: 1.4rem;
+      }
+      #loginContainer .login-right input,
+      #loginContainer .login-right button {
+        width: 100%;
+        max-width: 320px;
+        margin: 8px 0;
+        padding: 12px;
+        font-size: 1rem;
+      }
+    }
+    
+    /* ========================
+         Portrait Mode Adjustments for Live Video Page
+         ======================== */
+    @media screen and (orientation: portrait) {
+      /* Bring down the profile button by 20% */
+      #rightPanel {
+        top: 20%;
+      }
+      /* Bring down the game details text (header container) by 20% */
+      #headerContainer {
+        top: 20%;
+      }
+    }
+    
+    /* ========================
+         Landscape Mode Adjustments for Live Video Page
+         ======================== */
+    @media screen and (orientation: landscape) {
+      /* Move the right panel buttons 5% to the left */
+      #rightPanel {
+        right: 5%;
+      }
+      /* Move the game details text 5% to the right */
+      #headerContainer {
+        left: 5%;
+      }
+    }
+    
+    /* ========================
+         The Rest of the Application CSS (Unchanged)
+         ======================== */
+    /* Main App Container */
+    #appContainer { display: none; position: relative; }
+    
+    /* Start Overlay (Game Details Page) */
+    #startOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      min-height: 100vh;
+      background: rgba(28,28,30,0.95);
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+      text-align: center;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    #startOverlay label { font-size: 16px; }
+    #startOverlay input {
+      width: 100%;
+      max-width: 320px;
+      padding: 12px;
+      border: 1px solid #3a3a3c;
+      border-radius: 10px;
+      background: #2c2c2e;
+      color: #ffffff;
+    }
+    #startOverlay button {
+      width: 100%;
+      max-width: 320px;
+      padding: 14px;
+      border-radius: 10px;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    #startGameBtn { background: #C7FE2E; color: #383836; }
+    #startGameBtn:hover { opacity: 0.9; }
+    #signOutFromDetails { background: #ff3b30; color: #ffffff; margin-top: 10px; }
+    #signOutFromDetails:hover { opacity: 0.9; }
+    
+    /* Video Container (Live Video Page) */
+    .video-container { 
+      position: fixed; 
+      inset: 0;
+      width: 100%; 
+      height: 100%; 
+      background: #1c1c1e; 
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+    #liveVideo { 
+      width: 100%; 
+      height: 100%; 
+      object-fit: cover; 
+      z-index: 1; 
+    }
+    
+    /* Header Container (Game Title & Recording Indicator) */
+    #headerContainer {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    #greetingContainer { font-size: 16px; }
+    #recordingIndicator {
+      font-family: Helvetica, sans-serif;
+      font-size: 16px;
+      color: #ff3b30;
+      display: none;
+    }
+    
+    /* Review Button Container */
+    #reviewButtonContainer {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 30;
+      display: none;
+    }
+    /* UPDATED REVIEW BUTTON STYLING */
+    #reviewButton {
+      background: transparent;
+      border: 7px solid #C7FE2E;
+      color: #C7FE2E;
+      padding: 24px 40px;
+      border-radius: 10px;
+      font-size: 36px;
+      cursor: pointer;
+      opacity: 1.0;
+    }
+    #reviewButton:hover { opacity: 1; }
+    
+    /* Right Panel (Profile Button and Controls) */
+    #rightPanel {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      bottom: 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      z-index: 20;
+    }
+    #profileButtonContainer button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 24px;
+      color: #C7FE2E;
+    }
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .controls button {
+      padding: 9px;
+      border-radius: 10px;
+      background: #3a3a3c;
+      border: none;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .controls button:hover { background: #48484a; }
+    .controls button.signout { background: #ff3b30; }
+    .controls button.signout:hover { background: #ff453a; }
+    .controls button.startRec { background: #C7FE2E; color: #383836; }
+    .controls button.stopRec { background: #C7FE2E; color: #383836; }
+    .extraButtonsGroup {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 10px;
+    }
+    #toggleCameraButton {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 20px;
+      color: #C7FE2E;
+    }
+    .muteButton {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      padding: 0;
+      font-size: 16px;
+      background: none;
+      border: none;
+      color: #C7FE2E;
+      cursor: pointer;
+    }
+    .muteButton:hover { opacity: 0.8; }
+    
+    /* Timeline */
+    .timeline {
+      position: absolute;
+      top: 10%;
+      left: 5px;
+      width: auto;
+      background: transparent;
+      z-index: 3;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 5px;
+      max-height: 80%;
+      overflow-y: auto;
+    }
+    .timeline-item { margin: 5px; display: flex; flex-direction: column; align-items: center; }
+    .timeline-item video {
+      width: 56px;
+      height: 35px;
+      object-fit: cover;
+      border: 1px solid #3a3a3c;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .timeline-item span { font-size: 10px; color: #ffffff; margin-top: 4px; }
+    
+    /* Download Overlay and Action Buttons Styling */
+    #downloadOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      min-height: 100vh;
+      background: rgba(28,28,30,0.95);
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      overflow-y: auto;
+      padding: 20px;
+    }
+    #downloadOverlay h2 { margin-bottom: 20px; }
+    #downloadOverlay .clipItem {
+      border: 1px solid #3a3a3c;
+      padding: 5px;
+      margin: 5px;
+      text-align: center;
+      border-radius: 8px;
+    }
+    #downloadOverlay .clipItem video {
+      width: 120px;
+      height: 80px;
+      object-fit: cover;
+      display: block;
+      margin: 0 auto;
+      border-radius: 8px;
+    }
+    #downloadOverlay input[type="email"] {
+      padding: 10px;
+      font-size: 16px;
+      width: 300px;
+      margin-top: 20px;
+      border: 1px solid #3a3a3c;
+      border-radius: 10px;
+      background: #2c2c2e;
+      color: #ffffff;
+    }
+    .action-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .action-buttons button {
+      padding: 12px 24px;
+      font-size: 18px;
+      border: none;
+      border-radius: 10px;
+      color: #ffffff;
+      cursor: pointer;
+      min-width: 150px;
+    }
+    #getDownloadButton {
+      background: #32d74b;
+    }
+    #nahImGoodBtn {
+      background: #808080;
+    }
+    
+    /* Profile Page */
+    #profilePage {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      min-height: 100vh;
+      background: #1c1c1e;
+      z-index: 1000;
+      overflow-y: auto;
+      padding: 20px;
+    }
+    #profilePage h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 24px;
+    }
+    #profilePage label {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 16px;
+    }
+    #profilePage input {
+      width: 100%;
+      max-width: 400px;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #3a3a3c;
+      border-radius: 5px;
+      background: #2c2c2e;
+      color: #ffffff;
+    }
+    #profilePage input[readonly] {
+      background: #1c1c1e;
+      border: none;
+    }
+    #profilePage button {
+      display: block;
+      margin: 0 auto;
+      padding: 12px 24px;
+      background: #C7FE2E;
+      color: #383836;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    #profilePage button:hover { opacity: 0.9; }
+    
+    @media (max-height: 500px) {
+      #startOverlay,
+      #downloadOverlay,
+      #profilePage {
+        overflow-y: auto;
+      }
+    }
   </style>
 </head>
 <body>
@@ -853,6 +853,8 @@ button {
       segmentedMode = false;
       if (mediaRecorder && mediaRecorder.state === "recording") {
         stopRecording();
+        // Wait for a short duration to ensure the onstop event completes
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
       if (videoElement.srcObject) {
         videoElement.srcObject.getTracks().forEach(track => track.stop());
@@ -1049,7 +1051,7 @@ button {
       }
       
       const nahBtn = overlay.querySelector("#nahImGoodBtn");
-      // Feature 2: When "Nah, I'm good" is clicked, log out (same as the signOutUser function)
+      // When "Nah, I'm good" is clicked, log out (same as signOutUser function)
       nahBtn.addEventListener("click", async () => {
         try {
           if (videoElement.srcObject) {
