@@ -74,6 +74,7 @@ button {
 /* ========================
       Login Page Styles
       ======================== */
+/* Default Portrait Mode: Container split vertically */
 #loginContainer {
   display: flex;
   flex-direction: column;
@@ -81,6 +82,7 @@ button {
   background: #1c1c1e;
   overflow: hidden;
 }
+/* Top half: Logo container (centered vertically and horizontally) */
 #loginContainer .login-left {
   display: flex;
   flex: 1;
@@ -88,6 +90,7 @@ button {
   align-items: center;
   text-align: center;
 }
+/* Bottom half: Login form container (centered) */
 #loginContainer .login-right {
   display: flex;
   flex-direction: column;
@@ -96,15 +99,18 @@ button {
   align-items: center;
   text-align: center;
 }
+/* Logo styling for Portrait */
 #loginContainer .login-left img {
   max-width: 70%;
   height: auto;
 }
+/* Heading styling for Portrait (only one appearance) */
 #loginContainer .login-right h2 {
   margin-bottom: 20px;
-  font-size: 1.4rem;
+  font-size: 1.4rem; /* Reduced font size (20% less than original 1.75rem) */
   text-align: center;
 }
+/* Inputs and buttons styling in Portrait */
 #loginContainer .login-right input,
 #loginContainer .login-right button {
   width: 100%;
@@ -125,6 +131,7 @@ button {
 #emailSignInBtn:hover { opacity: 0.9; }
 #googleSignInBtn { background: #34a853; }
 #googleSignInBtn:hover { opacity: 0.9; }
+/* Error message for incorrect credentials */
 #loginError {
   color: red;
   font-size: 1rem;
@@ -141,7 +148,6 @@ button {
   }
   /* Left Column: Logo */
   #loginContainer .login-left {
-    display: flex;
     flex: 1;
     justify-content: flex-start;
     align-items: center;
@@ -193,7 +199,7 @@ button {
 
 /* ========================
        Landscape Mode Adjustments for Live Video Page
-       ======================== */
+      ======================== */
 @media screen and (orientation: landscape) {
   /* Move the right panel buttons 5% to the left */
   #rightPanel {
@@ -207,7 +213,7 @@ button {
 
 /* ========================
        The Rest of the Application CSS (Unchanged)
-       ======================== */
+      ======================== */
 /* Main App Container */
 #appContainer { display: none; position: relative; }
 
@@ -467,7 +473,7 @@ button {
   background: #808080;
 }
 
- /* Profile Page */
+/* Profile Page */
 #profilePage {
   display: none;
   position: fixed;
@@ -770,19 +776,14 @@ button {
       }, 1000);
     }
   
-    // Updated createMediaRecorder() with MIME type fallback for better browser support
+    // Reverted createMediaRecorder() to original settings using "video/mp4"
     function createMediaRecorder() {
-      let options = {};
-      if (MediaRecorder.isTypeSupported("video/webm;codecs=vp9")) {
-        options = { mimeType: "video/webm;codecs=vp9", videoBitsPerSecond: 2500000, audioBitsPerSecond: 128000 };
-      } else if (MediaRecorder.isTypeSupported("video/webm;codecs=vp8")) {
-        options = { mimeType: "video/webm;codecs=vp8", videoBitsPerSecond: 2500000, audioBitsPerSecond: 128000 };
-      } else {
-        options = { mimeType: "video/webm", videoBitsPerSecond: 2500000, audioBitsPerSecond: 128000 };
-      }
-      
       try {
-        mediaRecorder = new MediaRecorder(videoElement.srcObject, options);
+        mediaRecorder = new MediaRecorder(videoElement.srcObject, {
+          mimeType: "video/mp4",
+          videoBitsPerSecond: 2500000,
+          audioBitsPerSecond: 128000
+        });
         mediaRecorder.ondataavailable = (event) => {
           if (event.data && event.data.size > 0) {
             recordedChunks.push(event.data);
@@ -792,7 +793,7 @@ button {
         mediaRecorder.onstop = async () => {
           if (recordedChunks.length > 0) {
             console.log("Recording stopped, uploading clip...");
-            const blob = new Blob(recordedChunks, { type: options.mimeType });
+            const blob = new Blob(recordedChunks, { type: "video/mp4" });
             const result = await uploadToFirebase(blob);
             const clip = { url: result.url, timestamp: new Date().toLocaleTimeString(), filename: result.filename, manual: false };
             rallyClips.push(clip);
@@ -1048,7 +1049,7 @@ button {
       }
       
       const nahBtn = overlay.querySelector("#nahImGoodBtn");
-      // Feature 2: When "Nah, I'm good" is clicked, log out and return to login page.
+      // Feature 2: When "Nah, I'm good" is clicked, log out (same as the signOutUser function)
       nahBtn.addEventListener("click", async () => {
         try {
           if (videoElement.srcObject) {
