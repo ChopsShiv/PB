@@ -849,18 +849,20 @@
       }
     }
   
-    async function stopGame() {
-      segmentedMode = false;
-      if (mediaRecorder && mediaRecorder.state === "recording") {
-        stopRecording();
-        // Wait for a short duration to ensure the onstop event completes
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-      if (videoElement.srcObject) {
-        videoElement.srcObject.getTracks().forEach(track => track.stop());
-      }
-      showDownloadOverlay();
-    }
+   async function stopGame() {
+  segmentedMode = false;
+  if (mediaRecorder && mediaRecorder.state === "recording") {
+    stopRecording();
+    // Wait for 1.5 seconds to allow onstop event to complete
+    await new Promise(resolve => setTimeout(resolve, 1500));
+  }
+  if (videoElement.srcObject) {
+    videoElement.srcObject.getTracks().forEach(track => track.stop());
+  }
+  // Update the timeline to ensure the latest clip is available
+  updateTimeline();
+  showDownloadOverlay();
+}
   
     function updateTimeline() {
       timeline.innerHTML = "";
