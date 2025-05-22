@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pickleball Replay WebApp</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-audio@latest"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white">
+
+<div class="container mx-auto p-4">
+  <h1 class="text-2xl mb-4">🏓 Pickleball Instant Replay</h1>
+
+  <video id="videoPlayer" class="w-full h-auto mb-4" controls></video>
+
+  <input type="file" id="videoUpload" accept="video/mp4" class="mb-4">
+
+  <button id="processBtn" class="bg-blue-600 px-4 py-2 rounded">Process Highlights</button>
+
+  <div id="highlights" class="mt-4"></div>
+</div>
+
+<script>
+  document.getElementById('videoUpload').addEventListener('change', function(event) {
+    const file = event.target.files[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      document.getElementById('videoPlayer').src = url;
+    }
+  });
+
+  document.getElementById('processBtn').addEventListener('click', async function() {
+    alert('Processing started... This may take a while depending on the video length.');
+
+    // Simulated AI processing
+    setTimeout(() => {
+      const highlightsContainer = document.getElementById('highlights');
+
+      highlightsContainer.innerHTML = '';
+
+      for (let i = 1; i <= 3; i++) {
+        const highlight = document.createElement('div');
+        highlight.innerHTML = `
+          <div class="bg-gray-800 p-2 mb-2 rounded">
+            <p>🔥 Rally Highlight ${i}</p>
+            <video controls class="w-full h-auto mt-2">
+              <source src="https://samplelib.com/lib/preview/mp4/sample-5s.mp4" type="video/mp4">
+            </video>
+            <button onclick="shareHighlight('Highlight ${i}')" class="mt-2 bg-green-600 px-2 py-1 rounded">Share Highlight</button>
+          </div>
+        `;
+        highlightsContainer.appendChild(highlight);
+      }
+
+      alert('Highlights generated successfully!');
+    }, 5000); // simulate processing delay
+  });
+
+  function shareHighlight(title) {
+    if (navigator.share) {
+      navigator.share({
+        title: title,
+        text: 'Check out my pickleball highlight!',
+        url: window.location.href
+      }).then(() => {
+        console.log('Shared successfully');
+      }).catch(console.error);
+    } else {
+      alert('Sharing is not supported by your browser.');
+    }
+  }
+</script>
+
+</body>
+</html>
