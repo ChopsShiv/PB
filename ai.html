@@ -32,106 +32,118 @@
   <canvas id="videoCanvas" class="hidden"></canvas>
 
   <script>
-    const { createFFmpeg, fetchFile } = FFmpeg;
-    const ffmpeg = createFFmpeg({ log: true, corePath: 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.10.0/dist/ffmpeg-core.js' });
-    let posenetModel;
-    const uploadInput = document.getElementById('videoUpload');
-    const processBtn = document.getElementById('processBtn');
-    const highlightsContainer = document.getElementById('highlights');
-    const canvas = document.getElementById('videoCanvas');
-    const ctx = canvas.getContext('2d');
+    (async () => {
+      const processBtn = document.getElementById('processBtn');
+      const uploadInput = document.getElementById('videoUpload');
+      const highlightsContainer = document.getElementById('highlights');
+      const canvas = document.getElementById('videoCanvas');
+      const ctx = canvas.getContext('2d');
 
-    // Load PoseNet and FFmpeg
-    async function loadModels() {
+      // Load TF.js and PoseNet
       try {
+        processBtn.textContent = 'Initializing TensorFlow...';
+        await tf.ready();
         processBtn.textContent = 'Loading PoseNet...';
-        posenetModel = await posenet.load();
+        const posenetModel = await posenet.load();
+
+        // Load FFmpeg WASM
         processBtn.textContent = 'Loading FFmpeg...';
+        const { createFFmpeg, fetchFile } = FFmpeg;
+        const ffmpeg = createFFmpeg({ 
+          log: true, 
+          corePath: 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.10.0/dist/ffmpeg-core.js'
+        });
         await ffmpeg.load();
+
+        // Enable process button
         processBtn.textContent = 'Process Highlights';
         processBtn.disabled = false;
+
+        // Rally detection logic
+        async function analyzeVideo(file) {
+          return new Promise((resolve) => {
+            const video = document.createElement('video');
+            video.src = URL.createObjectURL(file);
+            video.crossOrigin = 'anonymous';
+            video.onloadedmetadata = async () => {
+              const duration = video.duration;
+              const sampleRate = 0.5;
+              const motionThreshold = 100;
+              let prevKeypoints = null;
+              const segments = [];
+              let segStart = null;
+
+              for (let t = 0; t < duration; t += sampleRate) {
+                video.currentTime = t;
+                await new Promise(r => video.onseeked = r);
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                ctx.drawImage(video, 0, 0);
+                const pose = await posenetModel.estimateSinglePose(canvas, { flipHorizontal: false });
+                const keypoints = pose.keypoints.map(k => k.position);
+                if (prevKeypoints) {
+                  let motion = 0;
+                  for (let i = 0; i < keypoints.length; i++) {
+                    const dx = keypoints[i].x - prevKeypoints[i].x;
+                    const dy = keypoints[i].y - prevKeypoints[i].y;
+                    motion += Math.hypot(dx, dy);
+                  }
+                  if (motion > motionThreshold) {
+                    if (segStart === null) segStart = t;
+                  } else if (segStart !== null) {
+                    segments.push({ start: segStart, end: t });
+                    segStart = null;
+                  }
+                }
+                prevKeypoints = keypoints;
+              }
+              if (segStart !== null) segments.push({ start: segStart, end: duration });
+              // Filter segments shorter than 2s
+              const filtered = segments.filter(s => (s.end - s.start) > 2);
+              resolve(filtered);
+            };
+          });
+        }
+
+        // Process button click event
+        processBtn.addEventListener('click', async () => {
+          const file = uploadInput.files[0];
+          if (!file) return alert('Please upload a video first.');
+
+          highlightsContainer.innerHTML = '<p class="text-center">Analyzing video... please wait.</p>';
+
+          // Write file to FFmpeg FS
+          await ffmpeg.FS('writeFile', 'input.mp4', await fetchFile(file));
+
+          // Get rally segments
+          const segments = await analyzeVideo(file);
+
+          highlightsContainer.innerHTML = '';
+          for (let i = 0; i < segments.length; i++) {
+            const { start, end } = segments[i];
+            const outName = `clip_${i}.mp4`;
+            await ffmpeg.run('-i', 'input.mp4', '-ss', `${start}`, '-to', `${end}`, '-c', 'copy', outName);
+            const data = ffmpeg.FS('readFile', outName);
+            const url = URL.createObjectURL(new Blob([data.buffer], { type: 'video/mp4' }));
+
+            const div = document.createElement('div');
+            div.className = 'bg-gray-800 p-4 rounded';
+            div.innerHTML = `
+              <p class="font-semibold">🔥 Rally Clip ${i+1}: ${start.toFixed(1)}s–${end.toFixed(1)}s</p>
+              <video controls class="w-full mt-2 bg-black"><source src="${url}" type="video/mp4"></video>
+              <button onclick="shareHighlight('Rally Clip ${i+1}')" class="mt-2 bg-green-600 px-3 py-1 rounded">Share</button>
+            `;
+            highlightsContainer.appendChild(div);
+          }
+          alert('Highlights ready!');
+        });
+
       } catch (err) {
-        console.error('Error loading models:', err);
+        console.error('Model loading error:', err);
         processBtn.textContent = 'Error loading models';
       }
-    }
-    loadModels();
+    })();
 
-    // Analyze Video for Rally Segments
-    async function analyzeVideo(file) {
-      return new Promise((resolve) => {
-        const video = document.createElement('video');
-        video.src = URL.createObjectURL(file);
-        video.crossOrigin = 'anonymous';
-        video.onloadedmetadata = async () => {
-          const duration = video.duration;
-          const sampleRate = 0.5; // seconds
-          const motionThreshold = 100; // empirical threshold
-          let prevKeypoints = null;
-          const segments = [];
-          let segStart = null;
-
-          for (let t = 0; t < duration; t += sampleRate) {
-            video.currentTime = t;
-            await new Promise(res => video.onseeked = res);
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            ctx.drawImage(video, 0, 0);
-            const pose = await posenetModel.estimateSinglePose(canvas, { flipHorizontal: false });
-            const keypoints = pose.keypoints.map(k => k.position);
-            if (prevKeypoints) {
-              let motion = 0;
-              for (let i = 0; i < keypoints.length; i++) {
-                const dx = keypoints[i].x - prevKeypoints[i].x;
-                const dy = keypoints[i].y - prevKeypoints[i].y;
-                motion += Math.hypot(dx, dy);
-              }
-              if (motion > motionThreshold) {
-                if (segStart === null) segStart = t;
-              } else if (segStart !== null) {
-                segments.push({ start: segStart, end: t });
-                segStart = null;
-              }
-            }
-            prevKeypoints = keypoints;
-          }
-          if (segStart !== null) segments.push({ start: segStart, end: duration });
-          // Filter out short segments (<2s)
-          const filtered = segments.filter(s => (s.end - s.start) > 2);
-          resolve(filtered);
-        };
-      });
-    }
-
-    // Process Button Click
-    processBtn.addEventListener('click', async () => {
-      const file = uploadInput.files[0];
-      if (!file) return alert('Please upload a video first.');
-      highlightsContainer.innerHTML = '<p class="text-center">Analyzing video... please wait.</p>';
-      await ffmpeg.FS('writeFile', 'input.mp4', await fetchFile(file));
-      const segments = await analyzeVideo(file);
-      highlightsContainer.innerHTML = '';
-
-      for (let i = 0; i < segments.length; i++) {
-        const { start, end } = segments[i];
-        const outName = `clip_${i}.mp4`;
-        await ffmpeg.run('-i', 'input.mp4', '-ss', `${start}`, '-to', `${end}`, '-c', 'copy', outName);
-        const data = ffmpeg.FS('readFile', outName);
-        const url = URL.createObjectURL(new Blob([data.buffer], { type: 'video/mp4' }));
-
-        const div = document.createElement('div');
-        div.className = 'bg-gray-800 p-4 rounded';
-        div.innerHTML = `
-          <p class="font-semibold">🔥 Rally Clip ${i+1}: ${start.toFixed(1)}s–${end.toFixed(1)}s</p>
-          <video controls class="w-full mt-2 bg-black"><source src="${url}" type="video/mp4"></video>
-          <button onclick="shareHighlight('Rally Clip ${i+1}')" class="mt-2 bg-green-600 px-3 py-1 rounded">Share</button>
-        `;
-        highlightsContainer.appendChild(div);
-      }
-      alert('Highlights ready!');
-    });
-
-    // Share Function
     function shareHighlight(title) {
       if (navigator.share) navigator.share({ title, text: 'Check out my pickleball rally!', url: window.location.href });
       else alert('Web share not supported');
@@ -139,3 +151,4 @@
   </script>
 </body>
 </html>
+
