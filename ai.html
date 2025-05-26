@@ -4,91 +4,104 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pickleball Replay WebApp</title>
-
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.10.0/dist/ffmpeg.min.js"></script>
 </head>
 <body class="bg-gray-900 text-white">
-
 <div class="container mx-auto p-4">
   <h1 class="text-2xl mb-4">🏓 Pickleball Instant Replay</h1>
 
-  <!-- Video Upload Section -->
-  <label for="videoUpload" class="block mb-2">📁 Select a Pickleball Game Video (MP4):</label>
-  <input type="file" id="videoUpload" accept="video/mp4" class="mb-4 block">
-
-  <!-- Video Player Preview -->
-  <video id="videoPlayer" class="w-full h-auto mb-4 bg-black" controls>
-    <source src="" type="video/mp4">
-    Your browser does not support the video tag.
-  </video>
+  <!-- Upload Video -->
+  <label for="videoUpload" class="block mb-2">📁 Select Pickleball Game Video (MP4):</label>
+  <input type="file" id="videoUpload" accept="video/mp4" class="mb-4 block" />
 
   <!-- Process Button -->
-  <button id="processBtn" class="bg-blue-600 px-4 py-2 rounded mb-4">Process Pickleball Highlights</button>
+  <button id="processBtn" class="bg-blue-600 px-4 py-2 rounded mb-4">Process Highlights</button>
 
-  <!-- Highlights Container -->
-  <div id="highlights" class="mt-4"></div>
+  <!-- Highlights -->
+  <div id="highlights" class="space-y-4"></div>
 </div>
 
 <script>
-  // Handle Video Upload
+  const { createFFmpeg, fetchFile } = FFmpeg;
+  const ffmpeg = createFFmpeg({ log: true });
   const uploadInput = document.getElementById('videoUpload');
-  const videoPlayer = document.getElementById('videoPlayer');
+  const highlightsContainer = document.getElementById('highlights');
 
-  uploadInput.addEventListener('change', function(event) {
-    const file = event.target.files[0];
-    if (file && file.type === 'video/mp4') {
-      const url = URL.createObjectURL(file);
-      videoPlayer.src = url;
-      // Clear previous highlights
-      document.getElementById('highlights').innerHTML = '';
-    } else {
-      alert('Please upload a valid MP4 video.');
+  // Placeholder rally detection: replace with AI logic
+  async function analyzeVideo(file) {
+    // TODO: Implement actual AI rally detection (audio/visual analysis)
+    // Currently returns sample segments in seconds
+    return [
+      { start: 10, end: 20 },
+      { start: 35, end: 45 },
+      { start: 60, end: 70 }
+    ];
+  }
+
+  async function loadFFmpeg() {
+    if (!ffmpeg.isLoaded()) {
+      await ffmpeg.load();
     }
-  });
+  }
 
-  // Process Highlights
-  document.getElementById('processBtn').addEventListener('click', function() {
-    if (!videoPlayer.src) {
+  document.getElementById('processBtn').addEventListener('click', async () => {
+    const file = uploadInput.files[0];
+    if (!file) {
       alert('Please upload a video before processing highlights.');
       return;
     }
-    alert('Analyzing pickleball moments. Please wait...');
 
-    setTimeout(() => {
-      const highlightsContainer = document.getElementById('highlights');
-      highlightsContainer.innerHTML = '';
+    highlightsContainer.innerHTML = '<p>Loading FFmpeg and analyzing video... ⏳</p>';
+    await loadFFmpeg();
 
-      // Placeholder: actual AI logic goes here
-      const pickleballMoments = [
-        { start: 10, end: 20 },
-        { start: 35, end: 45 },
-        { start: 60, end: 70 }
-      ];
+    // Write file to FFmpeg FS
+    ffmpeg.FS('writeFile', 'input.mp4', await fetchFile(file));
 
-      pickleballMoments.forEach((moment, index) => {
-        const highlight = document.createElement('div');
-        highlight.className = 'bg-gray-800 p-4 mb-4 rounded';
-        highlight.innerHTML = `
-          <p class="font-semibold">🔥 Rally Highlight ${index + 1} (from ${moment.start}s to ${moment.end}s)</p>
-          <video controls class="w-full h-auto mt-2 bg-black">
-            <source src="${videoPlayer.src}#t=${moment.start},${moment.end}" type="video/mp4">
-            Your browser does not support the video tag.
-          </video>
-          <button onclick="shareHighlight('Highlight ${index + 1}')" class="mt-2 bg-green-600 px-3 py-1 rounded">Share Highlight</button>
-        `;
-        highlightsContainer.appendChild(highlight);
-      });
+    // Detect rally segments
+    const segments = await analyzeVideo(file);
 
-      alert('Highlights processed successfully!');
-    }, 3000);
+    highlightsContainer.innerHTML = '';
+
+    for (let i = 0; i < segments.length; i++) {
+      const { start, end } = segments[i];
+      const outputName = `clip_${i}.mp4`;
+
+      // Extract clip
+      await ffmpeg.run(
+        '-i', 'input.mp4',
+        '-ss', start.toString(),
+        '-to', end.toString(),
+        '-c', 'copy',
+        outputName
+      );
+
+      // Read and display clip
+      const data = ffmpeg.FS('readFile', outputName);
+      const blob = new Blob([data.buffer], { type: 'video/mp4' });
+      const url = URL.createObjectURL(blob);
+
+      const div = document.createElement('div');
+      div.className = 'bg-gray-800 p-4 rounded';
+      div.innerHTML = `
+        <p class="font-semibold">🔥 Rally Clip ${i + 1} (from ${start}s to ${end}s)</p>
+        <video controls class="w-full h-auto mt-2 bg-black">
+          <source src="${url}" type="video/mp4">
+          Your browser does not support the video tag.
+        </video>
+        <button onclick="shareHighlight('Rally Clip ${i + 1}')" class="mt-2 bg-green-600 px-3 py-1 rounded">Share</button>
+      `;
+      highlightsContainer.appendChild(div);
+    }
+
+    alert('Highlights ready!');
   });
 
-  // Share Function
   function shareHighlight(title) {
     if (navigator.share) {
       navigator.share({
         title: title,
-        text: 'Check out my pickleball highlight!',
+        text: 'Check out my pickleball rally!',
         url: window.location.href
       }).catch(console.error);
     } else {
