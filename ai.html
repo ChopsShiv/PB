@@ -4,151 +4,142 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pickleball Instant Replay</title>
-  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- TensorFlow.js -->
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.14.0/dist/tf.min.js"></script>
-  <!-- PoseNet Model -->
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/posenet@2.2.1/dist/posenet.min.js"></script>
-  <!-- FFmpeg WASM -->
-  <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.10.0/dist/ffmpeg.min.js"></script>
 </head>
 <body class="bg-gray-900 text-white">
   <div class="container mx-auto p-4">
     <h1 class="text-2xl mb-4">🏓 Pickleball Instant Replay</h1>
-
-    <!-- Upload Video -->
     <label for="videoUpload" class="block mb-2">📁 Upload Pickleball Game (MP4):</label>
     <input type="file" id="videoUpload" accept="video/mp4" class="mb-4 block" />
-
-    <!-- Process Button -->
     <button id="processBtn" class="bg-blue-600 px-4 py-2 rounded mb-4" disabled>Loading models...</button>
-
-    <!-- Highlights Container -->
     <div id="highlights" class="space-y-4"></div>
   </div>
 
-  <!-- Hidden Canvas for Pose Estimation -->
+  <video id="sourceVideo" class="hidden"></video>
   <canvas id="videoCanvas" class="hidden"></canvas>
 
   <script>
     (async () => {
-      const processBtn = document.getElementById('processBtn');
       const uploadInput = document.getElementById('videoUpload');
+      const processBtn = document.getElementById('processBtn');
       const highlightsContainer = document.getElementById('highlights');
+      const video = document.getElementById('sourceVideo');
       const canvas = document.getElementById('videoCanvas');
       const ctx = canvas.getContext('2d');
 
-      // Load TF.js and PoseNet
-      try {
-        processBtn.textContent = 'Initializing TensorFlow...';
-        await tf.ready();
-        processBtn.textContent = 'Loading PoseNet...';
-        const posenetModel = await posenet.load();
+      // Load TF and PoseNet
+      await tf.ready();
+      processBtn.textContent = 'Loading PoseNet...';
+      const posenetModel = await posenet.load();
+      processBtn.textContent = 'Models Loaded';
+      processBtn.disabled = false;
 
-        // Load FFmpeg WASM
-        processBtn.textContent = 'Loading FFmpeg...';
-        const { createFFmpeg, fetchFile } = FFmpeg;
-        const ffmpeg = createFFmpeg({ 
-          log: true, 
-          corePath: 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.10.0/dist/ffmpeg-core.js'
-        });
-        await ffmpeg.load();
+      // Analyze video for rally segments
+      async function analyzeVideo(file) {
+        return new Promise(resolve => {
+          video.src = URL.createObjectURL(file);
+          video.onloadedmetadata = async () => {
+            const duration = video.duration;
+            const sampleRate = 0.5;
+            const threshold = 100;
+            let prevPts = null;
+            const segs = [];
+            let segStart = null;
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
 
-        // Enable process button
-        processBtn.textContent = 'Process Highlights';
-        processBtn.disabled = false;
-
-        // Rally detection logic
-        async function analyzeVideo(file) {
-          return new Promise((resolve) => {
-            const video = document.createElement('video');
-            video.src = URL.createObjectURL(file);
-            video.crossOrigin = 'anonymous';
-            video.onloadedmetadata = async () => {
-              const duration = video.duration;
-              const sampleRate = 0.5;
-              const motionThreshold = 100;
-              let prevKeypoints = null;
-              const segments = [];
-              let segStart = null;
-
-              for (let t = 0; t < duration; t += sampleRate) {
-                video.currentTime = t;
-                await new Promise(r => video.onseeked = r);
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                ctx.drawImage(video, 0, 0);
-                const pose = await posenetModel.estimateSinglePose(canvas, { flipHorizontal: false });
-                const keypoints = pose.keypoints.map(k => k.position);
-                if (prevKeypoints) {
-                  let motion = 0;
-                  for (let i = 0; i < keypoints.length; i++) {
-                    const dx = keypoints[i].x - prevKeypoints[i].x;
-                    const dy = keypoints[i].y - prevKeypoints[i].y;
-                    motion += Math.hypot(dx, dy);
-                  }
-                  if (motion > motionThreshold) {
-                    if (segStart === null) segStart = t;
-                  } else if (segStart !== null) {
-                    segments.push({ start: segStart, end: t });
-                    segStart = null;
-                  }
+            for (let t = 0; t < duration; t += sampleRate) {
+              video.currentTime = t;
+              await new Promise(r => video.onseeked = r);
+              ctx.drawImage(video, 0, 0);
+              const pose = await posenetModel.estimateSinglePose(canvas, { flipHorizontal: false });
+              const pts = pose.keypoints.map(k => k.position);
+              if (prevPts) {
+                let motion = 0;
+                for (let i = 0; i < pts.length; i++) {
+                  motion += Math.hypot(pts[i].x - prevPts[i].x, pts[i].y - prevPts[i].y);
                 }
-                prevKeypoints = keypoints;
+                if (motion > threshold) {
+                  if (segStart === null) segStart = t;
+                } else if (segStart !== null) {
+                  segs.push({ start: segStart, end: t });
+                  segStart = null;
+                }
               }
-              if (segStart !== null) segments.push({ start: segStart, end: duration });
-              // Filter segments shorter than 2s
-              const filtered = segments.filter(s => (s.end - s.start) > 2);
-              resolve(filtered);
-            };
-          });
-        }
-
-        // Process button click event
-        processBtn.addEventListener('click', async () => {
-          const file = uploadInput.files[0];
-          if (!file) return alert('Please upload a video first.');
-
-          highlightsContainer.innerHTML = '<p class="text-center">Analyzing video... please wait.</p>';
-
-          // Write file to FFmpeg FS
-          await ffmpeg.FS('writeFile', 'input.mp4', await fetchFile(file));
-
-          // Get rally segments
-          const segments = await analyzeVideo(file);
-
-          highlightsContainer.innerHTML = '';
-          for (let i = 0; i < segments.length; i++) {
-            const { start, end } = segments[i];
-            const outName = `clip_${i}.mp4`;
-            await ffmpeg.run('-i', 'input.mp4', '-ss', `${start}`, '-to', `${end}`, '-c', 'copy', outName);
-            const data = ffmpeg.FS('readFile', outName);
-            const url = URL.createObjectURL(new Blob([data.buffer], { type: 'video/mp4' }));
-
-            const div = document.createElement('div');
-            div.className = 'bg-gray-800 p-4 rounded';
-            div.innerHTML = `
-              <p class="font-semibold">🔥 Rally Clip ${i+1}: ${start.toFixed(1)}s–${end.toFixed(1)}s</p>
-              <video controls class="w-full mt-2 bg-black"><source src="${url}" type="video/mp4"></video>
-              <button onclick="shareHighlight('Rally Clip ${i+1}')" class="mt-2 bg-green-600 px-3 py-1 rounded">Share</button>
-            `;
-            highlightsContainer.appendChild(div);
-          }
-          alert('Highlights ready!');
+              prevPts = pts;
+            }
+            if (segStart !== null) segs.push({ start: segStart, end: duration });
+            resolve(segs.filter(s => s.end - s.start > 2));
+          };
         });
-
-      } catch (err) {
-        console.error('Model loading error:', err);
-        processBtn.textContent = 'Error loading models';
       }
-    })();
 
-    function shareHighlight(title) {
-      if (navigator.share) navigator.share({ title, text: 'Check out my pickleball rally!', url: window.location.href });
-      else alert('Web share not supported');
-    }
+      // Capture segment using MediaRecorder & canvas
+      function captureSegment(start, end) {
+        return new Promise(async (resolve) => {
+          const recCanvas = document.createElement('canvas');
+          const recCtx = recCanvas.getContext('2d');
+          recCanvas.width = video.videoWidth;
+          recCanvas.height = video.videoHeight;
+
+          // draw to recCanvas
+          video.currentTime = start;
+          await new Promise(r => video.onseeked = r);
+
+          const stream = recCanvas.captureStream(30);
+          const recorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp8' });
+          const chunks = [];
+          recorder.ondataavailable = e => chunks.push(e.data);
+          recorder.onstop = () => {
+            const blob = new Blob(chunks, { type: 'video/webm' });
+            resolve(blob);
+          };
+
+          recorder.start();
+
+          const playDuration = end - start;
+          const startTime = performance.now();
+          (function drawFrame() {
+            recCtx.drawImage(video, 0, 0, recCanvas.width, recCanvas.height);
+            if ((performance.now() - startTime) / 1000 < playDuration) {
+              requestAnimationFrame(drawFrame);
+            } else {
+              recorder.stop();
+            }
+          })();
+        });
+      }
+
+      // Process Handler
+      processBtn.addEventListener('click', async () => {
+        const file = uploadInput.files[0];
+        if (!file) return alert('Upload a video first.');
+        highlightsContainer.innerHTML = '<p class="text-center">Analyzing rally segments...</p>';
+        const segments = await analyzeVideo(file);
+        highlightsContainer.innerHTML = '';
+        for (let i = 0; i < segments.length; i++) {
+          const { start, end } = segments[i];
+          const blob = await captureSegment(start, end);
+          const url = URL.createObjectURL(blob);
+          const div = document.createElement('div');
+          div.className = 'bg-gray-800 p-4 rounded';
+          div.innerHTML = `
+            <p class="font-semibold">🔥 Rally Clip ${i+1}: ${start.toFixed(1)}s–${end.toFixed(1)}s</p>
+            <video controls class="w-full mt-2 bg-black"><source src="${url}" type="video/webm"></video>
+            <button onclick="share('${url}')" class="mt-2 bg-green-600 px-3 py-1 rounded">Share</button>
+          `;
+          highlightsContainer.appendChild(div);
+        }
+      });
+
+      window.share = (url) => {
+        if (navigator.share) navigator.share({ title: 'Pickleball Rally Highlight', url }).catch(()=>{});
+        else alert('Web Share not supported');
+      };
+
+    })();
   </script>
 </body>
 </html>
-
